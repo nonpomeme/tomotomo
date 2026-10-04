@@ -188,8 +188,21 @@ if (isNew) {
   const calls = [];
   await scenario('backend', async page => {
     await onboard(page);
-    await page.evaluate(base => localStorage.setItem('tomotomo:ai', JSON.stringify({ apiBase: base, token: 'test-pass' })), new URL('api', url).href);
+    // 「その他」タブで接続先と合言葉を設定する（最初は合言葉を間違える）
+    await click(page, '#nav [data-a="tab"][data-v="more"]');
+    check(await has(page, '[data-a="aiSave"]'), 'AIサーバーの設定欄がない');
+    await page.fill('#aiBase', url);
+    await page.fill('#aiToken', 'wrong');
+    await click(page, '[data-a="aiSave"]');
+    await page.waitForFunction(() => /⚠️/.test(document.querySelector('#aiMsg').textContent));
+    check((await page.textContent('#aiMsg')).includes('合言葉が違います'), '合言葉違いが表示されない');
+    await page.fill('#aiToken', 'test-pass');
+    await click(page, '[data-a="aiSave"]');
+    await page.waitForFunction(() => /接続できました/.test(document.querySelector('#aiMsg').textContent));
+    await snap(page, 'ai-settings');
+    check((await page.textContent('#aiMsg')).includes('あと 42 回'), '残り回数が表示されない');
     await page.reload();
+    await click(page, '#nav [data-a="tab"][data-v="home"]');
     await click(page, '[data-a="start"]');
     await runLesson(page, 'lesson1');
     const fb = Object.entries(snaps).find(([k]) => k.startsWith('backend / lesson1 thought-feedback'));
@@ -202,7 +215,10 @@ if (isNew) {
   }, {
     route: async r => {
       const req = r.request();
-      calls.push({ path: new URL(req.url()).pathname, auth: req.headers()['authorization'], body: req.postDataJSON() });
+      const auth = req.headers()['authorization'];
+      calls.push({ path: new URL(req.url()).pathname, auth, body: req.method() === 'POST' ? req.postDataJSON() : null });
+      if (auth !== 'Bearer test-pass') return r.fulfill({ status: 401, json: { error: '合言葉が違います' } });
+      if (req.url().endsWith('/health')) return r.fulfill({ json: { ok: true, remaining: 42 } });
       if (req.url().endsWith('/feedback')) return r.fulfill({ json: { scores: { logic: 5, concrete: 4, multi: 3, evidence: 2, practical: 1, verbal: 5 }, good: 'バックエンド良い点', improve: 'バックエンド改善点', next: '次の問い' } });
       return r.fulfill({ status: 200, contentType: 'text/plain; charset=utf-8', body: 'バックエンドの回答です。' });
     }

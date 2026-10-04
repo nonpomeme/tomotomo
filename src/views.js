@@ -297,6 +297,7 @@ function viewMore() {
   h += '<div class="sec-title">ランキング</div><div class="card"><div class="setrow"><span class="grow"><b>ランキングに参加する</b><br><span class="tiny muted">ONにすると、呼び名・職種・今週のXPが、このアプリを開いた他の人にも表示されます。OFFでもすべての機能が使えます。</span></span><button class="switch ' + (S.ranking ? 'on' : '') + '" data-a="rankToggle" aria-label="ランキングに参加する" aria-pressed="' + S.ranking + '"></button></div></div>';
   h += '<div class="sec-title">表示</div><div class="card"><div class="setrow"><span><b>テーマ</b></span><div class="chips">' + [['auto', '自動'], ['light', 'ライト'], ['dark', 'ダーク']].map(([v, l]) => '<button class="chip ' + (S.theme === v ? 'on' : '') + '" data-a="theme" data-v="' + v + '">' + l + '</button>').join('') + '</div></div>' +
     '<label class="field"><span>アプリ名（正式名称の変更用）</span><input class="input" data-f="appName" value="' + esc(S.appName) + '" maxlength="20"></label></div>';
+  h += aiServerCard();
   h += '<div class="sec-title">本番接続の状態</div><div class="card small">' +
     [['LLM（AI解説・採点・ディスカッション）', AI.connected() ? '接続中' : '簡易AIで動作'], ['データベース', Remote.ready ? 'クラウド同期中' : 'この端末に保存'], ['ニュースAPI・検索API', 'サンプルニュースで動作'], ['プッシュ通知', 'アプリ版で接続予定'], ['分析基盤', '未接続']].map(([a, b]) => '<div class="setrow"><span>' + a + '</span><span class="tag">' + b + '</span></div>').join('') +
     '<p class="tiny muted" style="margin-top:8px">APIキーなどの秘密情報は端末に保存せず、サーバー経由で接続する構成です。</p></div>';
@@ -305,4 +306,15 @@ function viewMore() {
     '<button class="btn btn-ghost" style="margin-top:10px;color:var(--coral-deep)" data-a="reset">学習データをリセット</button></div>';
   h += '<p class="tiny muted" style="text-align:center;margin-top:20px">' + esc(S.appName) + ' MVP ・ サンプルデータで動作中</p>';
   return h;
+}
+function aiServerCard() {
+  const cfg = AI.config();
+  const msg = ui.aiMsg || (cfg ? (AI.lastError ? '⚠️ ' + AI.lastError : '設定済み') : '未設定（簡易AIで動作中）');
+  return '<div class="sec-title">AIサーバー（自分専用）</div><div class="card">' +
+    '<p class="small muted" style="margin:0">自分で用意したサーバーにつなぐと、思考問題の採点とニュースの対話に本物のAIを使えます。合言葉はこの端末にだけ保存されます。</p>' +
+    '<label class="field"><span>サーバーのURL</span><input class="input" id="aiBase" type="url" inputmode="url" autocomplete="off" placeholder="https://tomotomo-api.○○.workers.dev" value="' + esc(cfg ? cfg.apiBase.replace(/\/api$/, '') : '') + '"></label>' +
+    '<label class="field"><span>合言葉</span><input class="input" id="aiToken" type="password" autocomplete="off" placeholder="' + (cfg && cfg.token ? '保存済み（変えるときだけ入力）' : '') + '"></label>' +
+    '<p class="small" id="aiMsg" role="status" style="margin-top:10px">' + esc(msg) + '</p>' +
+    '<button class="btn btn-primary" style="margin-top:10px" data-a="aiSave">保存して接続テスト</button>' +
+    (cfg ? '<button class="btn btn-ghost" style="margin-top:10px" data-a="aiClear">接続を解除する</button>' : '') + '</div>';
 }

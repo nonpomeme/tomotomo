@@ -40,7 +40,7 @@ const AI = {
   /* 接続先と合言葉を保存する（空にすると解除） */
   configure(apiBase, token) {
     try {
-      if (apiBase) localStorage.setItem(AI_KEY, JSON.stringify({ apiBase: String(apiBase).trim(), token: String(token || '').trim() }));
+      if (apiBase) localStorage.setItem(AI_KEY, JSON.stringify({ apiBase: normalizeApiBase(apiBase), token: String(token || '').trim() }));
       else localStorage.removeItem(AI_KEY);
     } catch (e) { /* storage unavailable */ }
     AI.backendOk = true; AI.skipUntil = 0; AI.lastError = '';
@@ -50,6 +50,20 @@ const AI = {
     if (ClaudeHost.available()) ClaudeHost.use('sample').then(s => { AI.sample = s; refreshAIBadge(); }).catch(() => {});
   },
   connected() { return (!!loadAIConfig() && AI.backendOk) || !!AI.sample; },
+  /* 接続テスト：合言葉が正しいか、今日あと何回使えるか */
+  async test() {
+    const cfg = loadAIConfig();
+    if (!cfg) return { ok: false, error: '接続先が設定されていません' };
+    try {
+      const res = await fetch(cfg.apiBase + '/health', { headers: { Authorization: 'Bearer ' + cfg.token }, signal: AbortSignal.timeout(15000) });
+      const j = await res.json().catch(() => ({}));
+      AI.backendOk = res.ok; AI.skipUntil = 0; AI.lastError = res.ok ? '' : (j.error || 'エラー（' + res.status + '）');
+      return res.ok ? { ok: true, remaining: j.remaining } : { ok: false, error: AI.lastError };
+    } catch (e) {
+      AI.backendOk = false; AI.lastError = '接続できませんでした（URLを確認してください）';
+      return { ok: false, error: AI.lastError };
+    } finally { refreshAIBadge(); }
+  },
 
   /* 思考問題の6観点採点 */
   async feedback(t, variant, text) {
@@ -102,6 +116,11 @@ const AI = {
 };
 
 /* ---------------- バックエンド呼び出し ---------------- */
+/* Workers のURLだけ入力されても動くように、末尾を /api にそろえる */
+function normalizeApiBase(u) {
+  u = String(u).trim().replace(/\/+$/, '');
+  return /\/api$/.test(u) ? u : u + '/api';
+}
 const topicPayload = t => ({ id: t.id, title: t.title, summary: t.s30 });
 const profilePayload = () => ({ occupation: S.profile.occupation || '', industry: S.profile.industry || '' });
 const partnerPayload = () => ({ name: partnerName(), voice: partner().voice });

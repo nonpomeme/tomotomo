@@ -1,0 +1,5 @@
+# 手元で `npm run dev` するときの設定。このファイルを .dev.vars にコピーして値を入れる。
+# .dev.vars は .gitignore 済み（リポジトリには入らない）
+ANTHROPIC_API_KEY=sk-ant-ここに自分のキー
+APP_PASSPHRASE=ここに合言葉
+ALLOWED_ORIGINS=http://127.0.0.1:8080,http://localhost:8080

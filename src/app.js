@@ -95,6 +95,18 @@ const A = {
   },
   rankToggle: () => { S.ranking = !S.ranking; save(); if (S.ranking) { pushRanking(); toast('ランキングに参加しました'); } else if (Remote.db && Remote.uid) { Remote.db.collection('ranking').doc(Remote.uid).delete().catch(() => {}); toast('ランキングから外れました'); } ui.rankRows = null; render(); },
   theme: el => { S.theme = el.dataset.v; save(); render(); },
+  aiSave: async () => {
+    const base = ($('#aiBase') || {}).value || '', token = ($('#aiToken') || {}).value || '';
+    const old = AI.config();
+    if (!/^https:\/\/[^\s/]+|^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/.test(base.trim())) { const m = $('#aiMsg'); if (m) m.textContent = 'URL は https:// から始めてください'; return; }
+    if (!token.trim() && !(old && old.token)) { const m = $('#aiMsg'); if (m) m.textContent = '合言葉を入力してください'; return; }
+    AI.configure(base, token.trim() || old.token);
+    ui.aiMsg = '接続を確認しています…'; render();
+    const r = await AI.test();
+    ui.aiMsg = r.ok ? '✅ 接続できました（今日あと ' + r.remaining + ' 回使えます）' : '⚠️ ' + r.error;
+    if (ui.tab === 'more' && !ui.overlay) render();
+  },
+  aiClear: () => { AI.configure(''); ui.aiMsg = '接続を解除しました。簡易AIで動作します'; render(); },
   logout: () => { S.loggedIn = false; save(); ui.tab = 'home'; render(); toast('ログアウトしました'); },
   reset: () => {
     if (!confirm('学習データ（XP・知識マップ・履歴・復習）をすべて消去します。プロフィールは残ります。よろしいですか？')) return;
