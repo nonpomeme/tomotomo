@@ -1,4 +1,169 @@
-/* ---------------- thought feedback ---------------- */
+/* TomoTomo — AIアダプタ
+   AIを使う処理（思考問題の採点・ニュースの対話）はすべてここを通す。接続先は次の順で切り替える。
+     1. 自分のバックエンド（server/ の Cloudflare Workers）… 接続先URLと合言葉がこの端末に保存されているとき
+     2. claude.ai のアーティファクトとして開いているとき … window.claude.use('sample')
+     3. どちらも使えないとき … 簡易AI（ルールベース採点・定型回答）
+   window.claude を直接さわるのはこのファイルだけ（クラウド同期の db / user も ClaudeHost 経由で取る）。
+
+   ── バックエンドとの約束（server/ はこの形に合わせて作る）──
+   共通：ヘッダー  Authorization: Bearer <合言葉> ／ Content-Type: application/json
+   POST {apiBase}/feedback
+     送信 { topic:{id,title,summary}, question:{variant,text}, answer, profile:{occupation,industry}, partner:{name,voice} }
+     返信 200 { scores:{logic,concrete,multi,evidence,practical,verbal}（各1〜5の整数）, good, improve, next }
+   POST {apiBase}/chat
+     送信 { topic:{id,title,summary,causal[]}, profile, partner, messages:[{role:'user'|'assistant', content}] }
+     返信 200 text/plain のストリーム（届いた本文を順に連結して表示）。JSON { text } でも可。
+   401（合言葉違い）・429（回数上限）・5xx・通信不可・タイムアウトのときは簡易AIにフォールバックする。
+   プロンプトはサーバー側で組み立てる（クライアントから任意のプロンプトを送れないようにするため）。 */
+
+/* ---------------- 接続設定（学習データ S とは別のキーに保存。クラウド同期には載せない） ---------------- */
+const AI_KEY = 'tomotomo:ai';
+function loadAIConfig() {
+  try {
+    const c = JSON.parse(localStorage.getItem(AI_KEY) || 'null');
+    return c && c.apiBase ? { apiBase: String(c.apiBase).replace(/\/+$/, ''), token: String(c.token || '') } : null;
+  } catch (e) { return null; }
+}
+
+/* ---------------- claude.ai 上でだけ存在する仕組み ---------------- */
+const ClaudeHost = {
+  available: () => !!(window.claude && typeof window.claude.use === 'function'),
+  use: name => window.claude.use(name)
+};
+
+const AI = {
+  sample: null,      // claude.ai の LLM（claude.ai 上でだけ入る）
+  backendOk: true,   // 直近のバックエンド呼び出しが成功したか（表示用）
+  skipUntil: 0,      // 通信できなかったら、しばらくバックエンドを試さない（performance.now 基準）
+  lastError: '',
+  config: loadAIConfig,
+  /* 接続先と合言葉を保存する（空にすると解除） */
+  configure(apiBase, token) {
+    try {
+      if (apiBase) localStorage.setItem(AI_KEY, JSON.stringify({ apiBase: String(apiBase).trim(), token: String(token || '').trim() }));
+      else localStorage.removeItem(AI_KEY);
+    } catch (e) { /* storage unavailable */ }
+    AI.backendOk = true; AI.skipUntil = 0; AI.lastError = '';
+    refreshAIBadge();
+  },
+  init() {
+    if (ClaudeHost.available()) ClaudeHost.use('sample').then(s => { AI.sample = s; refreshAIBadge(); }).catch(() => {});
+  },
+  connected() { return (!!loadAIConfig() && AI.backendOk) || !!AI.sample; },
+
+  /* 思考問題の6観点採点 */
+  async feedback(t, variant, text) {
+    const th = t.thoughts[variant];
+    const viaBackend = normalizeFeedback(await callBackend('/feedback', {
+      topic: topicPayload(t), question: { variant, text: th.q }, answer: text.slice(0, 1500),
+      profile: profilePayload(), partner: partnerPayload()
+    }, 30000, res => res.json()));
+    if (viaBackend) return viaBackend;
+    if (AI.sample) {
+      const prompt = [
+        'あなたは社会人向けAI教養トレーナー「' + partnerName() + '」です。ユーザーの記述回答を採点し、前向きで具体的なフィードバックを返します。',
+        '文章の話し方: ' + partner().voice + '。ただし採点の基準・内容の正確さ・質は話し方によって変えないこと。',
+        '否定的な言い方はせず「惜しい」「ここを足すともっと良い」の調子で。政治的に中立を保ち、事実と解釈を区別してください。',
+        'テーマ: ' + t.title, '要点: ' + t.s30, '問い: ' + th.q,
+        'ユーザーの職種: ' + (S.profile.occupation || '未設定') + ' / 業界: ' + (S.profile.industry || '未設定'),
+        'ユーザーの回答: """' + text.slice(0, 1500) + '"""',
+        '各観点を1〜5の整数で評価し、次のJSONだけを返してください（前置きやコードフェンス不要）:',
+        '{"scores":{"logic":0,"concrete":0,"multi":0,"evidence":0,"practical":0,"verbal":0},"good":"良かった点（80字以内）","improve":"伸ばすポイントと具体的な書き足し例（120字以内）","next":"次に考えるとよい問い（60字以内）"}'
+      ].join('\n');
+      try {
+        const fb = normalizeFeedback(await AI.sample.json(prompt, { modelTier: 'quick' }));
+        if (fb) return fb;
+      } catch (e) { /* fall back */ }
+    }
+    return heuristicFeedback(t, variant, text);
+  },
+
+  /* ニュースについての対話。onText(これまでの全文) がストリーミング中に何度も呼ばれる */
+  async chat(t, log, onText) {
+    const q = log[log.length - 1].content;
+    const viaBackend = await callBackend('/chat', {
+      topic: Object.assign(topicPayload(t), { causal: t.s10.causal }), profile: profilePayload(), partner: partnerPayload(),
+      messages: log.slice(-12).map(m => ({ role: m.role, content: String(m.content).slice(0, 1500) }))
+    }, 60000, res => readText(res, onText));
+    if (viaBackend) return viaBackend;
+    if (AI.sample) {
+      const ctx = 'あなたはユーザーの学習パートナー「' + partnerName() + '」（先生ではなく一緒に知識を育てる相棒）。ユーザーと次のニュースについて対話し、理解を深めさせる。話し方: ' + partner().voice + '。ただし説明の正確さ・情報量・質は話し方によって変えない。' +
+        '事実とAIの解釈を区別し、政治・社会の話題では特定の政党・候補者・思想を支持せず、複数の立場を示す。300字程度で、日本語で、やさしく具体的に。最後に考えを深める短い問いを1つ添える。\n' +
+        'テーマ: ' + t.title + '\n要点: ' + t.s30 + '\n因果: ' + t.s10.causal.join('→') + '\nユーザーの職種: ' + (S.profile.occupation || '未設定') + '、業界: ' + (S.profile.industry || '未設定');
+      const turns = log.map((m, i) => ({ role: m.role, content: i === 0 ? ctx + '\n\n質問: ' + m.content : m.content }));
+      try {
+        const r = await AI.sample(turns, { cache: false, onText: ({ text }) => onText(text) });
+        return r.text;
+      } catch (e) { return e && e.text ? e.text : fallbackChat(t, q); }
+    }
+    await new Promise(r => setTimeout(r, 500));
+    return fallbackChat(t, q);
+  }
+};
+
+/* ---------------- バックエンド呼び出し ---------------- */
+const topicPayload = t => ({ id: t.id, title: t.title, summary: t.s30 });
+const profilePayload = () => ({ occupation: S.profile.occupation || '', industry: S.profile.industry || '' });
+const partnerPayload = () => ({ name: partnerName(), voice: partner().voice });
+
+/* 使えなければ null を返す（呼び出し側が次の手段にフォールバックする） */
+async function callBackend(path, body, timeoutMs, read) {
+  const cfg = loadAIConfig();
+  if (!cfg || navigator.onLine === false || performance.now() < AI.skipUntil) return null;
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), timeoutMs);
+  try {
+    const res = await fetch(cfg.apiBase + path, {
+      method: 'POST', signal: ctl.signal,
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + cfg.token },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      AI.backendOk = false;
+      AI.lastError = res.status === 401 ? '合言葉が違います' : res.status === 429 ? '今日の利用上限に達しました' : 'サーバーエラー（' + res.status + '）';
+      return null;
+    }
+    const out = await read(res);
+    if (out == null) throw new Error('empty response');
+    AI.backendOk = true; AI.lastError = '';
+    return out;
+  } catch (e) {
+    AI.backendOk = false; AI.lastError = '接続できませんでした';
+    AI.skipUntil = performance.now() + 60000;
+    return null;
+  } finally {
+    clearTimeout(timer);
+    refreshAIBadge();
+  }
+}
+/* text/plain のストリームを読みながら onText に渡す。JSON { text } にも対応 */
+async function readText(res, onText) {
+  if (/json/.test(res.headers.get('content-type') || '')) { const j = await res.json(); return j && j.text ? String(j.text) : null; }
+  if (!res.body || !res.body.getReader) return (await res.text()) || null;
+  const reader = res.body.getReader(), dec = new TextDecoder();
+  let text = '';
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      text += dec.decode(value, { stream: true });
+      onText(text);
+    }
+    text += dec.decode();
+  } catch (e) { if (!text) throw e; /* 途中で切れても、届いた分は見せる */ }
+  return text || null;
+}
+function normalizeFeedback(r) {
+  if (!r || !r.scores) return null;
+  const scores = {};
+  AXES.forEach(([k]) => { scores[k] = clamp(Math.round(Number(r.scores[k]) || 1), 1, 5); });
+  return { scores, good: String(r.good || ''), improve: String(r.improve || ''), next: String(r.next || ''), offline: false };
+}
+
+function refreshAIBadge() { document.querySelectorAll('[data-ai-status]').forEach(el => { el.innerHTML = aiStatusHTML(); }); }
+function aiStatusHTML() { return AI.connected() ? '<span class="tag ai">AI接続中</span>' : '<span class="tag">簡易AI（オフライン）</span>'; }
+
+/* ---------------- 簡易AI（オフライン用） ---------------- */
 const AXES = [['logic', '論理性'], ['concrete', '具体性'], ['multi', '多角性'], ['evidence', '根拠'], ['practical', '実務性'], ['verbal', '言語化']];
 function heuristicFeedback(t, variant, text) {
   const len = text.replace(/\s/g, '').length;
@@ -37,29 +202,6 @@ function heuristicFeedback(t, variant, text) {
     next: variant === 'business' ? 'その提案に反対する人がいるとしたら、どんな理由だと思いますか？' : 'この変化が5年続いたら、あなたの業界では何が起きそうですか？',
     offline: true
   };
-}
-async function aiFeedback(t, variant, text) {
-  const th = t.thoughts[variant];
-  if (SAMPLE) {
-    const prompt = [
-      'あなたは社会人向けAI教養トレーナー「' + partnerName() + '」です。ユーザーの記述回答を採点し、前向きで具体的なフィードバックを返します。',
-      '文章の話し方: ' + partner().voice + '。ただし採点の基準・内容の正確さ・質は話し方によって変えないこと。',
-      '否定的な言い方はせず「惜しい」「ここを足すともっと良い」の調子で。政治的に中立を保ち、事実と解釈を区別してください。',
-      'テーマ: ' + t.title, '要点: ' + t.s30, '問い: ' + th.q,
-      'ユーザーの職種: ' + (S.profile.occupation || '未設定') + ' / 業界: ' + (S.profile.industry || '未設定'),
-      'ユーザーの回答: """' + text.slice(0, 1500) + '"""',
-      '各観点を1〜5の整数で評価し、次のJSONだけを返してください（前置きやコードフェンス不要）:',
-      '{"scores":{"logic":0,"concrete":0,"multi":0,"evidence":0,"practical":0,"verbal":0},"good":"良かった点（80字以内）","improve":"伸ばすポイントと具体的な書き足し例（120字以内）","next":"次に考えるとよい問い（60字以内）"}'
-    ].join('\n');
-    try {
-      const r = await SAMPLE.json(prompt, { modelTier: 'quick' });
-      if (r && r.scores) {
-        AXES.forEach(([k]) => { r.scores[k] = clamp(Math.round(Number(r.scores[k]) || 1), 1, 5); });
-        return { scores: r.scores, good: String(r.good || ''), improve: String(r.improve || ''), next: String(r.next || ''), offline: false };
-      }
-    } catch (e) { /* fall back */ }
-  }
-  return heuristicFeedback(t, variant, text);
 }
 function fallbackChat(t, q) {
   if (t.chat && t.chat[q]) return t.chat[q];

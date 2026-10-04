@@ -47,7 +47,6 @@ function loadLocal() { try { const raw = localStorage.getItem(KEY); return raw ?
 let S = loadLocal();
 
 const Remote = { db: null, uid: null, user: null, ready: false, timer: null };
-let SAMPLE = null;
 let saveTimer = null;
 function save() {
   S.updatedAt = Date.now();
@@ -62,10 +61,10 @@ async function pushRemote() {
   try { await Remote.db.collection('data/users/' + Remote.uid).doc('tomotomo').set({ state: JSON.stringify(S), updatedAt: S.updatedAt }); } catch (e) { /* keep local copy */ }
 }
 async function initRuntime() {
-  if (!window.claude || typeof window.claude.use !== 'function') return;
-  claude.use('sample').then(s => { SAMPLE = s; refreshAIBadge(); }).catch(() => {});
+  AI.init();
+  if (!ClaudeHost.available()) return;
   try {
-    const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
+    const [db, user] = await Promise.all([ClaudeHost.use('db'), ClaudeHost.use('user')]);
     if (!db || !user) return;
     const uid = await user.id();
     if (!uid) return;
@@ -84,8 +83,6 @@ async function initRuntime() {
     if (!ui.overlay) render();
   } catch (e) { /* db unavailable: device only */ }
 }
-function refreshAIBadge() { document.querySelectorAll('[data-ai-status]').forEach(el => { el.innerHTML = aiStatusHTML(); }); }
-function aiStatusHTML() { return SAMPLE ? '<span class="tag ai">AI接続中</span>' : '<span class="tag">簡易AI（オフライン）</span>'; }
 
 /* ---------------- derived ---------------- */
 function levelInfo(xp) {

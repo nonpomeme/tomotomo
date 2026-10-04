@@ -187,7 +187,7 @@ async function submitThought() {
   if (text.length < 10) { toast('あと少し書いてみましょう（10文字以上）'); if (ta) ta.focus(); return; }
   L.thought = { text, loading: true };
   lessonRerender(true);
-  const fb = await aiFeedback(t, step.variant, text);
+  const fb = await AI.feedback(t, step.variant, text);
   if (ui.L !== L) return;
   L.thought = { text, fb };
   const avg = AXES.reduce((a, [k]) => a + fb.scores[k], 0) / AXES.length;
@@ -343,20 +343,7 @@ async function sendChat(text) {
   const t = topicById(c.topicId);
   c.log.push({ role: 'user', content: text }); c.busy = true; c.partial = '';
   renderOverlay();
-  let answer = '';
-  if (SAMPLE) {
-    const ctx = 'あなたはユーザーの学習パートナー「' + partnerName() + '」（先生ではなく一緒に知識を育てる相棒）。ユーザーと次のニュースについて対話し、理解を深めさせる。話し方: ' + partner().voice + '。ただし説明の正確さ・情報量・質は話し方によって変えない。' +
-      '事実とAIの解釈を区別し、政治・社会の話題では特定の政党・候補者・思想を支持せず、複数の立場を示す。300字程度で、日本語で、やさしく具体的に。最後に考えを深める短い問いを1つ添える。\n' +
-      'テーマ: ' + t.title + '\n要点: ' + t.s30 + '\n因果: ' + t.s10.causal.join('→') + '\nユーザーの職種: ' + (S.profile.occupation || '未設定') + '、業界: ' + (S.profile.industry || '未設定');
-    const turns = c.log.map((m, i) => ({ role: m.role, content: i === 0 ? ctx + '\n\n質問: ' + m.content : m.content }));
-    try {
-      const r = await SAMPLE(turns, { cache: false, onText: ({ text }) => { c.partial = text; const el = $('#streaming'); if (el) el.textContent = text; } });
-      answer = r.text;
-    } catch (e) { answer = e && e.text ? e.text : fallbackChat(t, text); }
-  } else {
-    await new Promise(r => setTimeout(r, 500));
-    answer = fallbackChat(t, text);
-  }
+  const answer = await AI.chat(t, c.log, text => { c.partial = text; const el = $('#streaming'); if (el) el.textContent = text; });
   c.log.push({ role: 'assistant', content: answer }); c.busy = false; c.partial = '';
   if (ui.overlay === 'chat') renderOverlay();
 }

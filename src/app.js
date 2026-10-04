@@ -29,7 +29,7 @@ const A = {
   tab: el => { ui.tab = el.dataset.v; ui.modal = null; showModal(); if (ui.overlay) closeOverlay(); render(); window.scrollTo(0, 0); },
   login: el => {
     S.loggedIn = true; S.account = el.dataset.v;
-    if (el.dataset.v === 'account' && !Remote.db) toast(window.claude ? 'クラウド同期の準備中です。準備ができるまでこの端末にも保存します' : 'この環境ではクラウド同期が使えないため、この端末に保存します');
+    if (el.dataset.v === 'account' && !Remote.db) toast(ClaudeHost.available() ? 'クラウド同期の準備中です。準備ができるまでこの端末にも保存します' : 'この環境ではクラウド同期が使えないため、この端末に保存します');
     save(); render();
   },
   pick: el => { const k = el.dataset.k; S.profile[k] = k === 'minutes' ? Number(el.dataset.v) : el.dataset.v; save(); render(); },

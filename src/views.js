@@ -298,7 +298,7 @@ function viewMore() {
   h += '<div class="sec-title">表示</div><div class="card"><div class="setrow"><span><b>テーマ</b></span><div class="chips">' + [['auto', '自動'], ['light', 'ライト'], ['dark', 'ダーク']].map(([v, l]) => '<button class="chip ' + (S.theme === v ? 'on' : '') + '" data-a="theme" data-v="' + v + '">' + l + '</button>').join('') + '</div></div>' +
     '<label class="field"><span>アプリ名（正式名称の変更用）</span><input class="input" data-f="appName" value="' + esc(S.appName) + '" maxlength="20"></label></div>';
   h += '<div class="sec-title">本番接続の状態</div><div class="card small">' +
-    [['LLM（AI解説・採点・ディスカッション）', SAMPLE ? '接続中' : '簡易AIで動作'], ['データベース', Remote.ready ? 'クラウド同期中' : 'この端末に保存'], ['ニュースAPI・検索API', 'サンプルニュースで動作'], ['プッシュ通知', 'アプリ版で接続予定'], ['分析基盤', '未接続']].map(([a, b]) => '<div class="setrow"><span>' + a + '</span><span class="tag">' + b + '</span></div>').join('') +
+    [['LLM（AI解説・採点・ディスカッション）', AI.connected() ? '接続中' : '簡易AIで動作'], ['データベース', Remote.ready ? 'クラウド同期中' : 'この端末に保存'], ['ニュースAPI・検索API', 'サンプルニュースで動作'], ['プッシュ通知', 'アプリ版で接続予定'], ['分析基盤', '未接続']].map(([a, b]) => '<div class="setrow"><span>' + a + '</span><span class="tag">' + b + '</span></div>').join('') +
     '<p class="tiny muted" style="margin-top:8px">APIキーなどの秘密情報は端末に保存せず、サーバー経由で接続する構成です。</p></div>';
   h += '<div class="sec-title">アカウント</div><div class="card"><div class="small muted">' + (S.account === 'account' && Remote.ready ? 'アカウントでログイン中（クラウドに保存）' : S.account === 'account' ? 'アカウントでログイン中（同期の準備中・この端末にも保存）' : 'ゲスト（この端末に保存）') + '</div>' +
     '<button class="btn btn-ghost" style="margin-top:12px" data-a="logout">ログアウト</button>' +
