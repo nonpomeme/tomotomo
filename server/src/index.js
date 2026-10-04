@@ -40,10 +40,12 @@ export default {
     const ip = req.headers.get('CF-Connecting-IP') || 'local';
     const limiter = env.LIMITER.get(env.LIMITER.idFromName('owner'));
 
-    // 合言葉の確認（総当たり対策：失敗が続いたIPはしばらく締め出す）
-    if (await limiter.isLocked(ip)) return json({ error: '合言葉の失敗が続いたため、しばらく利用できません' }, 429, cors);
-    if (!env.APP_PASSPHRASE || !(await safeEqual(bearer(req), env.APP_PASSPHRASE))) {
-      await limiter.authFailed(ip);
+    // 合言葉の確認（総当たり対策：違う合言葉が続いたIPはしばらく締め出す）
+    // 合言葉なしのアクセス（ブラウザで URL を開いた動作確認など）は失敗として数えない
+    const token = bearer(req);
+    if (await limiter.isLocked(ip)) return json({ error: '合言葉の失敗が続いたため、1時間ほど利用できません' }, 429, cors);
+    if (!env.APP_PASSPHRASE || !(await safeEqual(token, env.APP_PASSPHRASE))) {
+      if (token) await limiter.authFailed(ip);
       return json({ error: '合言葉が違います' }, 401, cors);
     }
 
