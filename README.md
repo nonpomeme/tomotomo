@@ -12,6 +12,8 @@
   - `views.js` / `map.js` / `lesson.js` 画面・知識マップ・学習オーバーレイ
   - `app.js` ボタン操作と起動
   - `styles.css` 見た目
+- `manifest.json` / `service-worker.js` / `icons/` … PWA（ホーム画面に追加・オフライン学習）。アイコンは `node tools/make-icons.mjs` でパートナーのSVGから生成
+- `.github/workflows/pages.yml` … main に入ると自動テスト → GitHub Pages に公開
 - `server/` … AIサーバー（Cloudflare Workers）。採点 `/api/feedback`・対話 `/api/chat`・接続確認 `/api/health`
 - `tests/` … 操作フローの自動テスト
 - `CLAUDE.md` … Claude Code 用のプロジェクトガイド
@@ -34,6 +36,26 @@ cd server && npm install && npm test   # AIサーバー（本物のAPIは呼ば�
 ```
 
 ヘッドレスブラウザで「ログイン → オンボーディング → 学習 → クイズ → 思考問題 → 結果 → 知識マップ更新 → 2回目の学習 → 各タブ → ニュース対話 → 再読み込み」を通しで操作し、エラーが出ないこと・XPや知識マップが保存されることを確かめます。AIは「簡易AI」「claude.ai 上」「バックエンドあり」「バックエンド停止中」の4通りで確認します。
+
+## アプリの公開（GitHub Pages）とスマホへの追加
+
+### 公開する（最初の1回だけ）
+1. GitHub でこのリポジトリを開き、上のタブの「Settings」を押す。
+2. 左メニューの「Pages」を押す。
+3. 「Build and deployment」の「Source」で **「GitHub Actions」** を選ぶ（選ぶだけで保存されます）。
+4. 上のタブの「Actions」を押し、左の「GitHub Pages に公開」→ 右の「Run workflow」→ 緑の「Run workflow」を押す。
+5. 数分後、一覧の行が緑のチェックになれば公開完了。アプリのURLは **https://nonpomeme.github.io/tomotomo/** です。
+
+以後は main に変更が入るたびに、自動テストに合格したものだけが自動で公開されます（テストに落ちたら公開されず、前の版のまま）。
+更新はアプリを開くと裏で取り込まれ、**次に開いたときに**新しい版になります。
+
+### iPhone のホーム画面に追加する
+1. iPhone の **Safari** で https://nonpomeme.github.io/tomotomo/ を開く。
+2. 画面下の共有ボタン（四角から上向き矢印が出ているマーク）を押す。
+3. 「ホーム画面に追加」→ 右上の「追加」を押す。
+4. ホーム画面の TomoTomo アイコンから開くと、Safari のバーがない全画面で起動します。一度開けば、電波がなくても学習できます（AIの採点・対話は簡易AIになります）。
+
+Android は Chrome で開き、右上の「︙」→「ホーム画面に追加」（または「アプリをインストール」）。
 
 ## AIサーバーの準備（オーナーが行う作業）
 

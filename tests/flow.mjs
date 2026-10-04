@@ -24,7 +24,7 @@ let current = '';
 function check(cond, msg) { if (!cond) failures.push('[' + current + '] ' + msg); }
 
 async function newPage(opts = {}) {
-  const ctx = await browser.newContext({ locale: 'ja-JP', timezoneId: 'Asia/Tokyo', colorScheme: 'light', viewport: { width: 400, height: 860 } });
+  const ctx = await browser.newContext({ locale: 'ja-JP', timezoneId: 'Asia/Tokyo', colorScheme: 'light', viewport: { width: 400, height: 860 }, serviceWorkers: opts.sw ? 'allow' : 'block' });
   const page = await ctx.newPage();
   page.errors = [];
   page.on('pageerror', e => page.errors.push(String(e)));
@@ -235,6 +235,28 @@ if (isNew) {
     check(fb && fb[1].overlay.includes('簡易評価'), 'バックエンド停止時に簡易AIへフォールバックしない');
     await chat(page, 'down');
   }, { route: r => r.fulfill({ status: 503, body: 'down' }) });
+}
+
+// 5. PWA：ホーム画面に追加できる情報があり、オフラインでも起動して学習できる
+if (fs.existsSync(path.join(root, 'service-worker.js'))) {
+  await scenario('pwa', async page => {
+    await page.goto(url);
+    const manifest = await page.evaluate(async () => { const l = document.querySelector('link[rel="manifest"]'); return l && (await fetch(l.href)).json(); });
+    check(manifest && manifest.display === 'standalone' && manifest.icons.some(i => i.sizes === '512x512' && i.purpose === 'maskable'), 'manifest が不正');
+    for (const i of manifest.icons) check((await page.request.get(new URL(i.src, url).href)).ok(), 'アイコンがない: ' + i.src);
+    check(await page.evaluate(() => !!document.querySelector('link[rel="apple-touch-icon"]') && document.querySelector('meta[name="apple-mobile-web-app-capable"]').content === 'yes'), 'iPhone 用の設定がない');
+    await page.evaluate(() => navigator.serviceWorker.ready);
+    await page.waitForFunction(async () => (await caches.keys()).length > 0 && (await (await caches.open((await caches.keys())[0])).keys()).length >= 15);
+    await onboard(page);
+    await page.context().setOffline(true);
+    await page.reload();
+    const s = await snap(page, 'offline-reload');
+    check(s.app.includes('<main class="screen">'), 'オフラインで起動しない');
+    await click(page, '[data-a="start"]');
+    const seen = await runLesson(page, 'offline-lesson');
+    check(seen.has('quiz') && seen.has('thought') && seen.has('mapupdate'), 'オフラインで学習を最後まで進められない');
+    await page.context().setOffline(false);
+  }, { sw: true });
 }
 
 await browser.close();

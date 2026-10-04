@@ -141,3 +141,8 @@ document.addEventListener('keydown', e => {
 
 render();
 initRuntime();
+
+/* オフラインで学習できるようにする（https か手元の確認時のみ） */
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname))) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('service-worker.js').catch(() => {}); });
+}
