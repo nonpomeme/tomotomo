@@ -1,0 +1,13 @@
+{
+  "name": "tomotomo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node tests/serve.mjs",
+    "test": "node tests/flow.mjs",
+    "test:server": "npm --prefix server test"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}

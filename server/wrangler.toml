@@ -1,0 +1,22 @@
+# TomoTomo API（Cloudflare Workers）の設定。
+# 秘密情報（ANTHROPIC_API_KEY / APP_PASSPHRASE）はここに書かない。`npx wrangler secret put` で登録する。
+name = "tomotomo-api"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+[vars]
+# アプリを公開するURL（オリジン）。カンマ区切りで複数可。末尾に / は付けない
+ALLOWED_ORIGINS = "https://nonpomeme.github.io"
+# 採点・対話に使うモデル（https://docs.claude.com で最新を確認）
+MODEL = "claude-sonnet-5-5"
+# 1日（日本時間）の上限回数と、1分あたりの上限回数
+DAILY_LIMIT = "100"
+PER_MINUTE_LIMIT = "10"
+
+[[durable_objects.bindings]]
+name = "LIMITER"
+class_name = "Limiter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Limiter"]
