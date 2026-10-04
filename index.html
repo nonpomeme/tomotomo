@@ -1,0 +1,2181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TomoTomo — AI教養トレーナー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF2FF; --surface:#FFFFFF; --surface2:#E4E9FF; --line:#D5DCF5;
+  --ink:#1A2048; --ink2:#5A6390; --ink3:#8A92BC;
+  --primary:#4F5BEF; --primary-deep:#3540C9; --primary-soft:#E2E5FF;
+  --sun:#FFC53D; --sun-deep:#E0A30F; --sun-soft:#FFF4D6;
+  --mint:#12B886; --mint-deep:#0B9068; --mint-soft:#DDF7EE;
+  --coral:#FF6B7F; --coral-deep:#E04A5F; --coral-soft:#FFE9EC;
+  --sky:#0B1033; --sky2:#1A2160;
+  --shadow:0 2px 0 rgba(26,32,72,.06);
+  --r-lg:22px; --r-md:16px; --r-sm:12px;
+  --f-head:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans",system-ui,sans-serif;
+  --f-body:"Noto Sans JP","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#11142B; --surface:#1B1F3F; --surface2:#252A55; --line:#2E3466;
+    --ink:#EEF0FF; --ink2:#A7AED8; --ink3:#7A82B0;
+    --primary:#7C86FF; --primary-deep:#5560E0; --primary-soft:#2A3070;
+    --sun-soft:#3A3220; --mint-soft:#163A33; --coral-soft:#40232B;
+    --shadow:0 2px 0 rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11142B; --surface:#1B1F3F; --surface2:#252A55; --line:#2E3466;
+  --ink:#EEF0FF; --ink2:#A7AED8; --ink3:#7A82B0;
+  --primary:#7C86FF; --primary-deep:#5560E0; --primary-soft:#2A3070;
+  --sun-soft:#3A3220; --mint-soft:#163A33; --coral-soft:#40232B;
+  --shadow:0 2px 0 rgba(0,0,0,.25);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
+input,select,textarea{font:inherit;color:var(--ink)}
+img,svg{max-width:100%}
+:focus-visible{outline:3px solid var(--primary);outline-offset:2px;border-radius:8px}
+h1,h2,h3,h4{font-family:var(--f-head);margin:0;line-height:1.35;letter-spacing:.01em}
+p{margin:0}
+.app{max-width:480px;margin:0 auto;min-height:100%;position:relative;background:var(--bg)}
+.screen{padding:12px 18px 120px}
+.hide{display:none!important}
+.muted{color:var(--ink2)}
+.small{font-size:13px}
+.tiny{font-size:11.5px}
+.row{display:flex;align-items:center;gap:10px}
+.between{justify-content:space-between}
+.wrap{flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.stack>*+*{margin-top:12px}
+.num{font-family:var(--f-head);font-weight:800;font-variant-numeric:tabular-nums}
+
+/* top bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 18px 4px;position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg)}
+.brand{display:flex;align-items:center;gap:8px;font-family:var(--f-head);font-weight:800;font-size:19px;color:var(--primary)}
+.stats{display:flex;gap:6px}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:var(--surface);border:1.5px solid var(--line);font-family:var(--f-head);font-weight:800;font-size:13px}
+.pill.fire{color:#F0723B}.pill.xp{color:var(--sun-deep)}.pill.lv{color:var(--primary)}
+
+/* buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px 18px;border-radius:var(--r-md);font-family:var(--f-head);font-weight:800;font-size:16px;letter-spacing:.02em;transition:transform .08s, box-shadow .08s, filter .15s}
+.btn:active{transform:translateY(3px)}
+.btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 0 var(--primary-deep)}
+.btn-primary:active{box-shadow:0 1px 0 var(--primary-deep)}
+.btn-mint{background:var(--mint);color:#fff;box-shadow:0 4px 0 var(--mint-deep)}
+.btn-mint:active{box-shadow:0 1px 0 var(--mint-deep)}
+.btn-coral{background:var(--coral);color:#fff;box-shadow:0 4px 0 var(--coral-deep)}
+.btn-ghost{background:var(--surface);color:var(--primary);border:2px solid var(--line);box-shadow:0 3px 0 var(--line)}
+.btn-ghost:active{box-shadow:0 0 0 var(--line)}
+.btn[disabled]{background:var(--surface2);color:var(--ink3);box-shadow:0 4px 0 var(--line);cursor:not-allowed}
+.btn-sm{padding:9px 14px;font-size:14px;width:auto;border-radius:var(--r-sm)}
+.link{color:var(--primary);font-weight:700;font-family:var(--f-head);font-size:14px}
+
+/* cards */
+.card{background:var(--surface);border:1.5px solid var(--line);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow)}
+.card.flat{box-shadow:none}
+.sec-title{font-family:var(--f-head);font-weight:800;font-size:16px;margin:22px 2px 10px;display:flex;align-items:center;justify-content:space-between}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);font-size:13px;font-weight:600;white-space:nowrap}
+.chip.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.chip.soft{background:var(--surface2);border-color:transparent}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.scroll-x{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.scroll-x::-webkit-scrollbar{display:none}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11.5px;font-weight:700;background:var(--surface2);color:var(--ink2)}
+.tag.fact{background:var(--mint-soft);color:var(--mint-deep)}
+.tag.ai{background:var(--primary-soft);color:var(--primary)}
+.bar{height:10px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:99px;background:var(--primary);transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.bar.mint>i{background:var(--mint)}.bar.sun>i{background:var(--sun)}
+
+/* home hero */
+.hero{background:var(--primary);color:#fff;border-radius:26px;padding:18px 18px 20px;position:relative;overflow:hidden;box-shadow:0 5px 0 var(--primary-deep)}
+.hero .bubble{background:rgba(255,255,255,.16);border-radius:16px 16px 16px 4px;padding:10px 12px;font-size:13.5px;line-height:1.6}
+.hero h2{font-size:22px;margin:14px 0 6px;line-height:1.4}
+.hero .meta{font-size:12.5px;opacity:.85}
+.hero .btn{background:#fff;color:var(--primary);box-shadow:0 4px 0 rgba(0,0,0,.18);margin-top:16px;font-size:17px;padding:16px}
+.timechips{display:flex;gap:6px;margin-top:12px}
+.timechips button{flex:1;padding:8px 0;border-radius:12px;background:rgba(255,255,255,.14);color:#fff;font-family:var(--f-head);font-weight:800;font-size:14px;border:2px solid transparent}
+.timechips button.on{background:#fff;color:var(--primary)}
+.hero .why{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+.hero .why span{font-size:11.5px;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,.18)}
+
+.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.stat{background:var(--surface);border:1.5px solid var(--line);border-radius:var(--r-md);padding:10px 8px;text-align:center}
+.stat .num{font-size:22px;display:block;line-height:1.2}
+.stat .lbl{font-size:11.5px;color:var(--ink2)}
+
+.listcard{display:flex;align-items:center;gap:12px;width:100%;text-align:left}
+.listcard .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:22px;background:var(--surface2);flex:none}
+.listcard + .listcard{margin-top:10px}
+
+/* bottom nav */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1.5px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav-in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+.nav button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 0 9px;font-size:10.5px;font-weight:700;color:var(--ink3)}
+.nav button svg{width:24px;height:24px}
+.nav button.on{color:var(--primary)}
+
+/* overlay screens */
+.overlay{position:fixed;inset:0;z-index:50;background:var(--bg);overflow-y:auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.overlay-in{max-width:480px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+.lesson-top{display:flex;align-items:center;gap:12px;padding:12px 18px;position:sticky;top:0;background:var(--bg);z-index:5}
+.lesson-top .bar{flex:1;height:14px}
+.lesson-top .bar>i{background:var(--mint)}
+.iconbtn{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;color:var(--ink2);flex:none}
+.iconbtn:hover{background:var(--surface2)}
+.lesson-body{flex:1;padding:6px 18px 24px}
+.lesson-foot{position:sticky;bottom:0;padding:14px 18px calc(16px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1.5px solid var(--line)}
+.kicker{font-family:var(--f-head);font-weight:800;font-size:13px;color:var(--primary);display:flex;align-items:center;gap:6px}
+.qtitle{font-size:20px;margin:8px 0 16px;line-height:1.5}
+
+.opt{display:block;width:100%;text-align:left;padding:14px 16px;border-radius:var(--r-md);background:var(--surface);border:2px solid var(--line);box-shadow:0 3px 0 var(--line);font-weight:600;line-height:1.55;transition:transform .08s}
+.opt+.opt{margin-top:10px}
+.opt:active{transform:translateY(2px)}
+.opt.sel{border-color:var(--primary);background:var(--primary-soft);box-shadow:0 3px 0 var(--primary)}
+.opt.ok{border-color:var(--mint);background:var(--mint-soft);box-shadow:0 3px 0 var(--mint)}
+.opt.ng{border-color:var(--coral);background:var(--coral-soft);box-shadow:0 3px 0 var(--coral)}
+.opt[disabled]{cursor:default}
+.tfgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tfgrid .opt{margin:0;text-align:center;font-size:40px;font-family:var(--f-head);padding:22px 0}
+.blank{display:inline-block;min-width:88px;border-bottom:3px solid var(--primary);text-align:center;color:var(--primary);font-weight:800;padding:0 6px}
+.fillbox{background:var(--surface);border:1.5px solid var(--line);border-radius:var(--r-md);padding:16px;font-size:17px;line-height:1.9;margin-bottom:16px}
+.ordered{min-height:60px;border:2px dashed var(--line);border-radius:var(--r-md);padding:8px;margin-bottom:14px}
+.ordered .oitem,.pool .oitem{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:12px;background:var(--surface);border:2px solid var(--line);box-shadow:0 2px 0 var(--line);font-weight:600;text-align:left}
+.ordered .oitem{border-color:var(--primary);background:var(--primary-soft)}
+.ordered .oitem+.oitem,.pool .oitem+.oitem{margin-top:8px}
+.oitem .n{width:24px;height:24px;border-radius:8px;background:var(--primary);color:#fff;display:grid;place-items:center;font-size:12px;font-family:var(--f-head);flex:none}
+.oitem.ok{border-color:var(--mint);background:var(--mint-soft)}.oitem.ng{border-color:var(--coral);background:var(--coral-soft)}
+.causebox{background:var(--sun-soft);border:2px solid var(--sun);border-radius:var(--r-md);padding:14px;font-weight:700}
+.arrowdown{text-align:center;font-size:22px;color:var(--ink3);margin:4px 0}
+.scenario{background:var(--surface2);border-radius:var(--r-md);padding:14px 16px;font-weight:600;margin-bottom:6px;position:relative}
+
+/* feedback sheet */
+.sheet{border-radius:22px 22px 0 0;padding:16px 18px calc(18px + env(safe-area-inset-bottom,0px));position:sticky;bottom:0;animation:up .28s cubic-bezier(.2,.9,.2,1)}
+.sheet.ok{background:var(--mint-soft)}.sheet.ng{background:var(--coral-soft)}
+.sheet h3{font-size:19px}
+.sheet.ok h3{color:var(--mint-deep)}.sheet.ng h3{color:var(--coral-deep)}
+@keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.exp{background:var(--surface);border-radius:var(--r-md);padding:12px 14px;margin:10px 0 12px;font-size:14px;max-height:42vh;overflow-y:auto}
+.exp dt{font-family:var(--f-head);font-weight:800;font-size:12.5px;color:var(--primary);margin-top:8px}
+.exp dt:first-child{margin-top:0}
+.exp dd{margin:2px 0 0}
+.combo{display:inline-flex;align-items:center;gap:4px;background:var(--sun);color:#3A2A00;border-radius:99px;padding:2px 10px;font-family:var(--f-head);font-weight:800;font-size:13px;animation:pop .4s}
+@keyframes pop{0%{transform:scale(.4)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+/* reading */
+.depthtabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface2);border-radius:14px;padding:4px;gap:4px;margin:12px 0 14px}
+.depthtabs button{padding:8px 0;border-radius:10px;font-family:var(--f-head);font-weight:800;font-size:13.5px;color:var(--ink2)}
+.depthtabs button.on{background:var(--surface);color:var(--primary);box-shadow:var(--shadow)}
+.read p{line-height:1.9}
+.read .blk{margin-top:14px}
+.chain{display:flex;flex-direction:column;align-items:flex-start;gap:0;margin-top:6px}
+.chain span{background:var(--surface2);border-radius:10px;padding:6px 10px;font-weight:600;font-size:14px}
+.chain i{font-style:normal;color:var(--ink3);padding-left:14px;line-height:1.3}
+.persp{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:14px}
+.persp b{font-family:var(--f-head);white-space:nowrap;color:var(--primary)}
+.source{font-size:12.5px;color:var(--ink2);border-top:1.5px dashed var(--line);margin-top:16px;padding-top:12px}
+.source a{color:var(--primary);word-break:break-all}
+
+/* tomo speech */
+.tomo{display:flex;gap:10px;align-items:flex-end}
+.tomo .say{background:var(--surface);border:1.5px solid var(--line);border-radius:18px 18px 18px 4px;padding:10px 14px;font-size:14px;line-height:1.6}
+.owl{flex:none;display:block}
+.owl.bob{animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-4px)}}
+
+/* thought */
+textarea.answer{width:100%;min-height:150px;border-radius:var(--r-md);border:2px solid var(--line);background:var(--surface);padding:14px;line-height:1.7;resize:vertical}
+textarea.answer:focus{outline:none;border-color:var(--primary)}
+.axis{display:grid;grid-template-columns:76px 1fr 28px;align-items:center;gap:8px;font-size:13px}
+.axis+.axis{margin-top:6px}
+.dots{display:flex;gap:4px}.dots i{flex:1;height:8px;border-radius:4px;background:var(--surface2)}.dots i.on{background:var(--primary)}
+
+/* results */
+.big-xp{font-size:56px;color:var(--sun-deep);line-height:1}
+.resgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.resgrid .stat{border-width:2px}
+.badge-new{display:flex;align-items:center;gap:12px;background:var(--sun-soft);border:2px solid var(--sun);border-radius:var(--r-md);padding:10px 14px;animation:pop .5s}
+
+/* map */
+.mapwrap{position:relative;border-radius:24px;overflow:hidden;background:radial-gradient(120% 90% at 30% 20%,var(--sky2),var(--sky));height:min(58vh,480px);touch-action:none;user-select:none;-webkit-user-select:none}
+.mapwrap svg{width:100%;height:100%;display:block;cursor:grab}
+.mapwrap svg:active{cursor:grabbing}
+.mapzoom{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:6px}
+.mapzoom button{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.12);color:#fff;font-size:20px;font-weight:700;backdrop-filter:blur(6px)}
+.maplegend{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.maplegend span{font-size:11.5px;color:var(--ink2);background:var(--surface);border:1.5px solid var(--line);padding:2px 8px;border-radius:99px;display:inline-flex;align-items:center;gap:4px}
+.maplegend i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.mapempty{position:absolute;inset:auto 14px 14px 14px;background:rgba(11,16,51,.82);color:#fff;border-radius:16px;padding:12px 14px;font-size:13.5px}
+.node-label{font-family:var(--f-head);font-weight:700;fill:#EEF0FF;font-size:30px;paint-order:stroke;stroke:#0B1033;stroke-width:7px;stroke-linejoin:round;pointer-events:none}
+.node-label.dim{fill:#7F88C6}
+.newpulse{animation:pulse 1.6s ease-out 3}
+@keyframes pulse{0%{opacity:1;r:40}100%{opacity:0;r:80}}
+.suggest{background:var(--surface);border:2px solid var(--primary);border-radius:var(--r-lg);padding:14px 16px;margin-top:14px}
+
+/* bottom sheet modal */
+.scrim{position:fixed;inset:0;background:rgba(10,14,40,.45);z-index:60;display:flex;align-items:flex-end;justify-content:center;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+.modal{width:100%;max-width:480px;background:var(--surface);border-radius:24px 24px 0 0;padding:18px 18px calc(20px + env(safe-area-inset-bottom,0px));max-height:86vh;overflow-y:auto;animation:up .25s}
+.grabber{width:40px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 12px}
+
+/* growth */
+.lvring{display:flex;align-items:center;gap:16px}
+.catrow{display:grid;grid-template-columns:96px 1fr 44px;gap:10px;align-items:center;font-size:13.5px}
+.catrow+.catrow{margin-top:10px}
+.badges{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.badge{text-align:center;font-size:11px;color:var(--ink2);line-height:1.35}
+.badge .b{width:56px;height:56px;margin:0 auto 4px;border-radius:18px;display:grid;place-items:center;font-size:26px;background:var(--surface2);filter:grayscale(1);opacity:.45}
+.badge.on .b{filter:none;opacity:1;background:var(--sun-soft);border:2px solid var(--sun)}
+.mission{display:flex;align-items:center;gap:10px;font-size:14px}
+.mission+.mission{margin-top:10px}
+.check{width:24px;height:24px;border-radius:8px;border:2px solid var(--line);display:grid;place-items:center;flex:none;color:#fff;font-size:14px}
+.check.on{background:var(--mint);border-color:var(--mint)}
+.hist{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1.5px solid var(--line);font-size:13.5px}
+.hist:last-child{border-bottom:0}
+
+/* forms */
+.field{display:block;margin-top:14px}
+.field>span{display:block;font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:6px}
+.input,.select{width:100%;padding:12px 14px;border-radius:var(--r-sm);border:2px solid var(--line);background:var(--surface)}
+.input:focus,.select:focus{outline:none;border-color:var(--primary)}
+.switch{position:relative;width:48px;height:28px;border-radius:99px;background:var(--line);flex:none;transition:background .2s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.switch.on{background:var(--mint)}.switch.on::after{transform:translateX(20px)}
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1.5px solid var(--line)}
+.setrow:last-child{border-bottom:0}
+input[type=time]{padding:6px 8px;border-radius:10px;border:2px solid var(--line);background:var(--surface)}
+
+/* chat */
+.chatlog{flex:1;padding:8px 18px 12px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:86%;padding:10px 14px;border-radius:18px;font-size:14.5px;line-height:1.7;white-space:pre-wrap}
+.msg.me{align-self:flex-end;background:var(--primary);color:#fff;border-bottom-right-radius:4px}
+.msg.ai{align-self:flex-start;background:var(--surface);border:1.5px solid var(--line);border-bottom-left-radius:4px}
+.chatin{display:flex;gap:8px;padding:10px 18px calc(12px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1.5px solid var(--line);position:sticky;bottom:0}
+.chatin input{flex:1;padding:12px 14px;border-radius:14px;border:2px solid var(--line);background:var(--surface)}
+
+/* toast */
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:90;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:14px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2);animation:drop .3s;max-width:90vw}
+.toast.notif{background:var(--surface);color:var(--ink);border:1.5px solid var(--line);display:flex;gap:10px;align-items:center;width:340px}
+@keyframes drop{from{transform:translate(-50%,-20px);opacity:0}}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:80;overflow:hidden}
+.confetti i{position:absolute;top:-12px;width:8px;height:14px;border-radius:2px;animation:fall 1.6s ease-in forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.8}}
+.spinner{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* login */
+.login{min-height:100%;display:flex;flex-direction:column;justify-content:center;padding:32px 24px calc(32px + env(safe-area-inset-bottom,0px));text-align:center}
+.login h1{font-size:34px;color:var(--primary);margin-top:10px}
+.choice{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.choice .chip{justify-content:center;padding:10px 6px;white-space:normal;text-align:center;line-height:1.35}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* partners */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.pcard{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;padding:14px 10px 12px;border-radius:var(--r-lg);background:var(--surface);border:2px solid var(--line);box-shadow:0 3px 0 var(--line);transition:transform .08s}
+.pcard:active{transform:translateY(2px)}
+.pcard.sel{border-color:var(--primary);background:var(--primary-soft);box-shadow:0 3px 0 var(--primary)}
+.pcard:last-child:nth-child(odd){grid-column:1/-1}
+.plabel{font-family:var(--f-head);font-weight:800;font-size:11px;letter-spacing:.08em;color:var(--primary)}
+.pname{font-family:var(--f-head);font-weight:800;font-size:15px}
+.ptrait{font-size:11px;color:var(--ink2);line-height:1.45}
+.phello{font-size:12.5px;font-weight:600;margin-top:4px;line-height:1.5}
+.lineup{display:flex;justify-content:center;gap:4px;margin-top:6px;opacity:.9}
+.owl.ctr{margin:0 auto}
+</style></head><body><div class="app" id="app"></div><nav class="nav" id="nav" aria-label="メインメニュー"></nav><div class="overlay hide" id="overlay"></div><script>
+/* ============ TomoTomo sample data (MVP) ============
+   本番ではここを News API / LLM / DB から取得したデータに置き換える。 */
+
+const SKILLS = {
+  knowledge: '知識', understanding: '理解', causal: '因果関係', logic: '論理',
+  critical: '批判的思考', multi: '多角的思考', future: '未来思考', verbal: '言語化', applied: '実務応用'
+};
+
+const MAP_CATS = {
+  'テクノロジー': '#7C8CFF',
+  '採用・人事': '#2FD4A6',
+  '経済': '#FFC53D',
+  '金融': '#FF8FA3',
+  'ビジネス': '#5CC8FF'
+};
+
+const NODES = {
+  ai:          { name: 'AI',               cat: 'テクノロジー', sub: 'AI',       diff: 1, x: 170, y: 170 },
+  genai:       { name: '生成AI',            cat: 'テクノロジー', sub: 'AI',       diff: 2, x: 330, y: 95 },
+  agent:       { name: 'AIエージェント',     cat: 'テクノロジー', sub: 'AI',       diff: 3, x: 380, y: 255 },
+  hrtech:      { name: 'HR Tech',          cat: '採用・人事',   sub: 'HR Tech',  diff: 2, x: 565, y: 190 },
+  aiinterview: { name: 'AI面接',            cat: '採用・人事',   sub: 'HR Tech',  diff: 3, x: 610, y: 70 },
+  hiring:      { name: '採用',              cat: '採用・人事',   sub: '採用',      diff: 1, x: 610, y: 360 },
+  agency:      { name: '人材紹介',           cat: '採用・人事',   sub: '人材業界',   diff: 2, x: 790, y: 290 },
+  consult:     { name: '採用コンサルティング', cat: '採用・人事',   sub: '人材業界',   diff: 3, x: 870, y: 150 },
+  productivity:{ name: '生産性',            cat: '経済',        sub: 'マクロ経済', diff: 2, x: 300, y: 420 },
+  employment:  { name: '雇用',              cat: '経済',        sub: '労働',      diff: 1, x: 170, y: 560 },
+  labor:       { name: '労働市場',           cat: '経済',        sub: '労働',      diff: 2, x: 430, y: 545 },
+  wage:        { name: '賃金',              cat: '経済',        sub: '労働',      diff: 2, x: 330, y: 690 },
+  mgmt:        { name: '経営',              cat: 'ビジネス',     sub: '経営戦略',   diff: 2, x: 650, y: 560 },
+  humancap:    { name: '人的資本',           cat: 'ビジネス',     sub: '組織',      diff: 3, x: 830, y: 480 },
+  hrmarketing: { name: '採用マーケティング',   cat: '採用・人事',   sub: '採用',      diff: 3, x: 950, y: 360 },
+  marketing:   { name: 'マーケティング',      cat: 'ビジネス',     sub: 'マーケ',    diff: 2, x: 980, y: 590 },
+  rates:       { name: '金利',              cat: '金融',        sub: '金融政策',   diff: 2, x: 820, y: 710 },
+  economy:     { name: '景気',              cat: '経済',        sub: 'マクロ経済', diff: 2, x: 590, y: 720 }
+};
+
+const REL_LABEL = {
+  related: '関連', cause: '原因', effect: '影響', example: '具体例', opposite: '対立',
+  background: '背景', application: '応用', industry: '業界', historical: '歴史'
+};
+
+const EDGES = [
+  ['ai', 'genai', 'example', 0.9],
+  ['genai', 'agent', 'application', 0.9],
+  ['agent', 'hrtech', 'application', 0.8],
+  ['hrtech', 'aiinterview', 'example', 0.7],
+  ['hrtech', 'hiring', 'application', 0.8],
+  ['aiinterview', 'hiring', 'application', 0.5],
+  ['agent', 'productivity', 'effect', 0.8],
+  ['productivity', 'employment', 'effect', 0.6],
+  ['employment', 'labor', 'related', 0.8],
+  ['labor', 'wage', 'related', 0.8],
+  ['labor', 'hiring', 'cause', 0.9],
+  ['hiring', 'agency', 'industry', 0.8],
+  ['agency', 'consult', 'industry', 0.8],
+  ['hiring', 'mgmt', 'related', 0.6],
+  ['productivity', 'mgmt', 'application', 0.7],
+  ['mgmt', 'humancap', 'related', 0.8],
+  ['humancap', 'hiring', 'application', 0.7],
+  ['rates', 'economy', 'cause', 0.9],
+  ['economy', 'mgmt', 'effect', 0.8],
+  ['economy', 'labor', 'effect', 0.7],
+  ['rates', 'mgmt', 'effect', 0.6],
+  ['wage', 'economy', 'related', 0.5],
+  ['marketing', 'hrmarketing', 'application', 0.8],
+  ['hrmarketing', 'hiring', 'application', 0.8],
+  ['consult', 'hrmarketing', 'application', 0.6],
+  ['agent', 'agency', 'effect', 0.6]
+];
+
+const BIG_CATEGORIES = ['最新ニュース','ビジネス','経済','投資','金融','国際','政治','社会','心理学','脳科学','科学','テクノロジー','AI','IT','歴史','文化','アート','文学','雑学','一般教養','採用','人事','業界トレンド'];
+const INDUSTRIES = ['IT','AI','金融','人材','コンサル','広告','メーカー','自動車','不動産','小売','物流','食品','製薬','ヘルスケア','エネルギー','通信','メディア','エンタメ','教育','旅行','ホテル','建設','公共'];
+const RELATED_INDUSTRIES = {
+  '人材': ['コンサル','IT','広告','教育'], 'IT': ['AI','通信','人材','コンサル'], 'AI': ['IT','人材','製薬','金融'],
+  '金融': ['不動産','IT','コンサル'], 'コンサル': ['人材','IT','金融'], '広告': ['メディア','人材','小売'],
+  'メーカー': ['自動車','物流','エネルギー'], '小売': ['物流','食品','広告'], 'ヘルスケア': ['製薬','AI','人材'],
+  '不動産': ['金融','建設'], '教育': ['人材','IT'], '_': ['人材','IT','コンサル']
+};
+const OCCUPATIONS = ['採用コンサルタント','人事・採用担当','経営者・役員','営業','マーケティング','エンジニア','コンサルタント','管理職','企画・事業開発','その他'];
+const ROLES = ['メンバー','リーダー','マネージャー','部長以上','経営者'];
+const INTEREST_OPTIONS = ['AI','採用','人事','経済','金融','投資','経営','マーケティング','国際','心理学','テクノロジー','歴史','科学','業界トレンド'];
+
+const SAMPLE_NOTE = '開発用のサンプル記事です。本文は学習体験の検証用に作成したもので、実在の報道ではありません。参照先は関連する公的機関・研究機関のトップページです。本番ではニュースAPIから記事URL・公開日・更新日を紐付けます。';
+
+const TOPICS = [
+/* ---------------------------------------------------- T1 */
+{
+  id: 'ai-agent-hiring',
+  title: 'AIエージェントが変える採用市場',
+  emoji: '🤖',
+  path: ['採用・人事','HR Tech','AI×採用','AIエージェント','人材業界'],
+  tags: ['AI','採用','人事','テクノロジー','業界トレンド','最新ニュース'],
+  industries: ['人材','IT','AI','コンサル'],
+  nodes: ['ai','genai','agent','hrtech','aiinterview','hiring','agency','consult'],
+  difficulty: 2, future: 0.95, kind: '最新ニュース',
+  date: '2026-10-02', updated: '2026-10-03',
+  sources: [
+    { name: '厚生労働省', type: '公的機関', url: 'https://www.mhlw.go.jp/' },
+    { name: '経済産業省', type: '公的機関', url: 'https://www.meti.go.jp/' },
+    { name: 'OECD', type: '国際機関・研究', url: 'https://www.oecd.org/' }
+  ],
+  s30: '求人票の作成、候補者の検索、スカウト文の作成、日程調整、書類の一次確認。こうした採用業務の一連の流れを、目標を与えるだけで自律的に進める「AIエージェント」を導入する企業が増えています。作業時間は大きく減る一方、候補者体験・公平性・人が判断すべき領域が改めて問われています。',
+  s3: [
+    { label: '事実（サンプル）', text: '複数の企業が、スカウト送信や面接日程調整をAIエージェントに任せる運用を始めた。担当者1人あたりが扱える求人数が増えたという報告がある。' },
+    { label: '背景', text: '生成AIは「文章を作る道具」だった。AIエージェントは目標を与えると、検索・メール・カレンダーなど複数のツールを使い、手順を自分で組み立てて実行する。採用は定型作業が多く、人手不足で担当者の負荷が高い領域のため、導入が早い。' },
+    { label: '重要ポイント', text: '① 母集団形成のスピードが上がる　② スカウト量が増えるほど候補者は「量より質」を求める　③ AIによる選考には説明責任とバイアス対策が必要　④ 人材紹介の価値は「探す」から「見極める・口説く・設計する」へ移る' }
+  ],
+  s10: {
+    causal: ['人手不足','採用担当の負荷増','AIエージェント導入','スカウト量の急増','候補者の受信疲れ','個別性・関係性の価値が上昇'],
+    perspectives: [
+      { who: '企業', text: '採用コストと工数が下がる。ただし全社がAIを使うと差がつきにくく、競争は「魅力の伝え方」に移る。' },
+      { who: '採用担当者', text: '作業者から「採用の設計者」へ。面談・口説き・入社後の定着支援に時間を使えるかが分かれ目。' },
+      { who: '候補者', text: '連絡が速くなる一方、似たスカウトが大量に届く。AIに評価されることへの不安もある。' },
+      { who: '人材紹介会社', text: '検索・マッチングの価値は下がりやすい。業界知識・関係性・クロージング力が差別化要因になる。' },
+      { who: '政府・規制', text: 'AIによる選考の透明性、差別的な判断の防止、個人データの扱いがルール化の論点になる。' },
+      { who: '投資家', text: 'HR Tech企業の評価軸が「機能の数」から「成果（定着率・承諾率）への貢献」へ移る。' }
+    ],
+    opinion: 'AIの解釈：AIエージェントは採用を「なくす」のではなく、採用担当の時間の使い方を作り替える。勝負は「浮いた時間を何に再配分するか」。'
+  },
+  apply: {
+    hr: ['送信数ではなく「返信率・面談化率・承諾率」をKPIにする提案をする','AIで浮いた工数を、面談品質と入社後オンボーディングに再配分する設計を示す','AI選考のガイドライン（判断理由の記録・人の最終確認）づくりを支援する'],
+    general: ['自分の業務で「定型作業」と「判断・関係づくり」を分けて書き出す','定型作業をAIに任せたら空く時間で、何の価値を上げるか決める','AIに任せた判断には、理由を説明できる仕組みを残す']
+  },
+  talk: '「AIでスカウトは増やせる。でも差がつくのは、浮いた時間で候補者とどれだけ深く話せるかなんです」',
+  thoughts: {
+    think: { q: 'AIエージェントが採用業務で3年間普及し続けたら、採用担当者の仕事はどう変わる？', hint: '「減る作業」「増える仕事」「新しく必要になる力」の3つに分けて考えてみよう。', example: '日程調整や一次スクリーニングはほぼ自動化され、担当者の時間は候補者との対話、配属後の活躍まで見据えた見極め、採用ブランドの設計に移る。必要な力は、AIの出力を検証する力と、候補者の意思決定を支える対話力。' },
+    multi: { q: 'この変化で得をするのは誰？ 不利益を受けるのは誰？ 企業・候補者・人材紹介会社の立場から考えよう。', hint: '同じ変化でも、立場によって「メリット」と「リスク」が入れ替わる。', example: '企業は工数削減で得をするが、横並びになり差別化が難しくなる。候補者は返信が速くなる一方、画一的なスカウトが増え不信感も。人材紹介会社は検索の価値が下がるが、業界知識と関係性に強い会社は相対的に有利になる。' },
+    business: { q: 'あなたが採用コンサルタントなら、AIエージェント導入を検討する企業に何を提案する？', hint: '「導入するか」ではなく「導入して何を変えるか」まで具体的に。', example: 'まずKPIを送信数から返信率・面談化率・承諾率へ切り替える。AIには母集団形成と日程調整を任せ、浮いた工数でカジュアル面談の質を上げる。判断理由を記録するAI選考ガイドラインを整え、候補者へのAI利用の開示方針も決める。' }
+  },
+  keywords: ['自動化','工数','時間','面談','候補者','体験','公平','説明','バイアス','KPI','返信率','承諾','質','関係','対話','再配分','ガイドライン','差別化','ブランド'],
+  questions: [
+    { id: 'q1-1', type: 'mc', skill: 'knowledge', q: '「AIエージェント」の説明として最も適切なのは？',
+      options: ['目標に向けて手順を組み立て、複数のツールを使って作業を実行するAI','質問に1回だけ答える検索エンジン','人間の面接官の代わりに必ず合否を決めるAI','求人広告を自動で掲載するだけのシステム'], answer: 0,
+      ex: { why: 'AIエージェントの本質は「自律的に手順を組み立て、ツールを使って実行する」こと。文章を返すだけの生成AIとの違いです。', others: '検索エンジンや単機能の自動化はエージェントではありません。また「必ず合否を決める」は誤りで、選考の最終判断は人が担う設計が一般的に推奨されます。', bg: '生成AI（文章や画像をつくる）→ AIエージェント（目標達成のために行動する）という進化の流れがあります。', related: '生成AI／RPA（定型作業の自動化）／ワークフロー自動化', apply: '提案時は「何を任せ、何を人が判断するか」の線引きから話すと伝わりやすい。', memo: 'エージェント＝「考えて動く代理人」。チャット＝「答える相手」。' } },
+    { id: 'q1-2', type: 'tf', skill: 'understanding', q: 'AIエージェントでスカウト送信数が増えると、一通あたりの返信率も必ず上がる。', answer: false,
+      ex: { why: '送信量が業界全体で増えると、候補者は似たメッセージを大量に受け取ります。一通あたりの注目度は下がりやすく、返信率はむしろ下がることがあります。', others: '量を増やすこと自体は母集団形成に役立ちますが、「量＝成果」ではありません。', bg: 'メールマーケティングでも、配信数の増加と開封率の低下が同時に起きる現象が知られています。', related: '受信疲れ／パーソナライゼーション／採用マーケティング', apply: '送信数より「返信率」「面談化率」で効果を測ると、施策の良し悪しが見える。', memo: 'みんなが増やせば、ひとつの価値は薄まる。' } },
+    { id: 'q1-3', type: 'order', skill: 'causal', q: '原因から結果の順に並べ替えよう。',
+      items: ['人手不足','採用担当の負荷が増える','AIエージェントを導入','スカウト量が急増','候補者の受信疲れ'],
+      ex: { why: '人手不足が出発点。担当者の負荷増が導入を後押しし、自動化でスカウト量が増え、その結果として候補者側の受信疲れが起きます。', others: '「導入」が先に来ると、なぜ導入したのかという原因が抜け落ちます。', bg: '日本では生産年齢人口の減少が続き、多くの業界で採用難が構造的な課題になっています。', related: '労働市場／生産性／候補者体験', apply: 'クライアントの課題を話すときも「原因→対策→副作用」の順で整理すると説得力が増す。', memo: '足りない→忙しい→任せる→増える→疲れる。' } },
+    { id: 'q1-4', type: 'fill', skill: 'knowledge', q: 'AIで選考を行うときは、判断の理由を説明できる「＿＿＿」を確保することが求められる。',
+      options: ['説明責任','守秘義務','競業避止','善管注意義務'], answer: 0,
+      ex: { why: '説明責任（アカウンタビリティ）は、AIの判断について理由を示し、責任の所在を明らかにすること。採用は人の人生に関わるため特に重視されます。', others: '守秘義務は情報を漏らさない義務、競業避止は競合に就かない義務、善管注意義務は職務上の注意義務。いずれもAI選考の透明性とは別の概念です。', bg: '各国でAIの利用ルール整備が進み、採用はリスクが高い用途として扱われることが多い領域です。', related: 'AIガバナンス／バイアス／個人情報保護', apply: 'AI導入支援では「判断ログを残す」「最終判断は人」の2点をセットで提案する。', memo: 'AIが決めても、説明するのは人。' } },
+    { id: 'q1-5', type: 'cause', skill: 'causal', cause: '候補者が、AIで作られた似たスカウトを大量に受け取るようになる', q: 'このとき最も起こりやすい結果は？',
+      options: ['個別性の高いメッセージや信頼できる紹介の価値が上がる','候補者がすべてのスカウトに返信するようになる','人材紹介会社が不要になる','求人倍率が必ず下がる'], answer: 0,
+      ex: { why: '似たメッセージがあふれるほど、「自分のことをわかってくれている」と感じる連絡や、信頼できる人からの紹介が目立つようになります。', others: '全返信は非現実的。紹介会社は役割が変わるが不要にはならない。求人倍率は需給で決まり、スカウトの量だけでは決まりません。', bg: '希少なものに価値が移る、という経済の基本原理の応用です。', related: 'リファラル採用／採用ブランディング／候補者体験', apply: 'スカウト文には「なぜあなたか」を1文入れるだけで差が出る。', memo: 'ありふれたものが増えると、ありふれないものが光る。' } },
+    { id: 'q1-6', type: 'case', skill: 'applied', scenario: '中堅IT企業の人事部長：「AIエージェントでスカウトを3倍送ったのに、面談数がほとんど増えません」', q: '採用コンサルタントとして、まず提案すべきことは？',
+      options: ['KPIを送信数から返信率・面談化率に変え、ターゲットと文面の個別性を見直す','さらに送信数を増やして確率で勝負する','AIの利用をすぐに全面停止する','全職種の給与を一律に引き上げる'], answer: 0,
+      ex: { why: '問題は「量」ではなく「刺さり方」。測る指標を変えないと、改善の方向も見えません。', others: '送信を増やすと受信疲れを加速させます。全面停止は効率化のメリットまで失います。給与引き上げは有効な場合もあるが、原因を特定する前の打ち手としては重すぎます。', bg: '採用ファネル（認知→応募→面談→内定→承諾）のどこで落ちているかを見るのが基本です。', related: '採用ファネル／KPI設計／ダイレクトリクルーティング', apply: '提案の型：「現状の数字 → ボトルネック → 指標の変更 → 小さな実験」。', memo: '増やす前に、測り方を変える。' } }
+  ],
+  chat: {
+    '採用業界にはどう影響する？': '大きく3つあります。①検索・マッチングの作業価値が下がり、価格競争が起きやすくなる。②一方で業界知識・候補者との信頼関係・クロージング力の価値は上がる。③AI選考の透明性への対応が、企業選びの新しい基準になる。紹介会社は「探す会社」から「意思決定を支える会社」への転換が論点です。',
+    '逆に企業側にはメリットない？': 'あります。工数削減で、少人数の採用チームでも多くの求人を扱えるようになります。また、日程調整の高速化は候補者の離脱を減らします。ただし全社が同じ道具を使えば差は縮むので、メリットを「浮いた時間を何に使うか」に変換できる企業が強くなります。',
+    '採用コンサルなら何を提案する？': '①KPIを送信数から返信率・面談化率・承諾率に切り替える、②AIに任せる業務と人が担う業務の線引き表をつくる、③AI選考ガイドライン（判断理由の記録・人の最終確認・候補者への開示）を整える、④浮いた工数をカジュアル面談とオンボーディングに再配分する。この4点をセットで提案すると説得力が出ます。',
+    'このニュースの反対意見は？': '代表的な反対・慎重論は次のとおりです。「AIによる選考は過去データの偏りを再生産するおそれがある」「候補者がAIとやりとりすることに抵抗を感じ、企業イメージを下げる」「効率化の効果は一時的で、全社が導入すれば競争優位にならない」。どの立場も一理あるので、導入の是非より「どう設計するか」で考えるのが建設的です。'
+  }
+},
+/* ---------------------------------------------------- T2 */
+{
+  id: 'ai-productivity-labor',
+  title: 'AI × 生産性 × 労働市場：仕事はなくなるのか',
+  emoji: '📈',
+  path: ['経済','労働市場','AIと雇用','生産性','全業界'],
+  tags: ['AI','経済','労働','採用','人事','経営','業界トレンド'],
+  industries: ['IT','人材','コンサル','メーカー','金融'],
+  nodes: ['productivity','employment','labor','wage','mgmt','agent'],
+  difficulty: 3, future: 0.9, kind: '今後重要になるテーマ',
+  date: '2026-09-28', updated: '2026-09-30',
+  sources: [
+    { name: 'OECD', type: '国際機関・研究', url: 'https://www.oecd.org/' },
+    { name: '内閣府', type: '公的機関', url: 'https://www.cao.go.jp/' },
+    { name: '厚生労働省', type: '公的機関', url: 'https://www.mhlw.go.jp/' }
+  ],
+  s30: 'AIは「職業」を丸ごと置き換えるより、職業の中の「タスク」を置き換えたり補ったりします。生産性が上がると、浮いた時間をどこに再配分するかで、賃金・雇用・企業の競争力が変わります。人手不足の国では、AIは仕事を奪うより「足りない人手を埋める」側面も大きいのが特徴です。',
+  s3: [
+    { label: '基礎知識', text: '労働生産性は「生み出した付加価値 ÷ 投入した労働量」。同じ時間でより多くの価値を生めば上がる。' },
+    { label: '背景', text: 'AIの影響は職業単位でなくタスク単位で考える見方が主流。一つの職業には自動化しやすい作業と、しにくい作業が混在している。' },
+    { label: '重要ポイント', text: '① 代替（人の作業を置き換える）と補完（人の能力を高める）の両面がある　② 効果が賃金に届くかは、浮いた時間の使い方と分配次第　③ 人手不足下では、雇用削減より業務の再設計が主な論点になる' }
+  ],
+  s10: {
+    causal: ['AIを導入','タスクの一部が自動化','浮いた時間を再配分','付加価値の高い業務が増える','生産性が向上','賃金・投資の原資が増える'],
+    perspectives: [
+      { who: '経営者', text: '人員削減より「同じ人数でできることを増やす」方が、人手不足の時代には合理的なことが多い。' },
+      { who: '従業員', text: '定型作業が減る分、判断・対人・創造的な業務の比重が上がる。学び直しの機会が重要になる。' },
+      { who: '政府', text: 'リスキリング支援、労働移動の円滑化、所得分配の公平性が政策論点になる。' },
+      { who: '投資家', text: 'AI導入の発表より、利益率や一人あたり売上の改善として成果が出ているかを見る。' },
+      { who: '社会', text: '恩恵がスキルや地域で偏ると、格差が広がる懸念がある。' }
+    ],
+    opinion: 'AIの解釈：「仕事がなくなるか」という問いより、「どのタスクが変わり、浮いた時間が誰の何に使われるか」という問いの方が、未来を正確に予測できる。'
+  },
+  apply: {
+    hr: ['求人票を「職種」ではなく「タスクの構成」で書き直し、AI時代に必要なスキルを明確にする','採用だけでなく、社内のリスキリングと配置転換もセットで提案する','面接で「AIをどう使って成果を出したか」を聞く質問を加える'],
+    general: ['自分の仕事をタスクに分解し、AIで代替・補完できるものに印をつける','浮いた時間で伸ばしたい「付加価値の高い業務」を1つ決める','チームの生産性を時間ではなく成果で測る指標を1つ置く']
+  },
+  talk: '「AIで仕事がなくなるか、より『どのタスクが変わるか』で考えると、打ち手が見えてきますよ」',
+  thoughts: {
+    think: { q: 'AIで生産性が上がっても、賃金が上がらないとしたら、原因は何が考えられる？', hint: '「浮いた時間がどこへ行くか」「利益が誰に分配されるか」に注目。', example: '浮いた時間が新しい付加価値に使われず単に人員削減で終わる場合や、利益が株主還元や内部留保に回り賃金に分配されない場合が考えられる。交渉力の弱い職種ほど、恩恵が届きにくい。' },
+    multi: { q: 'AI導入による生産性向上を、経営者・従業員・政府の3つの立場から評価してみよう。', hint: 'それぞれが「何を得て、何を心配するか」。', example: '経営者は人手不足の解消と利益率改善を期待するが、投資回収を心配する。従業員は負担軽減を歓迎しつつ、役割の変化や評価を不安視する。政府は成長を期待する一方、格差拡大と学び直し支援の財源を課題と見る。' },
+    business: { q: 'あなたの会社がAIで業務時間を2割減らせたら、その時間を何に使う？ 具体的に提案しよう。', hint: '顧客価値・人材育成・新規事業のどれに振り向けるか。', example: '浮いた2割のうち半分を既存顧客への提案の深掘りに、残りを若手のリスキリングと新サービスの検証に充てる。成果は顧客単価と新規案件数で測り、四半期ごとに見直す。' }
+  },
+  keywords: ['タスク','補完','代替','再配分','付加価値','賃金','分配','リスキリング','学び直し','人手不足','格差','成果','顧客','投資','利益'],
+  questions: [
+    { id: 'q2-1', type: 'mc', skill: 'knowledge', q: '労働生産性の定義として正しいものは？',
+      options: ['付加価値 ÷ 労働投入量','売上高 ÷ 従業員の年齢','労働時間 × 賃金','利益 ÷ 広告費'], answer: 0,
+      ex: { why: '労働生産性は、投入した労働（人数や時間）あたりにどれだけ付加価値を生んだかを示します。', others: 'その他は生産性の定義とは関係のない組み合わせです。', bg: '日本の時間あたり労働生産性は主要国と比べて低めと指摘されることが多く、改善が長年の課題です。', related: '付加価値／GDP／全要素生産性', apply: 'チームの議論では「時間を減らす」と「価値を増やす」の両輪で生産性を語る。', memo: '生産性＝価値 ÷ 手間。' } },
+    { id: 'q2-2', type: 'tf', skill: 'understanding', q: 'AIの影響は「職業単位」より「タスク単位」で考える方が実態に近い。', answer: true,
+      ex: { why: 'ひとつの職業には、自動化しやすい作業としにくい作業が混在します。だから職業が丸ごと消えるより、仕事の中身が組み替わるケースが多いのです。', others: '職業単位で見ると「消える／消えない」の二択になり、変化の実態を見誤りがちです。', bg: '経済学の研究では、仕事をタスクに分解して影響を測る手法が広く使われています。', related: 'タスクベースアプローチ／ジョブ型雇用', apply: '求人票や評価制度をタスク単位で見直すと、AI時代の職務設計がしやすくなる。', memo: '職業は「タスクの束」。' } },
+    { id: 'q2-3', type: 'fill', skill: 'knowledge', q: 'AIが人の作業を置き換えるのではなく、人の能力を高める効果を「＿＿＿効果」という。',
+      options: ['補完','代替','乗数','規模'], answer: 0,
+      ex: { why: '補完効果は、AIが人の判断や創造を支えて成果を高めること。逆に人の作業そのものを置き換えるのが代替効果です。', others: '乗数効果は投資が所得を何倍にも増やす効果、規模の経済は生産量が増えるほど単価が下がる効果です。', bg: '同じAIでも、使い方によって補完にも代替にもなります。', related: '代替効果／スキル偏向型技術進歩', apply: 'AI導入の提案は「補完」として設計すると、現場の納得を得やすい。', memo: '補う＝補完、代わる＝代替。' } },
+    { id: 'q2-4', type: 'order', skill: 'causal', q: 'AI導入が生産性向上につながる流れを並べ替えよう。',
+      items: ['AIを導入','タスクの一部が自動化','浮いた時間を再配分','付加価値の高い業務が増える','生産性が向上'],
+      ex: { why: '自動化だけでは生産性は上がりません。浮いた時間を価値の高い業務に再配分して、はじめて成果になります。', others: '「再配分」を飛ばすと、時間が空いただけで成果が変わらない状態になります。', bg: 'IT投資が生産性に表れるまで時間がかかる現象は「生産性のパラドックス」と呼ばれてきました。', related: '生産性のパラドックス／業務改革', apply: 'AI導入計画には「浮いた時間の使い道」を必ず書く。', memo: '空ける→移す→生む。' } },
+    { id: 'q2-5', type: 'case', skill: 'applied', scenario: '従業員300名の物流会社の社長：「AIで事務作業が減るなら、人員を減らすべきだろうか」', q: '人手不足の業界であることを踏まえ、最も筋の良い助言は？',
+      options: ['まず浮く時間を、人手が足りない業務や顧客対応に再配置する計画を立てる','すぐに事務職を半数に減らす','AI導入を見送り、現状維持する','全社員に同じAI研修を受けさせて終わりにする'], answer: 0,
+      ex: { why: '人手不足下では、削減より再配置の方が採用コストを抑えつつ事業を伸ばせます。', others: '急な削減は士気と知見を失います。見送りは競争力を落とします。研修だけでは業務が変わりません。', bg: '物流など人手不足が深刻な業界では、省人化は「雇用を減らす」より「回らない業務を回す」意味合いが強い。', related: '配置転換／リスキリング／人手不足', apply: '経営者には「削減額」より「再配置による売上・サービス改善」で効果を示す。', memo: '減らす前に、移す。' } }
+  ],
+  chat: {}
+},
+/* ---------------------------------------------------- T3 */
+{
+  id: 'rates-hiring',
+  title: '金利と景気は、企業の採用計画をどう動かすか',
+  emoji: '🏦',
+  path: ['金融','金利','金融政策と企業','景気と雇用','全業界'],
+  tags: ['金融','経済','経営','採用','投資','人事'],
+  industries: ['金融','不動産','IT','人材','建設'],
+  nodes: ['rates','economy','mgmt','humancap','hrmarketing','marketing','hiring'],
+  difficulty: 3, future: 0.8, kind: '基礎知識×ニュース',
+  date: '2026-09-24', updated: '2026-09-25',
+  sources: [
+    { name: '日本銀行', type: '公的機関', url: 'https://www.boj.or.jp/' },
+    { name: '内閣府', type: '公的機関', url: 'https://www.cao.go.jp/' },
+    { name: '総務省統計局', type: '公的機関', url: 'https://www.stat.go.jp/' }
+  ],
+  s30: '金利が上がると、企業がお金を借りるコストが上がり、設備投資や事業拡大に慎重になります。その結果、採用計画も見直されやすくなります。ただし人手不足が深刻なときは、景気が少し弱くても採用意欲は落ちにくい。金利・景気・人手不足の3つを同時に見るのがポイントです。',
+  s3: [
+    { label: '基礎知識', text: '金利はお金を借りる「値段」。中央銀行の政策金利が変わると、銀行の貸出金利や企業の資金調達コストに波及する。' },
+    { label: '因果関係', text: '金利上昇 → 借入コスト上昇 → 投資・拡大に慎重 → 採用計画の見直し。逆に金利低下は投資と採用を後押ししやすい。' },
+    { label: '重要ポイント', text: '① 影響は業界で差が大きい（不動産・スタートアップは敏感、インフラや医療は比較的鈍感）　② 人手不足は採用意欲を下支えする　③ 人材を「コスト」でなく「投資」と見る人的資本経営の考え方が広がっている' }
+  ],
+  s10: {
+    causal: ['政策金利の引き上げ','借入コストの上昇','投資・事業拡大に慎重','採用計画の見直し','採用市場の需給が変化'],
+    perspectives: [
+      { who: '企業', text: '資金調達に頼る成長企業ほど採用を絞りやすい。自己資金の厚い企業は、むしろ人材獲得の好機と見ることもある。' },
+      { who: '求職者', text: '採用が絞られる業界では競争が強まる。安定業界への人気が高まりやすい。' },
+      { who: '投資家', text: '金利上昇局面では、将来の利益に頼る成長企業の評価が下がりやすく、企業はコスト管理を求められる。' },
+      { who: '人材紹介会社', text: '業界ごとの採用意欲の差を読み、提案先の業界ポートフォリオを組み替える必要がある。' },
+      { who: '政府・中央銀行', text: '物価と景気のバランスを取るのが役割。雇用への影響も政策判断の材料になる。' }
+    ],
+    opinion: 'AIの解釈：金利ニュースは「金融の話」に見えて、実は半年〜1年後の採用市場を先読みする材料になる。'
+  },
+  apply: {
+    hr: ['金利動向から、採用を絞りそうな業界・維持しそうな業界を整理し、営業先の優先度を見直す','クライアントに「採用を止める」より「質を上げて絞る」選択肢を示す','人的資本の開示を、採用ブランディングの材料として活用する提案をする'],
+    general: ['自社の資金調達が金利にどれくらい敏感かを確認する','金利が1%上がったら、自社の投資・採用計画がどう変わるか考えてみる','人材への投資を、費用ではなく将来の利益の源泉として説明できるようにする']
+  },
+  talk: '「金利が上がると、半年後に採用を絞る業界が出てきます。逆に人材を取りに行くチャンスの会社もあるんです」',
+  thoughts: {
+    think: { q: '金利が上がり続けたら、1年後の採用市場はどう変わる？ 業界による違いも考えてみよう。', hint: '「お金を借りて成長する業界」と「そうでない業界」で分けてみよう。', example: '借入に頼る不動産やスタートアップは採用を絞り、そこから人材が流れる。一方、医療・インフラなど需要が安定した業界は採用を維持し、相対的に人材を獲得しやすくなる。全体の人手不足は続くため、職種によっては逼迫が残る。' },
+    multi: { q: '金利上昇は、企業・求職者・投資家にとってそれぞれ何を意味する？', hint: '同じ出来事が「チャンス」にも「リスク」にもなる。', example: '企業にとっては資金コスト増でコスト管理が厳しくなるが、自己資金の厚い企業は人材獲得の好機になる。求職者は成長企業の採用減で選択肢が狭まる可能性がある。投資家は成長期待の高い企業の評価を下げ、収益力を重視するようになる。' },
+    business: { q: '金利上昇局面で、採用予算を削ろうとしている企業に、あなたならどう提案する？', hint: '「止める」以外の選択肢を出そう。', example: '全面停止ではなく、事業の中核ポジションに絞って採用を継続することを提案する。他社が採用を絞る時期は優秀な人材を取りやすい好機であることを示し、紹介手数料より定着率で効果を測る契約形態も選択肢として提示する。' }
+  },
+  keywords: ['金利','借入','コスト','投資','業界','不動産','スタートアップ','人手不足','好機','チャンス','絞','質','定着','人的資本','予算','景気'],
+  questions: [
+    { id: 'q3-1', type: 'tf', skill: 'knowledge', q: '金利が上がると、企業がお金を借りるコストは下がる。', answer: false,
+      ex: { why: '金利はお金を借りる値段です。金利が上がれば借入コストは上がります。', others: '下がるのは金利が下がったときです。', bg: '中央銀行の政策金利の変更は、時間差で貸出金利に波及します。', related: '政策金利／貸出金利／資金調達', apply: '金利ニュースを見たら「どの企業の借入コストが上がるか」を考える。', memo: '金利＝お金のレンタル料。' } },
+    { id: 'q3-2', type: 'cause', skill: 'causal', cause: '政策金利が引き上げられる', q: '企業の採用に表れやすい影響は？',
+      options: ['借入に頼る成長企業が、採用計画を慎重に見直す','全企業が一斉に採用を増やす','賃金が必ず下がる','求人広告の価格が無料になる'], answer: 0,
+      ex: { why: '資金調達コストが上がると、借入に頼って拡大する企業ほど投資と採用を慎重にします。', others: '一斉増加や賃金の必ずの低下、広告の無料化は因果関係として成り立ちません。', bg: '金利の影響は業界・企業の財務体質で大きく異なります。', related: '景気循環／設備投資／資金繰り', apply: '営業先を「金利に敏感な企業」と「そうでない企業」に分けて考える。', memo: '借りて走る会社ほど、金利で止まる。' } },
+    { id: 'q3-3', type: 'mc', skill: 'understanding', q: '人手不足が深刻なとき、景気がやや弱くても採用意欲が落ちにくい理由として最も適切なのは？',
+      options: ['事業を維持するのに必要な人材が足りず、採用を止めにくいから','金利が上がると採用が自動的に増えるから','景気と採用はまったく関係がないから','求職者が増えすぎているから'], answer: 0,
+      ex: { why: '人手不足では、採用を止めると今の事業すら回らなくなるため、採用意欲が下支えされます。', others: '金利上昇は採用を増やす要因ではなく、景気と採用は関係します。「求職者が増えすぎ」は人手不足と矛盾します。', bg: '生産年齢人口の減少は、景気循環とは別の構造的な要因です。', related: '構造的人手不足／有効求人倍率', apply: '「景気が悪い＝採用が減る」と単純化せず、構造要因もあわせて説明する。', memo: '景気は波、人手不足は潮の流れ。' } },
+    { id: 'q3-4', type: 'fill', skill: 'knowledge', q: '人材を「コスト」ではなく「投資」と捉え、その価値を高めて企業価値向上につなげる考え方を「＿＿＿経営」という。',
+      options: ['人的資本','ジョブ型','年功序列','リーン'], answer: 0,
+      ex: { why: '人的資本経営は、人材への投資を企業価値の源泉と捉える考え方です。', others: 'ジョブ型は職務定義に基づく雇用、年功序列は勤続年数に応じた処遇、リーンは無駄を省く手法です。', bg: '日本でも人的資本に関する情報開示が広がり、投資家の関心が高まっています。', related: '人的資本開示／エンゲージメント', apply: '採用提案で「人的資本の開示資料を採用広報に使う」視点を加える。', memo: '人は経費ではなく資本。' } },
+    { id: 'q3-5', type: 'case', skill: 'applied', scenario: 'SaaSスタートアップのCFO：「金利上昇で資金調達が厳しい。今年の採用はゼロにしたい」', q: '採用コンサルタントとしての提案で最も適切なのは？',
+      options: ['成長に直結する中核ポジションに絞って採用を続け、他社が採用を絞る時期を好機と捉える','計画どおり全職種で大量採用を続ける','採用ゼロに賛成し、関係を一時終了する','給与を大幅に下げた求人を出す'], answer: 0,
+      ex: { why: '資金制約の中でも、事業成長の鍵を握る人材は確保した方が長期的に有利。競合が採用を絞る時期は採りやすい好機でもあります。', others: '大量採用は資金を圧迫します。関係終了は機会損失。大幅な給与ダウンは優秀層を遠ざけます。', bg: '景気後退期に人材投資を続けた企業が、回復期に優位に立つ事例はよく語られます。', related: '採用の優先順位づけ／キーポジション', apply: '提案の型：「止める・続ける」の二択ではなく「絞って続ける」第三の案を出す。', memo: '冬に種をまく会社が、春に勝つ。' } }
+  ],
+  chat: {}
+}
+];
+
+const BADGES = [
+  { id: 'first', icon: '🌱', name: 'はじめの一歩', desc: '最初の学習を完了' },
+  { id: 'combo3', icon: '🔥', name: '3コンボ', desc: '3問連続で正解' },
+  { id: 'thinker', icon: '💭', name: '考える人', desc: '思考問題に3回回答' },
+  { id: 'connector', icon: '🕸️', name: 'コネクター', desc: '知識ノードを10個獲得' },
+  { id: 'streak3', icon: '📅', name: '3日連続', desc: '3日連続で学習' },
+  { id: 'hr', icon: '🎯', name: '採用通', desc: '採用・人事の理解度 80%' },
+  { id: 'reviewer', icon: '🔁', name: '復習マスター', desc: '復習を1回完了' },
+  { id: 'explorer', icon: '🧭', name: '越境者', desc: '3つのテーマを学習' }
+];
+
+const REVIEW_STEPS = [0, 2, 7, 21];
+'use strict';
+/* =========================================================
+   TomoTomo — core (state / storage / AI / recommendation)
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ESC[c]);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const DAY = 86400000;
+function dkey(d) { d = d ? new Date(d) : new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function dayStart(d) { const x = d ? new Date(d) : new Date(); x.setHours(0, 0, 0, 0); return x.getTime(); }
+function daysBetween(a, b) { return Math.round((dayStart(b) - dayStart(a)) / DAY); }
+function fmtDate(t) { if (!t) return '—'; const d = new Date(t); return (d.getMonth() + 1) + '月' + d.getDate() + '日'; }
+function fmtYMD(s) { const p = String(s).split('-'); return p[0] + '年' + Number(p[1]) + '月' + Number(p[2]) + '日'; }
+function weekKey(t) { const d = new Date(dayStart(t)); const wd = (d.getDay() + 6) % 7; d.setDate(d.getDate() - wd); return dkey(d); }
+
+const QBANK = {};
+TOPICS.forEach(t => t.questions.forEach((q, i) => { QBANK[q.id] = Object.assign({}, q, { topicId: t.id, idx: i }); }));
+const topicById = id => TOPICS.find(t => t.id === id);
+const ADJ = {};
+Object.keys(NODES).forEach(k => ADJ[k] = []);
+EDGES.forEach(([s, t, type, w]) => { ADJ[s].push({ id: t, type, w, dir: 'out' }); ADJ[t].push({ id: s, type, w, dir: 'in' }); });
+
+/* ---------------- state ---------------- */
+const KEY = 'tomotomo:v1';
+function defaults() {
+  return {
+    v: 1, updatedAt: 0, loggedIn: false, account: 'device', appName: 'TomoTomo', theme: 'auto',
+    profile: { name: '', occupation: '', industry: '', role: '', interests: [], minutes: 10, mode: 'auto', onboarded: false },
+    xp: 0, streak: { count: 0, last: null }, history: [], skills: {}, skillCat: {}, nodes: {}, reviews: [],
+    completed: {}, thoughtCount: 0, badges: [], reviewDone: 0, snapshots: [],
+    notif: { enabled: true, freq: 'daily', slots: { morning: { on: true, time: '07:30' }, noon: { on: false, time: '12:15' }, night: { on: true, time: '21:00' } } },
+    ranking: false, partner: null
+  };
+}
+function mergeState(o) {
+  const d = defaults();
+  if (!o || typeof o !== 'object') return d;
+  const r = Object.assign(d, o);
+  r.profile = Object.assign(defaults().profile, o.profile || {});
+  r.notif = Object.assign(defaults().notif, o.notif || {});
+  r.notif.slots = Object.assign(defaults().notif.slots, (o.notif && o.notif.slots) || {});
+  return r;
+}
+function loadLocal() { try { const raw = localStorage.getItem(KEY); return raw ? mergeState(JSON.parse(raw)) : defaults(); } catch (e) { return defaults(); } }
+let S = loadLocal();
+
+const Remote = { db: null, uid: null, user: null, ready: false, timer: null };
+let SAMPLE = null;
+let saveTimer = null;
+function save() {
+  S.updatedAt = Date.now();
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ }
+  if (Remote.db && Remote.uid) {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(pushRemote, 1200);
+  }
+}
+async function pushRemote() {
+  if (!Remote.db || !Remote.uid) return;
+  try { await Remote.db.collection('data/users/' + Remote.uid).doc('tomotomo').set({ state: JSON.stringify(S), updatedAt: S.updatedAt }); } catch (e) { /* keep local copy */ }
+}
+async function initRuntime() {
+  if (!window.claude || typeof window.claude.use !== 'function') return;
+  claude.use('sample').then(s => { SAMPLE = s; refreshAIBadge(); }).catch(() => {});
+  try {
+    const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
+    if (!db || !user) return;
+    const uid = await user.id();
+    if (!uid) return;
+    Remote.db = db; Remote.uid = uid; Remote.user = user;
+    const snap = await db.collection('data/users/' + uid).doc('tomotomo').get();
+    if (snap.exists) {
+      const d = snap.data();
+      let st = null; try { st = JSON.parse(d.state); } catch (e) { }
+      if (st && (st.updatedAt || 0) > (S.updatedAt || 0)) {
+        S = mergeState(st);
+        try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { }
+        if (!ui.overlay) render();
+      }
+    } else if (S.updatedAt) { pushRemote(); }
+    Remote.ready = true;
+    if (!ui.overlay) render();
+  } catch (e) { /* db unavailable: device only */ }
+}
+function refreshAIBadge() { document.querySelectorAll('[data-ai-status]').forEach(el => { el.innerHTML = aiStatusHTML(); }); }
+function aiStatusHTML() { return SAMPLE ? '<span class="tag ai">AI接続中</span>' : '<span class="tag">簡易AI（オフライン）</span>'; }
+
+/* ---------------- derived ---------------- */
+function levelInfo(xp) {
+  let lv = 1, need = 60, rest = xp;
+  while (rest >= need) { rest -= need; lv++; need = 60 + (lv - 1) * 20; }
+  return { lv, cur: rest, need, pct: Math.round(rest / need * 100) };
+}
+function learnedIds() { return Object.keys(S.nodes).filter(k => (S.nodes[k].mastery || 0) > 0); }
+function isLearned(id) { return S.nodes[id] && S.nodes[id].mastery > 0; }
+function catScores() {
+  const out = {};
+  Object.keys(MAP_CATS).forEach(c => {
+    const ids = Object.keys(NODES).filter(k => NODES[k].cat === c);
+    const sum = ids.reduce((a, k) => a + (S.nodes[k] ? S.nodes[k].mastery : 0), 0);
+    out[c] = Math.round(sum / ids.length);
+  });
+  return out;
+}
+function skillRate(k) { const s = S.skills[k]; return s && s.t ? s.c / s.t : null; }
+function skillList() {
+  return Object.keys(SKILLS).map(k => ({ k, name: SKILLS[k], rate: skillRate(k), t: S.skills[k] ? S.skills[k].t : 0 }));
+}
+function weakSkills() { return skillList().filter(s => s.t >= 1).sort((a, b) => a.rate - b.rate); }
+function addSkill(k, ok, cat) {
+  const s = S.skills[k] || (S.skills[k] = { c: 0, t: 0 }); s.t++; if (ok) s.c++;
+  if (cat) { const key = cat + '|' + k; const x = S.skillCat[key] || (S.skillCat[key] = { c: 0, t: 0 }); x.t++; if (ok) x.c++; }
+}
+function isHRish() { return /採用|人事|コンサル/.test(S.profile.occupation) || S.profile.industry === '人材' || S.profile.industry === 'コンサル'; }
+function todayHistory() { const k = dkey(); return S.history.filter(h => dkey(h.at) === k); }
+function dueReviews(all) {
+  const now = Date.now();
+  return S.reviews.filter(r => all || r.due <= now).sort((a, b) => a.due - b.due);
+}
+function weekDays() {
+  const wk = weekKey(Date.now());
+  const set = new Set(S.history.filter(h => weekKey(h.at) === wk).map(h => dkey(h.at)));
+  return set.size;
+}
+function weekXP() { const wk = weekKey(Date.now()); return S.history.filter(h => weekKey(h.at) === wk).reduce((a, h) => a + h.xp, 0); }
+
+/* ---------------- recommendation ---------------- */
+function recommend() {
+  const learned = new Set(learnedIds());
+  const weak = weakSkills();
+  const lv = levelInfo(S.xp).lv;
+  const tier = lv < 4 ? 2 : 3;
+  const reviewTopics = new Set(dueReviews().map(r => QBANK[r.qid] && QBANK[r.qid].topicId));
+  return TOPICS.map(t => {
+    let sc = 0; const reasons = [];
+    const interest = t.tags.filter(x => S.profile.interests.includes(x));
+    if (interest.length) { sc += interest.length * 1.1; reasons.push({ w: interest.length * 1.1, s: '興味：' + interest.slice(0, 2).join('・') }); }
+    if (S.profile.industry && t.industries.includes(S.profile.industry)) { sc += 1.6; reasons.push({ w: 1.6, s: 'あなたの業界（' + S.profile.industry + '）に関係' }); }
+    if (isHRish() && t.tags.includes('採用')) { sc += 1.8; reasons.push({ w: 1.8, s: '仕事に直結' }); }
+    const age = daysBetween(new Date(t.date), Date.now());
+    const fresh = Math.max(0, 1.6 - age / 10); sc += fresh;
+    if (age <= 7) reasons.push({ w: fresh, s: '最新ニュース' });
+    const bridges = t.nodes.filter(n => !learned.has(n) && ADJ[n].some(a => learned.has(a.id)));
+    if (bridges.length) {
+      sc += bridges.length * 0.9;
+      const anchor = ADJ[bridges[0]].find(a => learned.has(a.id));
+      reasons.push({ w: bridges.length * 0.9 + 0.5, s: '既存知識「' + NODES[anchor.id].name + '」とつながる' });
+    }
+    const newCount = t.nodes.filter(n => !learned.has(n)).length; sc += newCount * 0.15;
+    sc += t.future * 1.4; if (t.future >= 0.9) reasons.push({ w: 1, s: '今後重要' });
+    if (weak.length && weak[0].rate < 0.75 && t.questions.some(q => q.skill === weak[0].k)) { sc += 1; reasons.push({ w: 1.2, s: '苦手な「' + weak[0].name + '」を鍛える' }); }
+    sc -= Math.abs(t.difficulty - tier) * 0.5;
+    if (reviewTopics.has(t.id)) { sc += 0.5; }
+    const done = S.completed[t.id] || 0;
+    if (done) sc -= 6 + done;
+    reasons.sort((a, b) => b.w - a.w);
+    return { t, sc, done, reasons: reasons.slice(0, 3).map(r => r.s) };
+  }).sort((a, b) => b.sc - a.sc);
+}
+function suggestionText() {
+  const learned = learnedIds();
+  const rec = recommend()[0];
+  if (!learned.length) return { lead: '最初のテーマを学ぶと、ここに知識の星座ができはじめます。', rec };
+  const cs = catScores();
+  const cats = Object.keys(cs).filter(c => cs[c] > 0).sort((a, b) => cs[b] - cs[a]).slice(0, 2);
+  const strong = cats.map(c => { const ks = learned.filter(k => NODES[k].cat === c).sort((a, b) => NODES[a].diff - NODES[b].diff || S.nodes[b].mastery - S.nodes[a].mastery); return '「' + NODES[ks[0]].name + '」'; });
+  const allDone = TOPICS.every(t => S.completed[t.id]);
+  if (allDone) return { lead: 'あなたは' + strong.join('と') + 'に詳しくなりました。いまは復習で知識を定着させる段階です。', rec, review: true };
+  return { lead: 'あなたは' + strong.join('と') + 'に詳しくなりました。次に「' + rec.t.title + '」を学ぶと知識がつながります。', rec };
+}
+
+/* ---------------- lesson builder ---------------- */
+const MODES = {
+  auto: { icon: '🎯', name: 'おまかせ', desc: '履歴・弱点・仕事・知識マップから、AIがその日の最適な内容を決めます' },
+  knowledge: { icon: '🧠', name: '知識', desc: '覚える・理解する。用語と基礎を固めます' },
+  think: { icon: '💭', name: '思考', desc: 'なぜ？どうなる？原因は？を考えます' },
+  multi: { icon: '⚖️', name: '多角的思考', desc: '企業・従業員・消費者・政府など複数の視点で考えます' },
+  business: { icon: '💼', name: 'ビジネス', desc: '経営・営業・採用・提案に変換します' }
+};
+function autoMode() {
+  const w = weakSkills();
+  const cand = w.find(s => ['causal', 'multi', 'applied', 'future', 'logic'].includes(s.k) && s.rate < 0.8);
+  if (cand) {
+    const m = { causal: 'think', future: 'think', logic: 'think', multi: 'multi', applied: 'business' }[cand.k];
+    return { mode: m, reason: '「' + cand.name + '」を伸ばすため、今日は' + MODES[m].name + 'モード中心にしました' };
+  }
+  if (!S.history.length) return isHRish()
+    ? { mode: 'business', reason: 'お仕事（' + (S.profile.occupation || '採用') + '）に役立つよう、ビジネス視点を中心にしました' }
+    : { mode: 'think', reason: '最初は「なぜ？」を考える思考モードから始めます' };
+  const ms = ['think', 'multi', 'business'];
+  const m = ms[S.history.length % 3];
+  return { mode: m, reason: 'バランスよく鍛えるため、今日は' + MODES[m].name + 'モードを多めにしました' };
+}
+const MODE_PREF = {
+  knowledge: { knowledge: 3, understanding: 2, causal: 1, applied: 0 },
+  think: { causal: 3, understanding: 2, knowledge: 1, applied: 1 },
+  multi: { understanding: 2, causal: 2, applied: 2, knowledge: 1 },
+  business: { applied: 3, causal: 2, knowledge: 1, understanding: 1 }
+};
+function noRepeatTypes(arr) {
+  for (let i = 1; i < arr.length; i++) {
+    if (arr[i].type === arr[i - 1].type) {
+      const j = arr.findIndex((x, k) => k > i && x.type !== arr[i - 1].type && (!arr[i + 1] || true));
+      if (j > 0) { const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp; }
+    }
+  }
+  return arr;
+}
+function buildLesson(topicId, minutes, modeSel) {
+  const t = topicById(topicId);
+  let mode = modeSel, modeReason = '';
+  if (mode === 'auto') { const a = autoMode(); mode = a.mode; modeReason = a.reason; }
+  const pref = MODE_PREF[mode] || MODE_PREF.think;
+  let n = minutes <= 3 ? 2 : minutes <= 10 ? 4 : 6;
+  if (mode === 'knowledge') n += 1;
+  n = Math.min(n, t.questions.length);
+  const ranked = t.questions.map((q, i) => ({ q, i, w: (pref[q.skill] || 0) + (q.skill === 'knowledge' ? 0.5 : 0) - i * 0.01 }))
+    .sort((a, b) => b.w - a.w).slice(0, n).sort((a, b) => a.i - b.i).map(x => x.q);
+  const qs = noRepeatTypes(ranked.slice());
+  const steps = [{ k: 'intro' }, { k: 'read' }];
+  qs.forEach(q => steps.push({ k: 'quiz', qid: q.id }));
+  const revMax = minutes <= 3 ? 1 : minutes <= 10 ? 1 : 2;
+  dueReviews().filter(r => QBANK[r.qid] && QBANK[r.qid].topicId !== topicId).slice(0, revMax)
+    .forEach(r => steps.push({ k: 'quiz', qid: r.qid, review: true }));
+  if (minutes > 3) {
+    const v = mode === 'multi' ? 'multi' : mode === 'business' ? 'business' : 'think';
+    steps.push({ k: 'thought', variant: v });
+    steps.push({ k: 'apply' });
+  }
+  steps.push({ k: 'finish' });
+  return {
+    kind: 'topic', topicId, minutes, mode, modeSel, modeReason, steps, i: 0,
+    depth: minutes <= 3 ? 's30' : minutes <= 10 ? 's3' : 's10',
+    xp: 0, combo: 0, maxCombo: 0, correct: 0, total: 0, results: [],
+    sel: null, order: [], checked: false, showExp: false, thought: null, startedAt: Date.now()
+  };
+}
+function buildReview(early) {
+  const list = dueReviews(early).slice(0, 6);
+  const steps = list.map(r => ({ k: 'quiz', qid: r.qid, review: true }));
+  steps.push({ k: 'finish' });
+  return { kind: 'review', steps, i: 0, xp: 0, combo: 0, maxCombo: 0, correct: 0, total: 0, results: [], sel: null, order: [], checked: false, showExp: false, startedAt: Date.now(), minutes: Math.max(1, Math.ceil(list.length / 2)) };
+}
+
+/* ---------------- grading ---------------- */
+function shuffleSeeded(arr, seed) {
+  const a = arr.slice(); let s = 0; for (const ch of seed) s = (s * 31 + ch.charCodeAt(0)) >>> 0;
+  for (let i = a.length - 1; i > 0; i--) { s = (s * 1103515245 + 12345) >>> 0; const j = s % (i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function optionOrder(q) { return shuffleSeeded(q.options.map((_, i) => i), q.id + (S.completed[q.topicId] || 0)); }
+function grade(q, L) {
+  if (q.type === 'tf') return L.sel === q.answer;
+  if (q.type === 'order') return L.order.length === q.items.length && L.order.every((v, i) => v === i);
+  return L.sel === q.answer;
+}
+
+/* ---------------- thought feedback ---------------- */
+const AXES = [['logic', '論理性'], ['concrete', '具体性'], ['multi', '多角性'], ['evidence', '根拠'], ['practical', '実務性'], ['verbal', '言語化']];
+function heuristicFeedback(t, variant, text) {
+  const len = text.replace(/\s/g, '').length;
+  const kw = t.keywords.filter(k => text.includes(k));
+  const causal = /ため|から|結果|ので|によって|→|につなが|影響/.test(text);
+  const persp = ['企業', '候補者', '従業員', '政府', '投資家', '経営', '顧客', '社会', '求職者', '担当者', '紹介会社', '株主', '消費者'].filter(w => text.includes(w));
+  const num = /[0-9０-９]|割|倍|%|％/.test(text);
+  const action = /提案|すべき|施策|KPI|計画|まず|導入|見直|設計|実行/.test(text);
+  const connect = /まず|次に|一方|つまり|だから|そのため|ただし|さらに/.test(text);
+  const ex = /例えば|たとえば|実際|具体的/.test(text);
+  const sc = {
+    logic: clamp(1 + (causal ? 2 : 0) + (connect ? 1 : 0) + (len > 90 ? 1 : 0), 1, 5),
+    concrete: clamp(1 + Math.min(2, kw.length) + (num ? 1 : 0) + (ex ? 1 : 0), 1, 5),
+    multi: clamp(1 + Math.min(4, persp.length), 1, 5),
+    evidence: clamp(1 + (causal ? 1 : 0) + (kw.length >= 3 ? 1 : 0) + (ex ? 1 : 0) + (num ? 1 : 0), 1, 5),
+    practical: clamp(1 + (action ? 2 : 0) + (/採用|営業|顧客|提案|現場|チーム|会社/.test(text) ? 1 : 0) + (len > 120 ? 1 : 0), 1, 5),
+    verbal: len < 30 ? 1 : len < 80 ? 2 : len < 160 ? 3 : len < 280 ? 4 : 5
+  };
+  const sorted = AXES.slice().sort((a, b) => sc[b[0]] - sc[a[0]]);
+  const best = sorted[0], worst = sorted[sorted.length - 1];
+  const goodMap = {
+    logic: '原因と結果のつながりが意識できています。', concrete: 'キーワード（' + (kw.slice(0, 3).join('・') || '具体例') + '）を押さえて、具体的に書けています。',
+    multi: (persp.length ? persp.slice(0, 3).join('・') : '複数') + 'の立場から考えられています。', evidence: '理由を添えて主張できています。',
+    practical: '行動につながる提案になっています。', verbal: '自分の言葉でしっかり言語化できています。'
+  };
+  const tipMap = {
+    logic: '「なぜそうなるか」を「〜だから〜になる」の形で1つ書き足すと、論理がぐっと強くなります。',
+    concrete: '数字・期間・具体的な職種など、イメージできる要素を1つ入れてみましょう。',
+    multi: '反対の立場（たとえば候補者側や投資家側）から見ると何が見えるか、1文加えてみましょう。',
+    evidence: '「例えば」で始まる具体例を1つ入れると、説得力が増します。',
+    practical: '「明日、自分なら何をするか」を1つ書くと、実務に使える答えになります。',
+    verbal: 'あと2〜3文、考えた理由を書き足すと、考えがはっきり伝わります。'
+  };
+  return {
+    scores: sc, good: goodMap[best[0]], improve: tipMap[worst[0]],
+    next: variant === 'business' ? 'その提案に反対する人がいるとしたら、どんな理由だと思いますか？' : 'この変化が5年続いたら、あなたの業界では何が起きそうですか？',
+    offline: true
+  };
+}
+async function aiFeedback(t, variant, text) {
+  const th = t.thoughts[variant];
+  if (SAMPLE) {
+    const prompt = [
+      'あなたは社会人向けAI教養トレーナー「' + partnerName() + '」です。ユーザーの記述回答を採点し、前向きで具体的なフィードバックを返します。',
+      '文章の話し方: ' + partner().voice + '。ただし採点の基準・内容の正確さ・質は話し方によって変えないこと。',
+      '否定的な言い方はせず「惜しい」「ここを足すともっと良い」の調子で。政治的に中立を保ち、事実と解釈を区別してください。',
+      'テーマ: ' + t.title, '要点: ' + t.s30, '問い: ' + th.q,
+      'ユーザーの職種: ' + (S.profile.occupation || '未設定') + ' / 業界: ' + (S.profile.industry || '未設定'),
+      'ユーザーの回答: """' + text.slice(0, 1500) + '"""',
+      '各観点を1〜5の整数で評価し、次のJSONだけを返してください（前置きやコードフェンス不要）:',
+      '{"scores":{"logic":0,"concrete":0,"multi":0,"evidence":0,"practical":0,"verbal":0},"good":"良かった点（80字以内）","improve":"伸ばすポイントと具体的な書き足し例（120字以内）","next":"次に考えるとよい問い（60字以内）"}'
+    ].join('\n');
+    try {
+      const r = await SAMPLE.json(prompt, { modelTier: 'quick' });
+      if (r && r.scores) {
+        AXES.forEach(([k]) => { r.scores[k] = clamp(Math.round(Number(r.scores[k]) || 1), 1, 5); });
+        return { scores: r.scores, good: String(r.good || ''), improve: String(r.improve || ''), next: String(r.next || ''), offline: false };
+      }
+    } catch (e) { /* fall back */ }
+  }
+  return heuristicFeedback(t, variant, text);
+}
+function fallbackChat(t, q) {
+  if (t.chat && t.chat[q]) return t.chat[q];
+  const p = t.s10.perspectives;
+  if (/反対|批判|デメリット|リスク/.test(q)) return 'よくある慎重論を整理します。' + p.slice(0, 3).map(x => '\n・' + x.who + 'の立場：' + x.text).join('') + '\n\nどの立場も一理あるので、「どこに線を引くか」を考えると議論が深まります。';
+  if (/採用|人事|人材/.test(q)) return '採用・人事の視点では次の点が重要です。' + t.apply.hr.map(x => '\n・' + x).join('') + '\n\n' + t.s10.opinion;
+  if (/企業|経営|メリット/.test(q)) return '企業・経営の視点で見ると：' + p.filter(x => /企業|経営/.test(x.who)).map(x => '\n・' + x.text).join('') + '\n\n加えて、' + t.apply.general[1];
+  if (/提案|コンサル|営業/.test(q)) return '提案の型は「現状 → ボトルネック → 打ち手 → 小さな実験」です。このテーマなら：' + t.apply.hr.map(x => '\n・' + x).join('');
+  return 'いい問いですね。このテーマの因果関係は「' + t.s10.causal.join(' → ') + '」です。' + '\n\nどの矢印が最も不確かだと思いますか？ そこに注目すると、ニュースの先が読めるようになります。\n\n（いまは簡易応答モードです。AI接続時は自由な質問に詳しく答えます）';
+}
+/* =========================================================
+   TomoTomo — 学習パートナー（見た目と話し方のみ。学習ロジックとは分離）
+   ========================================================= */
+const PARTNERS = {
+  dog: {
+    label: 'DOG', name: 'イヌ', trait: '明るい・親しみやすい・応援上手', hello: 'いつでも応援するよ！',
+    voice: '明るく親しみやすく、応援上手な口調（例：「いいね！」「一緒にやろう！」）',
+    greet: ['待ってたよ！', '今日も会えてうれしい！'], start: ['今日も一緒に10分やろう！'],
+    correct: ['いいね！正解！', 'やったね！その調子！'], correct5: ['すごい！完全に理解してるね！', '連続でいけてる！最高！'],
+    wrong: '惜しい！もう一度ポイントを見てみよう！', streak: '{n}日連続！毎日えらいね！',
+    levelup: 'レベルアップ！一緒にここまで来たね！', map: '見て！知識がつながったよ！',
+    review: '復習が{n}問あるよ！一緒にサクッとやろう！', finish: '今日もおつかれさま！よくがんばったね！',
+    recommend: '次はこれ、きっと面白いよ！', suggest: '提案',
+    mapReact: '知識が{count}個になったね！いちばん光ってるのは「{node}」だよ！',
+    weak: '「{weak}」がもう少しで伸びそう！次は一緒にそこを鍛えよう！',
+    history: 'これまで{days}日も一緒に学んできたね！ほんとにうれしいよ！'
+  },
+  redpanda: {
+    label: 'RED PANDA', name: 'レッサーパンダ', trait: 'かわいい・好奇心旺盛・少し知的', hello: '楽しく知識を増やそう！',
+    voice: 'かわいく好奇心旺盛で、少し知的な口調（例：「おっ、これは面白いね」「実はね…」）',
+    greet: ['今日は何を知れるかな。', 'おっ、来たね。'], start: ['おっ、これは面白いニュースだね。'],
+    correct: ['正解！よく気づいたね。', 'その通り。いい読みだね。'], correct5: ['実はこれ、別のテーマともつながってるんだよ。'],
+    wrong: '惜しい！ここがポイントなんだ。実はね…', streak: '{n}日連続だね。知識がどんどん増えてるよ。',
+    levelup: 'レベルアップ！知ってることが増えると、ニュースがもっと楽しくなるね。', map: '実はこのニュース、前に学んだことにもつながっているんだよ。',
+    review: '復習が{n}問あるよ。思い出すと記憶が強くなるんだ。', finish: '今日も新しいことを知れたね。',
+    recommend: '次はこれ。実は今日のテーマとつながってるんだよ。', suggest: '提案',
+    mapReact: '実はね、知識が{count}個になって「{node}」が中心になってきたんだよ。',
+    weak: '実は「{weak}」を鍛えると、ニュースの見え方が変わるんだよ。',
+    history: '{days}日分の学びを振り返ると、興味の広がりが見えて面白いね。'
+  },
+  owl: {
+    label: 'OWL', name: 'フクロウ', trait: '知的・落ち着いている・物知り', hello: '一緒に深く考えよう。',
+    voice: '知的で落ち着いた、物知りな丁寧語（例：「ここには重要な背景があります」）',
+    greet: ['今日も落ち着いて学びましょう。'], start: ['ここには重要な背景があります。順に見ていきましょう。'],
+    correct: ['正解です。', 'その通りです。よく理解できています。'], correct5: ['見事です。背景まで押さえられていますね。'],
+    wrong: '惜しいですね。ここが重要なポイントです。', streak: '{n}日連続です。積み重ねが理解を深めます。',
+    levelup: 'レベルが上がりました。視野が広がってきましたね。', map: 'このニュースを別の視点から見ると、既存の知識とつながります。',
+    review: '復習が{n}問あります。思い出す行為そのものが記憶を強めます。', finish: '本日の学習は完了です。よく考えましたね。',
+    recommend: '次はこのテーマを。知識の背景がつながります。', suggest: '提案',
+    mapReact: '知識は{count}個。「{node}」を軸に、体系ができはじめています。',
+    weak: '「{weak}」を意識すると、歴史的な視点からも別の見方ができるようになります。',
+    history: '{days}日間の学習履歴を見ると、着実に思考の幅が広がっています。'
+  },
+  cat: {
+    label: 'CAT', name: 'ネコ', trait: 'マイペース・少し辛口・賢い', hello: 'それ、本当にそうかな？',
+    voice: 'マイペースで少し辛口だが賢く、最後は前向きな口調（例：「それ、本当にそうかな？」）',
+    greet: ['来たね。今日もマイペースでいこう。'], start: ['今日のニュース、鵜呑みにしないで見ていこう。'],
+    correct: ['…やるじゃない。', '正解。まあ、当然かな。'], correct5: ['ふーん、ちゃんと分かってるね。'],
+    wrong: '惜しい。でも、ここを押さえれば大丈夫。', streak: '{n}日連続。…ちょっと見直した。',
+    levelup: 'レベルアップ。悪くないペースだね。', map: 'もう一つの視点から考えると、つながりが見えてくるよ。',
+    review: '復習{n}問。忘れる前にやっとこう。', finish: '今日はここまで。もう一つの視点、覚えておいてね。',
+    recommend: '次はこれ。反対側から考えるのにちょうどいい。', suggest: '提案',
+    mapReact: '知識{count}個。「{node}」ばっかり詳しくなってない？…まあ、いいけど。',
+    weak: '「{weak}」、まだ甘いね。もう一つの視点から考えてみよう。',
+    history: '{days}日続けたんだ。…正直、ここまでやるとは思ってなかった。'
+  },
+  penguin: {
+    label: 'PENGUIN', name: 'ペンギン', trait: '真面目・努力家・一緒に成長するタイプ', hello: '一問ずつ、一緒に進もう。',
+    voice: '真面目で努力家、一緒に成長しようとする口調（例：「一問ずつ進めよう」）',
+    greet: ['今日も一緒にがんばろう。'], start: ['今日も一問ずつ進めよう。'],
+    correct: ['正解！一歩前進だね。', 'よし、正解！'], correct5: ['昨日より理解が深くなっているよ。'],
+    wrong: '惜しい！一緒にポイントを確認しよう。', streak: '{n}日連続！コツコツが一番強いね。',
+    levelup: 'レベルアップ！一緒に努力してきた成果だね。', map: '知識が一つずつ積み上がっているよ。',
+    review: '復習が{n}問あるよ。一問ずつ確実にいこう。', finish: '今日もやりきったね。明日も一緒にがんばろう。',
+    recommend: '次はこのテーマ。少しずつ広げていこう。', suggest: '提案',
+    mapReact: '知識が{count}個まで積み上がったよ。「{node}」は特にしっかりしてきたね。',
+    weak: '次は「{weak}」を一緒に練習しよう。少しずつ伸ばせば大丈夫。',
+    history: '{days}日分、一緒にがんばってきたね。昨日より確実に成長してるよ。'
+  },
+  otter: {
+    label: 'OTTER', name: 'カワウソ', trait: '明るい・好奇心旺盛・リアクションが大きい', hello: 'えっ、今日は何を学ぶの！？',
+    voice: '明るく好奇心旺盛でリアクションが大きい口調（例：「えっ、そうなの！？」）',
+    greet: ['えっ、来てくれたの！？', '今日は何を学ぶ！？'], start: ['じゃあ、このニュースが仕事にどう関係するか見てみよう！'],
+    correct: ['えっ、正解！？すごい！', 'やったー！大正解！'], correct5: ['うわー、もうこんなに分かるの！？'],
+    wrong: '惜しい！えっとね、ここがポイントなんだ！', streak: '{n}日連続！？すごすぎる！',
+    levelup: 'えっ、レベルアップ！？やったー！', map: '見て見て！知識がつながった！',
+    review: '復習が{n}問あるよ！思い出せるかな！？', finish: '今日も楽しかったー！',
+    recommend: 'えっ、次はこれ面白そう！', suggest: '提案',
+    mapReact: 'えっ、知識が{count}個も！？「{node}」がキラキラしてる！',
+    weak: '「{weak}」を鍛えたら、もっとすごくなっちゃうよ！？',
+    history: '{days}日も一緒に！？思い出がいっぱいだね！'
+  },
+  tomo: {
+    label: 'TOMO', name: 'TOMO', trait: '正体不明・知識を吸収して成長する', hello: '……きみ、何を知りたい？',
+    voice: '正体不明で不思議な生き物。言葉は短く、少しずつ知的になっていく口調',
+    suggest: 'つぶやき'
+  }
+};
+const PARTNER_ORDER = ['dog', 'redpanda', 'owl', 'cat', 'penguin', 'otter', 'tomo'];
+
+/* TOMO は学習とともに話せるようになる */
+const TOMO_LINES = [
+  { // Lv1-4
+    greet: ['……？'], start: ['……？'], correct: ['……！'], correct5: ['……！'], wrong: '……？　…ここ…',
+    streak: '……！（{n}）', levelup: '……！！', map: '……っ！', review: '……（{n}）', finish: '……♪', recommend: '……？　…これ…',
+    mapReact: '……{count}…！', weak: '……「{weak}」…？', history: '……{days}…'
+  },
+  { // Lv5-9
+    greet: ['…きた。', '…きょうも？'], start: ['これ…おもしろい…？'], correct: ['せいかい…！', 'すごい…'], correct5: ['…わかってきた。'],
+    wrong: 'おしい…ここ、だいじ…', streak: '{n}にち…いっしょ…', levelup: '…おおきく、なった…？', map: 'つながった…！',
+    review: 'ふくしゅう…{n}こ…', finish: 'きょうも…まなんだ。', recommend: 'つぎ…これ…？',
+    mapReact: 'ちしき…{count}こ。「{node}」…ひかってる。', weak: '「{weak}」…すこし、にがて…？', history: '{days}にち…ずっと…いっしょ。'
+  },
+  { // Lv10-29
+    greet: ['また会えたね。'], start: ['これ、面白いね。'], correct: ['正解。いいね。', 'うん、合ってる。'], correct5: ['このニュース、前に学んだこととつながってるよ。'],
+    wrong: '惜しい。ここがポイントみたい。', streak: '{n}日連続。なんだか、元気が出る。', levelup: 'また少し、大きくなった気がする。',
+    map: 'このニュース、前に学んだこととつながってるよ。', review: '復習が{n}問。思い出すと、からだがあたたかくなる。',
+    finish: '今日も知識を吸収できた。ありがとう。', recommend: '次はこれ。たぶん、つながる。',
+    mapReact: '知識が{count}個。「{node}」のまわりが光ってきたね。', weak: '「{weak}」を学ぶと、もっと遠くまで見える気がする。', history: '{days}日分の知識が、ぼくの中にもある。'
+  },
+  { // Lv30+
+    greet: ['おかえり。今日は何を一緒に考えようか。'], start: ['このテーマ、きみの知識マップのど真ん中につながるよ。'],
+    correct: ['正解。背景まで見えてるね。', 'さすが。'], correct5: ['君、最近この分野が強くなってきたね。'],
+    wrong: '惜しい。でも、考え方の筋はいいよ。ここを押さえよう。', streak: '{n}日連続。きみと学ぶ毎日が、ぼくの形をつくってる。',
+    levelup: 'レベルアップ。ぼくたち、ずいぶん遠くまで来たね。', map: '新しい知識が、前に学んだことと結びついたよ。',
+    review: '復習が{n}問。今がいちばん記憶に残るタイミングだよ。', finish: '今日もいい学びだった。また明日。',
+    recommend: '次はこれ。今のきみなら、きっと面白く読める。',
+    mapReact: '知識は{count}個。「{node}」を中心に、きみだけの地図ができてきた。', weak: '君、「{weak}」を伸ばすと一段上に行けるよ。',
+    history: '{days}日間の学びを、ぼくは全部覚えてる。君、本当に変わったよ。'
+  }
+];
+
+const PARTNER_GROWTH = [
+  { lv: 1, name: '基本キャラクター', desc: '学習パートナーとして一緒に学びます' },
+  { lv: 5, name: '新しいリアクション', desc: '正解時のリアクションが増えます' },
+  { lv: 10, name: '新しい表情', desc: 'レベルアップや学習完了で特別な表情を見せます' },
+  { lv: 20, name: '知識マップに反応', desc: '知識マップの成長についてコメントします' },
+  { lv: 30, name: 'あなたの弱点を教えてくれる', desc: '成長画面で伸ばしどころを教えてくれます' },
+  { lv: 50, name: '学習履歴にコメント', desc: 'これまでの学びを振り返ってくれます' },
+  { lv: 100, name: '専属の知識トレーナー', desc: 'あなた専属のトレーナーとして完成します' }
+];
+
+function partnerId() { return S.partner && PARTNERS[S.partner] ? S.partner : 'owl'; }
+function partner() { return PARTNERS[partnerId()]; }
+function partnerName() { const p = partner(); return p.name; }
+function partnerLv() { return levelInfo(S.xp).lv; }
+function hasUnlock(lv) { return partnerLv() >= lv; }
+function tomoStage() { const lv = partnerLv(); return lv >= 30 ? 3 : lv >= 10 ? 2 : lv >= 5 ? 1 : 0; }
+function lineSrc() { return partnerId() === 'tomo' ? TOMO_LINES[tomoStage()] : partner(); }
+function fill(s, d) { return String(s).replace(/\{(\w+)\}/g, (_, k) => d && d[k] != null ? d[k] : ''); }
+let lineSeq = 0;
+function say(scene, data) {
+  const src = lineSrc();
+  let v = src[scene];
+  if (scene === 'correct' && hasUnlock(5) && src.correct5 && (lineSeq++ % 2 === 1)) v = src.correct5;
+  if (Array.isArray(v)) v = v[(lineSeq++) % v.length];
+  return fill(v || '', data);
+}
+
+/* ---------------- art ---------------- */
+function eyesSVG(mood, lx, rx, y, color) {
+  color = color || '#1F2340';
+  if (mood === 'proud' && !hasUnlock(10)) mood = 'happy';
+  if (mood === 'happy') return '<path d="M' + (lx - 6) + ' ' + (y + 1) + ' q6 -7 12 0" stroke="' + color + '" stroke-width="3.6" fill="none" stroke-linecap="round"/><path d="M' + (rx - 6) + ' ' + (y + 1) + ' q6 -7 12 0" stroke="' + color + '" stroke-width="3.6" fill="none" stroke-linecap="round"/>';
+  if (mood === 'proud') {
+    const star = (cx, cy) => '<path d="M' + cx + ' ' + (cy - 6) + ' Q' + (cx + 1.2) + ' ' + (cy - 1.2) + ' ' + (cx + 6) + ' ' + cy + ' Q' + (cx + 1.2) + ' ' + (cy + 1.2) + ' ' + cx + ' ' + (cy + 6) + ' Q' + (cx - 1.2) + ' ' + (cy + 1.2) + ' ' + (cx - 6) + ' ' + cy + ' Q' + (cx - 1.2) + ' ' + (cy - 1.2) + ' ' + cx + ' ' + (cy - 6) + 'Z" fill="' + color + '"/>';
+    return star(lx, y) + star(rx, y) + '<path d="M' + (rx + 13) + ' ' + (y - 12) + ' l1.5 3.5 3.5 1.5 -3.5 1.5 -1.5 3.5 -1.5 -3.5 -3.5 -1.5 3.5 -1.5z" fill="#FFC53D"/>';
+  }
+  const dx = mood === 'think' ? 1.5 : 0, dy = mood === 'think' ? -2 : 0;
+  return '<circle cx="' + (lx + dx) + '" cy="' + (y + dy) + '" r="5.2" fill="' + color + '"/><circle cx="' + (rx + dx) + '" cy="' + (y + dy) + '" r="5.2" fill="' + color + '"/>' +
+    '<circle cx="' + (lx + dx + 1.8) + '" cy="' + (y + dy - 1.8) + '" r="1.7" fill="#fff"/><circle cx="' + (rx + dx + 1.8) + '" cy="' + (y + dy - 1.8) + '" r="1.7" fill="#fff"/>';
+}
+const ART = {
+  owl(mood) {
+    let eyes;
+    if (mood === 'proud' && !hasUnlock(10)) mood = 'happy';
+    if (mood === 'happy') eyes = '<path d="M27 46 q9 -10 18 0" stroke="#1A2048" stroke-width="4.5" fill="none" stroke-linecap="round"/><path d="M55 46 q9 -10 18 0" stroke="#1A2048" stroke-width="4.5" fill="none" stroke-linecap="round"/>';
+    else if (mood === 'proud') eyes = '<circle cx="36" cy="44" r="13" fill="#fff"/><circle cx="64" cy="44" r="13" fill="#fff"/>' + eyesSVG('proud', 36, 64, 44, '#1A2048');
+    else {
+      const dx = mood === 'think' ? 3 : 0, dy = mood === 'think' ? -4 : 1;
+      eyes = '<circle cx="36" cy="44" r="13" fill="#fff"/><circle cx="64" cy="44" r="13" fill="#fff"/>' +
+        '<circle cx="' + (37 + dx) + '" cy="' + (45 + dy) + '" r="6.5" fill="#1A2048"/><circle cx="' + (65 + dx) + '" cy="' + (45 + dy) + '" r="6.5" fill="#1A2048"/>' +
+        '<circle cx="' + (39 + dx) + '" cy="' + (42 + dy) + '" r="2.2" fill="#fff"/><circle cx="' + (67 + dx) + '" cy="' + (42 + dy) + '" r="2.2" fill="#fff"/>';
+    }
+    return '<path d="M20 34 L27 10 L42 26 Z" fill="#3540C9"/><path d="M80 34 L73 10 L58 26 Z" fill="#3540C9"/>' +
+      '<ellipse cx="50" cy="58" rx="36" ry="38" fill="#4F5BEF"/>' +
+      '<path d="M16 58 q-6 18 12 28" stroke="#3540C9" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M84 58 q6 18 -12 28" stroke="#3540C9" stroke-width="7" fill="none" stroke-linecap="round"/>' +
+      '<ellipse cx="50" cy="72" rx="21" ry="20" fill="#E2E5FF"/>' +
+      '<path d="M41 69 q4.5 4 9 0 q4.5 4 9 0" stroke="#B4BBFF" fill="none" stroke-width="2.5" stroke-linecap="round"/><path d="M44 78 q3 3 6 0 q3 3 6 0" stroke="#B4BBFF" fill="none" stroke-width="2.5" stroke-linecap="round"/>' +
+      eyes + '<path d="M45 53 L55 53 L50 61 Z" fill="#FFC53D"/>' +
+      '<ellipse cx="40" cy="95" rx="6" ry="3" fill="#FFC53D"/><ellipse cx="60" cy="95" rx="6" ry="3" fill="#FFC53D"/>';
+  },
+  dog(mood) {
+    return '<ellipse cx="50" cy="60" rx="35" ry="35" fill="#E7AE74"/>' +
+      '<path d="M19 30 C8 40 8 62 18 70 C26 64 28 46 30 34 Z" fill="#A86E3E"/><path d="M81 30 C92 40 92 62 82 70 C74 64 72 46 70 34 Z" fill="#A86E3E"/>' +
+      '<ellipse cx="50" cy="84" rx="20" ry="11" fill="#F6DCBD"/>' +
+      '<ellipse cx="50" cy="61" rx="14" ry="10" fill="#F6DCBD"/>' +
+      eyesSVG(mood, 38, 62, 47) +
+      '<ellipse cx="50" cy="56.5" rx="4.6" ry="3.4" fill="#2A2238"/>' +
+      '<path d="M45 63 q5 5 10 0" stroke="#2A2238" stroke-width="2.4" fill="none" stroke-linecap="round"/>' +
+      (mood === 'happy' || mood === 'proud' ? '<path d="M48 64 q2 6 4 0" fill="#FF8A8A"/>' : '');
+  },
+  redpanda(mood) {
+    return '<path d="M16 38 L22 12 L40 27 Z" fill="#C9572F"/><path d="M84 38 L78 12 L60 27 Z" fill="#C9572F"/>' +
+      '<path d="M22 32 L25 19 L34 27 Z" fill="#FFF1E3"/><path d="M78 32 L75 19 L66 27 Z" fill="#FFF1E3"/>' +
+      '<ellipse cx="50" cy="60" rx="36" ry="34" fill="#D9653B"/>' +
+      '<ellipse cx="37" cy="37" rx="6" ry="3.5" fill="#FFF1E3"/><ellipse cx="63" cy="37" rx="6" ry="3.5" fill="#FFF1E3"/>' +
+      '<ellipse cx="22" cy="62" rx="7" ry="9" fill="#FFF1E3"/><ellipse cx="78" cy="62" rx="7" ry="9" fill="#FFF1E3"/>' +
+      '<ellipse cx="50" cy="64" rx="13" ry="9" fill="#FFF1E3"/>' +
+      '<path d="M36 52 l-3 8" stroke="#8A3520" stroke-width="3" stroke-linecap="round"/><path d="M64 52 l3 8" stroke="#8A3520" stroke-width="3" stroke-linecap="round"/>' +
+      eyesSVG(mood, 37, 63, 47) +
+      '<ellipse cx="50" cy="60" rx="4" ry="3" fill="#2A2238"/><path d="M46 65 q4 3 8 0" stroke="#2A2238" stroke-width="2.2" fill="none" stroke-linecap="round"/>' +
+      '<ellipse cx="38" cy="92" rx="7" ry="4" fill="#5A2A1E"/><ellipse cx="62" cy="92" rx="7" ry="4" fill="#5A2A1E"/>';
+  },
+  cat(mood) {
+    return '<path d="M17 40 L20 10 L42 26 Z" fill="#7F8BB0"/><path d="M83 40 L80 10 L58 26 Z" fill="#7F8BB0"/>' +
+      '<path d="M22 32 L23 18 L34 26 Z" fill="#F2B6C3"/><path d="M78 32 L77 18 L66 26 Z" fill="#F2B6C3"/>' +
+      '<ellipse cx="50" cy="60" rx="35" ry="34" fill="#8C97BA"/>' +
+      '<path d="M44 28 l2 8 M50 27 v9 M56 28 l-2 8" stroke="#6E7AA0" stroke-width="2.6" stroke-linecap="round"/>' +
+      '<ellipse cx="50" cy="86" rx="19" ry="9" fill="#E9ECF7"/><ellipse cx="50" cy="64" rx="13" ry="8" fill="#E9ECF7"/>' +
+      (mood === 'normal' ? eyesSVG('normal', 37, 63, 49).replace(/r="5.2"/g, 'r="4.6"') + '<path d="M31 44 l11 2 M69 44 l-11 2" stroke="#1F2340" stroke-width="2.4" stroke-linecap="round"/>' : eyesSVG(mood, 37, 63, 49)) +
+      '<path d="M47.5 59 h5 l-2.5 3 z" fill="#E98AA0"/><path d="M45 64 q2.5 3 5 0 q2.5 3 5 0" stroke="#1F2340" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+      '<path d="M22 60 l12 2 M22 67 l12 -1 M78 60 l-12 2 M78 67 l-12 -1" stroke="#E9ECF7" stroke-width="1.8" stroke-linecap="round"/>';
+  },
+  penguin(mood) {
+    return '<ellipse cx="50" cy="58" rx="34" ry="39" fill="#2C3866"/>' +
+      '<path d="M17 56 q-7 16 4 28" stroke="#212B52" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M83 56 q7 16 -4 28" stroke="#212B52" stroke-width="7" fill="none" stroke-linecap="round"/>' +
+      '<path d="M50 34 C40 26 24 34 27 50 C29 62 36 64 36 72 C36 86 42 92 50 92 C58 92 64 86 64 72 C64 64 71 62 73 50 C76 34 60 26 50 34 Z" fill="#F4F6FF"/>' +
+      eyesSVG(mood, 40, 60, 48) +
+      '<path d="M45 56 L55 56 L50 63 Z" fill="#FFB23F"/>' +
+      '<ellipse cx="34" cy="55" rx="4" ry="2.5" fill="#FFC2C2" opacity=".7"/><ellipse cx="66" cy="55" rx="4" ry="2.5" fill="#FFC2C2" opacity=".7"/>' +
+      '<ellipse cx="41" cy="96" rx="7" ry="3" fill="#FFB23F"/><ellipse cx="59" cy="96" rx="7" ry="3" fill="#FFB23F"/>';
+  },
+  otter(mood) {
+    return '<ellipse cx="50" cy="76" rx="27" ry="21" fill="#8E5F42"/><ellipse cx="50" cy="80" rx="18" ry="15" fill="#E9D2BA"/>' +
+      '<circle cx="16" cy="42" r="5.5" fill="#7A4F35"/><circle cx="84" cy="42" r="5.5" fill="#7A4F35"/>' +
+      '<ellipse cx="50" cy="46" rx="36" ry="27" fill="#9A6A4B"/>' +
+      '<ellipse cx="50" cy="55" rx="25" ry="15" fill="#EAD3BC"/>' +
+      eyesSVG(mood, 37, 63, 41) +
+      '<ellipse cx="50" cy="50" rx="6.5" ry="4.2" fill="#2A2238"/>' +
+      '<path d="M44 56 q3 3 6 0 q3 3 6 0" stroke="#2A2238" stroke-width="2.2" fill="none" stroke-linecap="round"/>' +
+      '<path d="M30 52 l-10 -2 M30 56 l-10 1 M70 52 l10 -2 M70 56 l10 1" stroke="#7A4F35" stroke-width="1.6" stroke-linecap="round"/>' +
+      '<ellipse cx="41" cy="74" rx="6" ry="4.5" fill="#7A4F35"/><ellipse cx="59" cy="74" rx="6" ry="4.5" fill="#7A4F35"/>' +
+      '<ellipse cx="50" cy="71" rx="5" ry="3.5" fill="#B9C2D6"/>';
+  },
+  tomo(mood) {
+    const lv = partnerLv();
+    const st = lv >= 100 ? 6 : lv >= 50 ? 5 : lv >= 30 ? 4 : lv >= 20 ? 3 : lv >= 10 ? 2 : lv >= 5 ? 1 : 0;
+    let sprout = '<path d="M50 20 Q49 13 51 8" stroke="#5BBFAE" stroke-width="3" fill="none" stroke-linecap="round"/>';
+    if (st === 0) sprout += '<circle cx="51" cy="7" r="3" fill="#5BBFAE"/>';
+    if (st >= 1) sprout += '<path d="M51 9 C57 2 66 4 66 8 C62 12 55 12 51 9 Z" fill="#5BBFAE"/>';
+    if (st >= 2) sprout += '<path d="M50 12 C44 6 36 8 36 11 C40 15 46 15 50 12 Z" fill="#7FD6C6"/>';
+    if (st >= 3) sprout = '<circle cx="51" cy="5" r="7" fill="#FFE08A" opacity=".45"/>' + sprout + '<circle cx="51" cy="5" r="3.6" fill="#FFC53D"/>';
+    const spotsN = Math.min(6, st);
+    const spotPos = [[34, 72], [64, 70], [44, 84], [58, 84], [28, 60], [72, 58]];
+    let spots = '';
+    for (let i = 0; i < spotsN; i++) spots += '<circle cx="' + spotPos[i][0] + '" cy="' + spotPos[i][1] + '" r="2" fill="#fff" opacity=".85"/>';
+    if (spotsN >= 3) spots += '<path d="M34 72 L44 84 L58 84 L64 70" stroke="#fff" stroke-opacity=".5" stroke-width="1" fill="none"/>';
+    const halo = st >= 6 ? '<ellipse cx="50" cy="16" rx="18" ry="4.5" fill="none" stroke="#FFC53D" stroke-width="2.5"/>' : '';
+    const orbit = st >= 5 ? '<circle cx="12" cy="40" r="2.6" fill="#B9A8FF"/><circle cx="90" cy="48" r="2" fill="#7FD6C6"/>' : '';
+    let eyes;
+    if (mood === 'proud' && !hasUnlock(10)) mood = 'happy';
+    if (mood === 'happy') eyes = eyesSVG('happy', 39, 61, 52, '#232045');
+    else if (mood === 'proud') eyes = eyesSVG('proud', 39, 61, 52, '#232045');
+    else {
+      const dy = mood === 'think' ? -2 : 0, dx = mood === 'think' ? 2 : 0;
+      eyes = '<ellipse cx="' + (39 + dx) + '" cy="' + (52 + dy) + '" rx="5.5" ry="7.5" fill="#232045"/><ellipse cx="' + (61 + dx) + '" cy="' + (52 + dy) + '" rx="5.5" ry="7.5" fill="#232045"/>' +
+        '<circle cx="' + (41 + dx) + '" cy="' + (49 + dy) + '" r="2" fill="#fff"/><circle cx="' + (63 + dx) + '" cy="' + (49 + dy) + '" r="2" fill="#fff"/>';
+    }
+    const cheeks = st >= 2 ? '<ellipse cx="30" cy="61" rx="4.5" ry="2.6" fill="#FFB3C7" opacity=".75"/><ellipse cx="70" cy="61" rx="4.5" ry="2.6" fill="#FFB3C7" opacity=".75"/>' : '';
+    const mouth = st === 0 ? '<circle cx="50" cy="64" r="1.8" fill="#232045"/>' : '<path d="M46 63 q4 4 8 0" stroke="#232045" stroke-width="2.2" fill="none" stroke-linecap="round"/>';
+    return orbit + halo + sprout +
+      '<path d="M50 20 C76 20 88 42 87 64 C86 86 70 96 50 96 C30 96 14 86 13 64 C12 42 24 20 50 20 Z" fill="#8FE0CF"/>' +
+      '<path d="M50 20 C76 20 88 42 87 64 C80 50 66 40 50 40 C34 40 20 50 13 64 C12 42 24 20 50 20 Z" fill="#A9B4FF" opacity=".55"/>' +
+      '<ellipse cx="50" cy="76" rx="24" ry="16" fill="#C9F3E9" opacity=".7"/>' +
+      spots + eyes + cheeks + mouth +
+      '<path d="M18 74 q-6 4 -4 10" stroke="#6FCDB9" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M82 74 q6 4 4 10" stroke="#6FCDB9" stroke-width="5" fill="none" stroke-linecap="round"/>';
+  }
+};
+function partnerArt(id, size, mood, cls) {
+  size = size || 56; mood = mood || 'normal';
+  return '<svg class="owl ' + (cls || '') + '" width="' + size + '" height="' + size + '" viewBox="0 0 100 100" aria-hidden="true">' + ART[id](mood) + '</svg>';
+}
+/* 既存の呼び出し口：現在のパートナーを描く */
+function owl(size, mood, cls) { return partnerArt(partnerId(), size, mood, cls); }
+
+/* ---------------- 選択UI ---------------- */
+function partnerCards(action, current) {
+  return '<div class="pgrid">' + PARTNER_ORDER.map(id => {
+    const p = PARTNERS[id];
+    return '<button class="pcard ' + (current === id ? 'sel' : '') + '" data-a="' + action + '" data-v="' + id + '">' +
+      partnerArt(id, 64, 'normal') +
+      '<b class="plabel">' + p.label + '</b><span class="pname">' + p.name + '</span>' +
+      '<span class="ptrait">' + p.trait + '</span><span class="phello">「' + p.hello + '」</span></button>';
+  }).join('') + '</div>';
+}
+function confirmPartner(id, ctx) {
+  const p = PARTNERS[id];
+  ui.modal = '<div class="grabber"></div><div style="text-align:center">' + partnerArt(id, 110, 'happy', 'bob ctr') +
+    '<div class="plabel" style="margin-top:6px">' + p.label + '</div><h3 style="font-size:22px">' + p.name + '</h3>' +
+    '<p class="small muted" style="margin-top:4px">' + p.trait + '</p>' +
+    '<div class="say" style="display:inline-block;margin-top:12px;border:1.5px solid var(--line);border-radius:16px;padding:10px 14px">「' + p.hello + '」</div>' +
+    '<p style="margin-top:16px;font-weight:700">このパートナーと一緒に学習を始めますか？</p>' +
+    (ctx === 'change' ? '<p class="tiny muted" style="margin-top:4px">変更しても、学習履歴・知識マップ・レベル・XPはそのまま引き継がれます。</p>' : '') +
+    '</div><div class="stack" style="margin-top:16px"><button class="btn btn-primary" data-a="partnerConfirm" data-v="' + id + '" data-ctx="' + ctx + '">' + p.name + 'と一緒に始める</button>' +
+    '<button class="btn btn-ghost" data-a="closeModalBtn">選び直す</button></div>';
+  showModal();
+}
+function partnerGrowthHTML() {
+  const lv = partnerLv();
+  return PARTNER_GROWTH.map(g => {
+    const on = lv >= g.lv;
+    return '<div class="mission"><span class="check ' + (on ? 'on' : '') + '">' + (on ? '✓' : '') + '</span><span class="grow"><b class="small">Lv.' + g.lv + '　' + g.name + '</b><br><span class="tiny muted">' + g.desc + '</span></span></div>';
+  }).join('');
+}
+function partnerTitle() { return hasUnlock(100) ? '専属トレーナー' : '学習パートナー'; }
+/* =========================================================
+   TomoTomo — views
+   ========================================================= */
+const ui = { tab: 'home', overlay: null, L: null, chat: null, news: null, newsDepth: 's3', mapView: null, mapCat: 'all', learnCat: 'すべて', learnInd: '', modal: null, ob: 0, minutes: null, lastResult: null, rankRows: null };
+
+const IC = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
+  map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="5" cy="6" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="12" cy="13" r="2.8"/><circle cx="6" cy="19" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M7 7.5l3 3.5M16 6.5l-2.6 4.4M10 15l-2.5 2.5M14.5 14.5l2.6 2"/></svg>',
+  learn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7"/></svg>',
+  growth: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.2-3.6 4-5 7-5s5.8 1.4 7 5"/></svg>',
+  close: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  back: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>'
+};
+
+/* ---------------- shell ---------------- */
+function render() {
+  applyTheme();
+  const root = $('#app');
+  if (!S.loggedIn) { root.innerHTML = viewLogin(); $('#nav').innerHTML = ''; return; }
+  if (!S.profile.onboarded) { root.innerHTML = viewOnboard(); $('#nav').innerHTML = ''; return; }
+  const views = { home: viewHome, map: viewMap, learn: viewLearn, growth: viewGrowth, more: viewMore };
+  root.innerHTML = topbar() + '<main class="screen">' + views[ui.tab]() + '</main>';
+  $('#nav').innerHTML = navHTML();
+  if (ui.tab === 'map') mountMap('#mainmap', true);
+  if (ui.tab === 'growth' && S.ranking) loadRanking();
+}
+function applyTheme() { const r = document.documentElement; if (S.theme === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', S.theme); }
+function topbar() {
+  const lv = levelInfo(S.xp);
+  return '<header class="topbar"><div class="brand">' + owl(30) + '<span>' + esc(S.appName) + '</span></div>' +
+    '<div class="stats"><span class="pill fire" title="連続学習日数">🔥 ' + S.streak.count + '</span><span class="pill xp" title="合計XP">⚡ ' + S.xp + '</span><span class="pill lv">Lv.' + lv.lv + '</span></div></header>';
+}
+function navHTML() {
+  const items = [['home', 'ホーム'], ['map', '知識マップ'], ['learn', '学習'], ['growth', '成長'], ['more', 'その他']];
+  return '<div class="nav-in">' + items.map(([k, l]) => '<button data-a="tab" data-v="' + k + '" class="' + (ui.tab === k ? 'on' : '') + '" aria-label="' + l + '">' + IC[k] + '<span>' + l + '</span></button>').join('') + '</div>';
+}
+
+/* ---------------- login / onboarding ---------------- */
+function viewLogin() {
+  return '<div class="login">' +
+    '<div style="display:flex;justify-content:center">' + (S.partner ? owl(120, 'normal', 'bob') : partnerArt('tomo', 120, 'normal', 'bob')) + '</div>' +
+    '<div class="lineup" aria-hidden="true">' + PARTNER_ORDER.filter(id => id !== (S.partner || 'tomo')).map(id => partnerArt(id, 34)).join('') + '</div>' +
+    '<h1>' + esc(S.appName) + '</h1>' +
+    '<p class="muted" style="margin-top:6px">毎日10分。ニュースと教養が、あなたの知識マップでつながっていく。</p>' +
+    '<div style="margin-top:32px" class="stack">' +
+    '<button class="btn btn-primary" data-a="login" data-v="account">アカウントで続ける</button>' +
+    '<button class="btn btn-ghost" data-a="login" data-v="guest">ゲストではじめる</button>' +
+    '</div>' +
+    '<p class="tiny muted" style="margin-top:18px">アカウントで続けると、学習データがクラウドに保存され、別の端末でも引き継げます。ゲストの場合はこの端末に保存されます。</p>' +
+    '</div>';
+}
+function viewOnboard() {
+  const p = S.profile, st = ui.ob;
+  const steps = 5;
+  let body = '';
+  if (st === 0) {
+    body = '<h2 style="font-size:22px">あなたの学習パートナーを選ぼう</h2><p class="muted small" style="margin-top:6px">一緒に知識を育てる相棒です。話し方やリアクションが変わりますが、学習内容の質は同じです。あとから変更できます。</p>' +
+      partnerCards('partnerPick', S.partner) +
+      '<button class="link" style="display:block;margin:14px auto 0" data-a="partnerSkip">あとで選ぶ</button>';
+  } else if (st === 1) {
+    body = '<div class="tomo">' + owl(52, 'happy', 'bob') + '<div class="say">' + esc(say('greet')) + '<br><span class="small muted">まず少しだけ教えてください。</span></div></div>' +
+      '<label class="field" style="margin-top:18px"><span>呼び名</span><input class="input" data-f="profile.name" value="' + esc(p.name) + '" placeholder="例：ゆうき" maxlength="20"></label>' +
+      '<div class="field"><span>職種</span><div class="choice">' + OCCUPATIONS.map(o => '<button class="chip ' + (p.occupation === o ? 'on' : '') + '" data-a="pick" data-k="occupation" data-v="' + esc(o) + '">' + esc(o) + '</button>').join('') + '</div></div>' +
+      '<div class="field"><span>役職</span><div class="chips">' + ROLES.map(o => '<button class="chip ' + (p.role === o ? 'on' : '') + '" data-a="pick" data-k="role" data-v="' + o + '">' + o + '</button>').join('') + '</div></div>';
+  } else if (st === 2) {
+    body = '<h2 style="font-size:22px">あなたの業界は？</h2><p class="muted" style="margin-top:6px">業界に閉じず、関連する業界の知識も自動でおすすめします。</p>' +
+      '<div class="chips" style="margin-top:16px">' + INDUSTRIES.map(o => '<button class="chip ' + (p.industry === o ? 'on' : '') + '" data-a="pick" data-k="industry" data-v="' + o + '">' + o + '</button>').join('') + '</div>';
+  } else if (st === 3) {
+    body = '<h2 style="font-size:22px">興味のあるテーマは？</h2><p class="muted" style="margin-top:6px">いくつでも選べます。あとから変更できます。</p>' +
+      '<div class="chips" style="margin-top:16px">' + INTEREST_OPTIONS.map(o => '<button class="chip ' + (p.interests.includes(o) ? 'on' : '') + '" data-a="toggleInterest" data-v="' + o + '">' + o + '</button>').join('') + '</div>';
+  } else {
+    body = '<h2 style="font-size:22px">1日の学習時間とモード</h2>' +
+      '<div class="field"><span>学習時間</span><div class="choice" style="grid-template-columns:repeat(3,1fr)">' + [3, 10, 15].map(m => '<button class="chip ' + (p.minutes === m ? 'on' : '') + '" data-a="pick" data-k="minutes" data-v="' + m + '">' + m + '分</button>').join('') + '</div></div>' +
+      '<div class="field"><span>学習モード</span>' + modeCards(p.mode, 'pickMode') + '</div>';
+  }
+  const canNext = st === 0 ? !!S.partner : st === 1 ? !!(p.name.trim() && p.occupation) : st === 2 ? !!p.industry : st === 3 ? p.interests.length > 0 : true;
+  return '<div class="overlay-in" style="min-height:100vh"><div class="lesson-top">' +
+    (st > 0 ? '<button class="iconbtn" data-a="obBack" aria-label="戻る">' + IC.back + '</button>' : '<span style="width:36px"></span>') +
+    '<div class="bar"><i style="width:' + ((st + 1) / steps * 100) + '%"></i></div></div>' +
+    '<div class="lesson-body">' + body + '</div>' +
+    (st === 0 ? '' : '<div class="lesson-foot"><button class="btn btn-primary" data-a="obNext" ' + (canNext ? '' : 'disabled') + '>' + (st === steps - 1 ? '学習をはじめる準備をする' : 'つぎへ') + '</button></div>') + '</div>';
+}
+function modeCards(cur, action) {
+  return Object.keys(MODES).map(k => {
+    const m = MODES[k];
+    return '<button class="opt ' + (cur === k ? 'sel' : '') + '" data-a="' + action + '" data-v="' + k + '" style="display:flex;gap:12px;align-items:flex-start">' +
+      '<span style="font-size:24px;line-height:1.2">' + m.icon + '</span><span><b style="font-family:var(--f-head)">' + m.name + 'モード</b>' + (k === 'auto' ? ' <span class="tag ai">推奨</span>' : '') +
+      '<br><span class="small muted" style="font-weight:500">' + m.desc + '</span></span></button>';
+  }).join('');
+}
+
+/* ---------------- home ---------------- */
+function greeting() { const h = new Date().getHours(); return h < 11 ? 'おはようございます' : h < 18 ? 'こんにちは' : 'こんばんは'; }
+function viewHome() {
+  const recs = recommend();
+  const today = recs[0];
+  const mins = ui.minutes || S.profile.minutes;
+  const doneToday = todayHistory().some(h => !h.review);
+  const due = dueReviews();
+  const allRev = S.reviews.length;
+  const learned = learnedIds().sort((a, b) => (S.nodes[b].last || 0) - (S.nodes[a].last || 0)).slice(0, 8);
+  const bubble = doneToday ? say('finish') + '　もう1テーマいくと、知識がさらにつながります。' : say('greet') + (today.reasons.length ? '　今日のテーマを選んだ理由は「' + today.reasons[0] + '」。' : '');
+  const days = new Set(S.history.map(x => dkey(x.at))).size;
+  const histNote = hasUnlock(50) && days ? '<div class="small muted" style="margin-top:4px">' + esc(say('history', { days })) + '</div>' : '';
+  let h = '<div class="tomo" style="margin:6px 0 12px">' + owl(52, doneToday ? 'happy' : 'normal', 'bob') + '<div class="say"><b>' + greeting() + '、' + esc(S.profile.name) + 'さん</b><br>' + esc(bubble) + histNote + '</div></div>';
+  h += '<section class="hero">' +
+    '<div class="meta">' + (doneToday ? '次のおすすめ' : '今日のテーマ') + '　' + esc(today.t.kind) + '・' + fmtYMD(today.t.date) + '</div>' +
+    '<h2>' + today.t.emoji + ' ' + esc(today.t.title) + '</h2>' +
+    '<div class="meta">' + esc(today.t.path.slice(0, 3).join(' ＞ ')) + '</div>' +
+    '<div class="why">' + today.reasons.map(r => '<span>' + esc(r) + '</span>').join('') + '</div>' +
+    '<div class="timechips" role="group" aria-label="学習時間">' + [3, 10, 15].map(m => '<button data-a="minutes" data-v="' + m + '" class="' + (mins === m ? 'on' : '') + '">' + m + '分</button>').join('') + '</div>' +
+    '<button class="btn" data-a="start" data-v="' + today.t.id + '">' + (doneToday ? 'もう1テーマ学ぶ' : '今日の学習をはじめる') + '</button>' +
+    '<div class="meta" style="margin-top:10px;text-align:center">' + MODES[S.profile.mode].icon + ' ' + MODES[S.profile.mode].name + 'モード　<button class="link" style="color:#fff;text-decoration:underline" data-a="tab" data-v="learn">変更</button></div>' +
+    '</section>';
+  h += '<div class="statgrid">' +
+    '<div class="stat"><span class="num" style="color:#F0723B">' + S.streak.count + '</span><span class="lbl">連続学習日数</span></div>' +
+    '<div class="stat"><span class="num" style="color:var(--sun-deep)">' + todayHistory().reduce((a, x) => a + x.xp, 0) + '</span><span class="lbl">今日のXP</span></div>' +
+    '<div class="stat"><span class="num" style="color:var(--primary)">' + weekDays() + '/5</span><span class="lbl">週間目標（日）</span></div></div>';
+  h += '<div class="sec-title">復習</div><div class="card">';
+  if (due.length) h += '<div class="row">' + owl(40, 'normal') + '<div class="grow"><b>🔁 復習が' + due.length + '問あります</b><div class="small muted">' + esc(say('review', { n: due.length })) + '</div></div></div><button class="btn btn-mint" style="margin-top:12px" data-a="review">復習する（約' + Math.max(1, Math.ceil(Math.min(6, due.length) / 2)) + '分）</button>';
+  else if (allRev) {
+    const next = dueReviews(true)[0];
+    h += '<div class="row"><div class="grow"><b>✅ 今日の復習はありません</b><div class="small muted">次の復習：' + fmtDate(next.due) + '（' + Math.max(1, daysBetween(Date.now(), next.due)) + '日後）</div></div><button class="btn btn-ghost btn-sm" data-a="reviewEarly">前倒しで復習</button></div>';
+  } else h += '<div class="small muted">学習すると、忘れるタイミングに合わせてここに復習が届きます（当日 → 2日後 → 7日後 → 21日後）。</div>';
+  h += '</div>';
+  const other = recs.find(r => r.t.id !== today.t.id && !r.done) || recs[1];
+  if (other) {
+    h += '<div class="sec-title">おすすめ</div><button class="card listcard" data-a="news" data-v="' + other.t.id + '"><span class="ic">' + other.t.emoji + '</span><span class="grow"><b style="font-family:var(--f-head)">' + esc(other.t.title) + '</b><br><span class="small muted">' + esc(other.reasons[0] || other.t.kind) + '</span></span></button>';
+  }
+  h += '<div class="sec-title">最近の知識<button class="link" data-a="tab" data-v="map">マップを見る</button></div>';
+  if (learned.length) h += '<div class="chips">' + learned.map(k => '<button class="chip" data-a="openNode" data-v="' + k + '"><i style="width:8px;height:8px;border-radius:50%;background:' + MAP_CATS[NODES[k].cat] + ';display:inline-block"></i>' + esc(NODES[k].name) + '</button>').join('') + '</div>';
+  else h += '<div class="card flat small muted">まだ知識ノードはありません。今日の学習を終えると、ここに追加されます。</div>';
+  h += '<div class="sec-title">デイリーミッション</div><div class="card">' + missionsHTML() + '</div>';
+  h += '<div class="sec-title">今日のニュース</div>' + TOPICS.map(t => '<button class="card listcard" data-a="news" data-v="' + t.id + '"><span class="ic">' + t.emoji + '</span><span class="grow"><b style="font-family:var(--f-head);font-size:14.5px">' + esc(t.title) + '</b><br><span class="tiny muted">' + fmtYMD(t.date) + '／' + esc(t.sources.map(s => s.name).join('・')) + '</span></span></button>').join('');
+  return h;
+}
+function missions() {
+  const th = todayHistory();
+  return [
+    { name: '今日の学習を1つ完了する', done: th.some(h => !h.review), xp: 20 },
+    { name: '思考問題に回答する', done: th.some(h => h.thought), xp: 15 },
+    { name: '3問連続で正解する', done: th.some(h => h.maxCombo >= 3), xp: 15 }
+  ];
+}
+function missionsHTML() {
+  return missions().map(m => '<div class="mission"><span class="check ' + (m.done ? 'on' : '') + '">' + (m.done ? '✓' : '') + '</span><span class="grow" style="' + (m.done ? 'color:var(--ink3);text-decoration:line-through' : '') + '">' + m.name + '</span><span class="tiny num" style="color:var(--sun-deep)">+' + m.xp + 'XP</span></div>').join('');
+}
+
+/* ---------------- learn ---------------- */
+function viewLearn() {
+  const p = S.profile;
+  let h = '<h2 style="font-size:22px;margin:6px 2px 4px">学習</h2><p class="small muted" style="margin:0 2px">モードと時間を選ぶと、AIが内容を組み立て直します。</p>';
+  h += '<div class="sec-title">学習モード</div>' + modeCards(p.mode, 'setMode');
+  h += '<div class="sec-title">1日の学習時間</div><div class="choice" style="grid-template-columns:repeat(3,1fr)">' + [3, 10, 15].map(m => '<button class="chip ' + (p.minutes === m ? 'on' : '') + '" data-a="setMinutes" data-v="' + m + '">' + m + '分</button>').join('') + '</div>';
+  h += '<p class="tiny muted" style="margin:8px 2px 0">3分：要点＋クイズ2問　／　10分：背景と重要ポイント＋クイズ＋思考問題　／　15分：因果関係・多角的視点・実務応用まで</p>';
+  h += '<div class="sec-title">カテゴリー</div><div class="scroll-x">' + ['すべて'].concat(BIG_CATEGORIES).map(c => '<button class="chip ' + (ui.learnCat === c ? 'on' : '') + '" data-a="learnCat" data-v="' + c + '">' + c + '</button>').join('') + '</div>';
+  const relInd = RELATED_INDUSTRIES[p.industry] || RELATED_INDUSTRIES._;
+  const indOrder = [p.industry].concat(relInd).concat(INDUSTRIES.filter(x => x !== p.industry && !relInd.includes(x))).filter(Boolean);
+  h += '<div class="sec-title">業界<span class="tiny muted" style="font-weight:500">あなたの業界と関連業界を先頭に表示</span></div><div class="scroll-x">' +
+    '<button class="chip ' + (!ui.learnInd ? 'on' : '') + '" data-a="learnInd" data-v="">すべて</button>' +
+    indOrder.map(c => '<button class="chip ' + (ui.learnInd === c ? 'on' : '') + '" data-a="learnInd" data-v="' + c + '">' + (c === p.industry ? '★ ' : '') + c + '</button>').join('') + '</div>';
+  const list = TOPICS.filter(t => {
+    const catOk = ui.learnCat === 'すべて' || t.tags.includes(ui.learnCat) || t.path.some(x => x.includes(ui.learnCat)) || (ui.learnCat === '人事' && t.tags.includes('採用'));
+    const indOk = !ui.learnInd || t.industries.includes(ui.learnInd);
+    return catOk && indOk;
+  });
+  h += '<div class="sec-title">テーマ（' + list.length + '）</div>';
+  if (!list.length) h += '<div class="card flat"><div class="tomo">' + owl(44, 'think') + '<div class="small">「' + esc(ui.learnInd || ui.learnCat) + '」のテーマは、ニュースAPI接続後に毎日配信されます。いまは近いテーマから学べます。</div></div><button class="btn btn-ghost" style="margin-top:12px" data-a="learnReset">すべてのテーマを表示</button></div>';
+  h += list.map(topicCard).join('');
+  h += '<div class="sec-title">採用・人事の注目領域</div><div class="card flat"><div class="chips">' +
+    ['採用市場', '新卒採用', '中途採用', '転職市場', '人材不足', '賃金', '人材紹介', 'HR Tech', 'AI×採用', 'AI面接', '採用マーケティング', 'ダイレクトリクルーティング', '人的資本', '組織開発', '人材育成', 'マネジメント', '労働市場', '働き方', '労働政策', '海外HR', '人事戦略'].map(x => {
+      const t = TOPICS.find(tp => tp.title.includes(x) || tp.nodes.some(n => NODES[n].name === x));
+      return t ? '<button class="chip on" data-a="news" data-v="' + t.id + '">' + x + '</button>' : '<span class="chip soft">' + x + '</span>';
+    }).join('') + '</div><p class="tiny muted" style="margin-top:10px">色つきの領域は学習できるテーマがあります。その他はニュースAPI接続後に追加されます。</p></div>';
+  return h;
+}
+function topicCard(t) {
+  const done = S.completed[t.id] || 0;
+  const m = Math.round(t.nodes.reduce((a, k) => a + (S.nodes[k] ? S.nodes[k].mastery : 0), 0) / t.nodes.length);
+  return '<div class="card" style="margin-bottom:10px"><div class="row" style="align-items:flex-start"><span style="font-size:28px">' + t.emoji + '</span><div class="grow">' +
+    '<div class="tiny muted">' + esc(t.path.join(' ＞ ')) + '</div>' +
+    '<b style="font-family:var(--f-head);font-size:16px;display:block;margin-top:2px">' + esc(t.title) + '</b>' +
+    '<div class="tiny muted" style="margin-top:2px">' + esc(t.kind) + '・' + fmtYMD(t.date) + (done ? '　<span class="tag fact">学習済み ×' + done + '</span>' : '') + '</div>' +
+    '<div class="row" style="margin-top:8px"><div class="bar mint grow" style="height:7px"><i style="width:' + m + '%"></i></div><span class="tiny num">' + m + '%</span></div>' +
+    '</div></div><div class="row" style="margin-top:12px"><button class="btn btn-ghost btn-sm grow" data-a="news" data-v="' + t.id + '">ニュースを読む</button><button class="btn btn-primary btn-sm grow" data-a="start" data-v="' + t.id + '">' + S.profile.minutes + '分で学ぶ</button></div></div>';
+}
+
+/* ---------------- growth ---------------- */
+function viewGrowth() {
+  const lv = levelInfo(S.xp);
+  const cs = catScores();
+  const snaps = S.snapshots;
+  let base = null, baseLabel = '';
+  if (snaps.length) {
+    const old = snaps.filter(s => daysBetween(s.at, Date.now()) >= 25);
+    if (old.length) { base = old[old.length - 1]; baseLabel = '先月'; } else { base = { cats: {} }; baseLabel = '学習開始時'; }
+  }
+  let h = '<h2 style="font-size:22px;margin:6px 2px 12px">成長</h2>';
+  h += '<div class="card"><div class="lvring">' + ring(lv.pct, 'Lv.' + lv.lv) + '<div class="grow"><b style="font-family:var(--f-head);font-size:18px">総合レベル ' + lv.lv + '</b><div class="small muted">次のレベルまで ' + (lv.need - lv.cur) + ' XP</div>' +
+    '<div class="row small" style="margin-top:6px;gap:14px"><span>⚡ <b class="num">' + S.xp + '</b> XP</span><span>🔥 <b class="num">' + S.streak.count + '</b> 日</span><span>🧩 <b class="num">' + learnedIds().length + '</b> 知識</span></div></div></div></div>';
+  h += '<div class="sec-title">カテゴリー別の理解度</div><div class="card">' + Object.keys(cs).map(c => {
+    const d = base ? cs[c] - (base.cats[c] || 0) : 0;
+    return '<div class="catrow"><span>' + c + '</span><div class="bar"><i style="width:' + cs[c] + '%;background:' + MAP_CATS[c] + '"></i></div><span class="num small" style="text-align:right">' + cs[c] + '%</span></div>' + (d > 0 ? '<div class="tiny" style="color:var(--mint-deep);margin:-4px 0 4px 106px">' + baseLabel + 'より +' + d + '%</div>' : '');
+  }).join('') + '</div>';
+  h += '<div class="sec-title">思考スキル</div><div class="card">' + radar() + '</div>';
+  h += '<div class="sec-title">' + esc(partnerName()) + 'と振り返る</div><div class="card stack">' + analysisHTML(cs, base, baseLabel) + '</div>';
+  h += '<div class="sec-title">デイリーミッション</div><div class="card">' + missionsHTML() + '<div style="margin-top:14px" class="small"><div class="row between"><span>週間目標：5日学習</span><b class="num">' + weekDays() + '/5</b></div><div class="bar sun" style="margin-top:6px"><i style="width:' + Math.min(100, weekDays() / 5 * 100) + '%"></i></div></div></div>';
+  h += '<div class="sec-title">バッジ</div><div class="card"><div class="badges">' + BADGES.map(b => '<div class="badge ' + (S.badges.includes(b.id) ? 'on' : '') + '" title="' + esc(b.desc) + '"><div class="b">' + b.icon + '</div>' + b.name + '</div>').join('') + '</div></div>';
+  if (S.ranking) h += '<div class="sec-title">ランキング（今週）</div><div class="card" id="rankbox">' + rankHTML() + '</div>';
+  h += '<div class="sec-title">学習履歴</div><div class="card">' + (S.history.length ? S.history.slice().reverse().slice(0, 30).map(x => '<div class="hist"><span style="font-size:20px">' + (x.review ? '🔁' : (topicById(x.topicId) || {}).emoji || '📘') + '</span><div class="grow"><b style="font-size:13.5px">' + esc(x.title) + '</b><div class="tiny muted">' + fmtDate(x.at) + '・' + x.minutes + '分・正答 ' + x.correct + '/' + x.total + (x.mode ? '・' + MODES[x.mode].name : '') + '</div></div><span class="num small" style="color:var(--sun-deep)">+' + x.xp + '</span></div>').join('') : '<div class="small muted">まだ履歴はありません。</div>') + '</div>';
+  return h;
+}
+function ring(pct, label) {
+  const r = 36, c = 2 * Math.PI * r;
+  return '<svg width="92" height="92" viewBox="0 0 92 92" role="img" aria-label="レベル進捗 ' + pct + '%"><circle cx="46" cy="46" r="' + r + '" fill="none" stroke="var(--surface2)" stroke-width="10"/><circle cx="46" cy="46" r="' + r + '" fill="none" stroke="var(--sun)" stroke-width="10" stroke-linecap="round" stroke-dasharray="' + (c * pct / 100) + ' ' + c + '" transform="rotate(-90 46 46)"/><text x="46" y="52" text-anchor="middle" font-family="M PLUS Rounded 1c,sans-serif" font-weight="800" font-size="18" fill="var(--ink)">' + label + '</text></svg>';
+}
+function radar() {
+  const list = skillList(); const n = list.length; const cx = 150, cy = 130, R = 92;
+  const pt = (i, v) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [cx + Math.cos(a) * R * v, cy + Math.sin(a) * R * v]; };
+  let g = '';
+  [0.33, 0.66, 1].forEach(v => { g += '<polygon points="' + list.map((_, i) => pt(i, v).join(',')).join(' ') + '" fill="none" stroke="var(--line)" stroke-width="1.5"/>'; });
+  const poly = list.map((s, i) => pt(i, s.rate == null ? 0.05 : Math.max(0.08, s.rate)).join(',')).join(' ');
+  g += '<polygon points="' + poly + '" fill="rgba(79,91,239,.22)" stroke="var(--primary)" stroke-width="2.5" stroke-linejoin="round"/>';
+  list.forEach((s, i) => { const [x, y] = pt(i, 1.22); g += '<text x="' + x + '" y="' + (y + 4) + '" text-anchor="middle" font-size="11.5" font-weight="700" fill="' + (s.rate == null ? 'var(--ink3)' : 'var(--ink2)') + '">' + s.name + (s.rate == null ? '' : ' ' + Math.round(s.rate * 100)) + '</text>'; });
+  return '<svg viewBox="0 0 300 265" role="img" aria-label="思考スキルのレーダーチャート">' + g + '</svg><p class="tiny muted" style="text-align:center">数字は正答率・評価の割合（%）。まだ測っていないスキルはグレーです。</p>';
+}
+function analysisHTML(cs, base, baseLabel) {
+  const out = [];
+  const w = weakSkills();
+  if (!w.length) return '<div class="tomo">' + owl(44) + '<div class="small">最初の学習を終えると、知識・理解・因果関係・論理・多角的思考などを分けて分析します。</div></div>';
+  const strong = w.slice().reverse()[0], weak = w[0];
+  out.push('<div><span class="tag fact">今の強み</span><p style="margin-top:4px">「' + strong.name + '」が安定しています（' + Math.round(strong.rate * 100) + '%）。</p></div>');
+  let detail = '';
+  Object.keys(MAP_CATS).concat(['採用・人事', '経済', '金融']).forEach(cat => {
+    const k = S.skillCat[cat + '|knowledge'], c = S.skillCat[cat + '|causal'];
+    if (!detail && k && c && k.t && c.t && k.c / k.t >= 0.7 && c.c / c.t < 0.6) detail = cat + 'の用語は理解していますが、' + cat + 'ニュースの因果関係がやや弱めです。';
+  });
+  out.push('<div><span class="tag" style="background:var(--coral-soft);color:var(--coral-deep)">今の弱点</span><p style="margin-top:4px">' + (detail || '「' + weak.name + '」がもう少しで伸びそうです（' + Math.round(weak.rate * 100) + '%）。') + '</p>' +
+    (hasUnlock(30) ? '<div class="tomo" style="margin-top:8px">' + owl(40, 'think') + '<div class="say small">' + esc(say('weak', { weak: weak.name })) + '</div></div>' : '') + '</div>');
+  if (base) {
+    const grown = Object.keys(cs).map(c => [c, cs[c] - (base.cats[c] || 0)]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]);
+    out.push('<div><span class="tag ai">' + baseLabel + 'から伸びたこと</span><p style="margin-top:4px">' + (grown.length ? grown.slice(0, 3).map(g => g[0] + ' +' + g[1] + '%').join('、') : 'これから伸ばしていきましょう') + '</p></div>');
+  }
+  const rec = recommend()[0];
+  out.push('<div><span class="tag ai">次に学ぶべきこと</span><p style="margin-top:4px">' + esc(rec.t.title) + '<br><span class="small muted">' + esc(rec.reasons.join('／')) + '</span></p><button class="btn btn-primary btn-sm" style="margin-top:8px" data-a="start" data-v="' + rec.t.id + '">このテーマを学ぶ</button></div>');
+  return out.join('');
+}
+function rankHTML() {
+  if (!Remote.db) return '<div class="small muted">ランキングは、共有データに接続できる環境で利用できます。この環境では表示できません。</div>';
+  if (!ui.rankRows) return '<div class="row"><div class="spinner"></div><span class="small muted">読み込み中</span></div>';
+  const rows = ui.rankRows.slice().sort((a, b) => b.weekXp - a.weekXp);
+  const same = rows.filter(r => r.occupation === S.profile.occupation);
+  const list = (arr) => arr.map((r, i) => '<div class="hist"><b class="num" style="width:22px">' + (i + 1) + '</b><span class="grow">' + esc(r.nick || '名無し') + (r.me ? ' <span class="tag ai">あなた</span>' : '') + '<br><span class="tiny muted">' + esc(r.occupation || '') + '</span></span><span class="num">' + r.weekXp + ' XP</span></div>').join('');
+  return '<b class="small">週間ランキング</b>' + list(rows) + (rows.length < 2 ? '<p class="tiny muted">このページを共有した仲間がランキングをONにすると、ここに並びます。</p>' : '') +
+    '<b class="small" style="display:block;margin-top:12px">同じ職種（' + esc(S.profile.occupation) + '）</b>' + list(same);
+}
+async function loadRanking() {
+  if (!Remote.db || !Remote.uid) { const b = $('#rankbox'); if (b) b.innerHTML = rankHTML(); return; }
+  try {
+    await pushRanking();
+    const snap = await Remote.db.collection('ranking').where('week', '==', weekKey(Date.now())).get();
+    ui.rankRows = snap.docs.map(d => Object.assign({}, d.data(), { me: d.id === Remote.uid }));
+  } catch (e) { ui.rankRows = []; }
+  const b = $('#rankbox'); if (b) b.innerHTML = rankHTML();
+}
+async function pushRanking() {
+  if (!S.ranking || !Remote.db || !Remote.uid) return;
+  try { await Remote.db.collection('ranking').doc(Remote.uid).set({ nick: S.profile.name.slice(0, 20), occupation: S.profile.occupation, weekXp: weekXP(), week: weekKey(Date.now()), at: Date.now() }); } catch (e) { }
+}
+
+/* ---------------- more ---------------- */
+function viewMore() {
+  const p = S.profile, n = S.notif;
+  const sel = (key, opts, cur) => '<select class="select" data-f="profile.' + key + '">' + opts.map(o => '<option ' + (o === cur ? 'selected' : '') + '>' + o + '</option>').join('') + '</select>';
+  let h = '<h2 style="font-size:22px;margin:6px 2px 12px">その他</h2>';
+  h += '<div class="sec-title">プロフィール</div><div class="card">' +
+    '<label class="field" style="margin-top:0"><span>呼び名</span><input class="input" data-f="profile.name" value="' + esc(p.name) + '" maxlength="20"></label>' +
+    '<label class="field"><span>職種</span>' + sel('occupation', OCCUPATIONS, p.occupation) + '</label>' +
+    '<label class="field"><span>業界</span>' + sel('industry', INDUSTRIES, p.industry) + '</label>' +
+    '<label class="field"><span>役職</span>' + sel('role', ROLES, p.role) + '</label>' +
+    '<div class="field"><span>興味</span><div class="chips">' + INTEREST_OPTIONS.map(o => '<button class="chip ' + (p.interests.includes(o) ? 'on' : '') + '" data-a="toggleInterest" data-v="' + o + '">' + o + '</button>').join('') + '</div></div></div>';
+  const pp = partner();
+  h += '<div class="sec-title">学習パートナー</div><div class="card"><div class="row">' + owl(64, 'happy') + '<div class="grow"><span class="plabel">' + pp.label + '・' + partnerTitle() + '</span><br><b style="font-family:var(--f-head);font-size:17px">' + esc(pp.name) + '</b><div class="tiny muted">' + esc(pp.trait) + '</div></div></div>' +
+    '<button class="btn btn-ghost" style="margin-top:12px" data-a="openPartnerChange">学習パートナーを変更</button>' +
+    '<p class="tiny muted" style="margin-top:8px">変更しても、学習履歴・知識マップ・レベル・XPはそのまま残ります。</p>' +
+    '<div class="small" style="margin:14px 0 8px"><b>パートナーの成長</b>（あなたのレベル Lv.' + partnerLv() + ' に連動）</div>' + partnerGrowthHTML() +
+    '<p class="tiny muted" style="margin-top:10px">成長で増えるのは表情やリアクションだけです。学習機能が有利・不利になることはありません。</p></div>';
+  h += '<div class="sec-title">通知</div><div class="card">' +
+    '<div class="setrow"><span><b>通知を受け取る</b></span><button class="switch ' + (n.enabled ? 'on' : '') + '" data-a="notifToggle" aria-label="通知を受け取る" aria-pressed="' + n.enabled + '"></button></div>' +
+    [['morning', '☀️ 朝', '今日の10分教養'], ['noon', '💡 昼', '今日のおすすめニュース'], ['night', '🧠 夜', '復習のお知らせ']].map(([k, l, d]) => '<div class="setrow"><span class="grow"><b>' + l + '</b><br><span class="tiny muted">' + d + '</span></span><input type="time" value="' + n.slots[k].time + '" data-f="notif.slots.' + k + '.time" aria-label="' + l + 'の時刻"><button class="switch ' + (n.slots[k].on ? 'on' : '') + '" data-a="slotToggle" data-v="' + k + '" aria-label="' + l + 'の通知" aria-pressed="' + n.slots[k].on + '"></button></div>').join('') +
+    '<div class="setrow"><span><b>頻度</b></span><select class="select" style="width:auto" data-f="notif.freq">' + [['daily', '毎日'], ['weekday', '平日のみ'], ['3week', '週3回']].map(([v, l]) => '<option value="' + v + '" ' + (n.freq === v ? 'selected' : '') + '>' + l + '</option>').join('') + '</select></div>' +
+    '<button class="btn btn-ghost" style="margin-top:12px" data-a="notifPreview">通知をプレビューする</button>' +
+    '<p class="tiny muted" style="margin-top:8px">プッシュ通知はスマホアプリ版（本番接続時）で、設定した時刻に配信されます。この版では設定の保存とプレビューができます。</p></div>';
+  h += '<div class="sec-title">ランキング</div><div class="card"><div class="setrow"><span class="grow"><b>ランキングに参加する</b><br><span class="tiny muted">ONにすると、呼び名・職種・今週のXPが、このアプリを開いた他の人にも表示されます。OFFでもすべての機能が使えます。</span></span><button class="switch ' + (S.ranking ? 'on' : '') + '" data-a="rankToggle" aria-label="ランキングに参加する" aria-pressed="' + S.ranking + '"></button></div></div>';
+  h += '<div class="sec-title">表示</div><div class="card"><div class="setrow"><span><b>テーマ</b></span><div class="chips">' + [['auto', '自動'], ['light', 'ライト'], ['dark', 'ダーク']].map(([v, l]) => '<button class="chip ' + (S.theme === v ? 'on' : '') + '" data-a="theme" data-v="' + v + '">' + l + '</button>').join('') + '</div></div>' +
+    '<label class="field"><span>アプリ名（正式名称の変更用）</span><input class="input" data-f="appName" value="' + esc(S.appName) + '" maxlength="20"></label></div>';
+  h += '<div class="sec-title">本番接続の状態</div><div class="card small">' +
+    [['LLM（AI解説・採点・ディスカッション）', SAMPLE ? '接続中' : '簡易AIで動作'], ['データベース', Remote.ready ? 'クラウド同期中' : 'この端末に保存'], ['ニュースAPI・検索API', 'サンプルニュースで動作'], ['プッシュ通知', 'アプリ版で接続予定'], ['分析基盤', '未接続']].map(([a, b]) => '<div class="setrow"><span>' + a + '</span><span class="tag">' + b + '</span></div>').join('') +
+    '<p class="tiny muted" style="margin-top:8px">APIキーなどの秘密情報は端末に保存せず、サーバー経由で接続する構成です。</p></div>';
+  h += '<div class="sec-title">アカウント</div><div class="card"><div class="small muted">' + (S.account === 'account' && Remote.ready ? 'アカウントでログイン中（クラウドに保存）' : S.account === 'account' ? 'アカウントでログイン中（同期の準備中・この端末にも保存）' : 'ゲスト（この端末に保存）') + '</div>' +
+    '<button class="btn btn-ghost" style="margin-top:12px" data-a="logout">ログアウト</button>' +
+    '<button class="btn btn-ghost" style="margin-top:10px;color:var(--coral-deep)" data-a="reset">学習データをリセット</button></div>';
+  h += '<p class="tiny muted" style="text-align:center;margin-top:20px">' + esc(S.appName) + ' MVP ・ サンプルデータで動作中</p>';
+  return h;
+}
+/* =========================================================
+   TomoTomo — knowledge map
+   ========================================================= */
+function viewMap() {
+  const learned = learnedIds();
+  const sug = suggestionText();
+  const edgesOn = EDGES.filter(([s, t]) => isLearned(s) && isLearned(t)).length;
+  let h = '<div class="row between" style="margin:6px 2px 10px"><h2 style="font-size:22px">知識マップ</h2><span class="small muted">🧩 ' + learned.length + ' 知識　🔗 ' + edgesOn + ' つながり</span></div>';
+  h += '<div class="scroll-x" style="margin-bottom:10px">' + ['all'].concat(Object.keys(MAP_CATS)).map(c => '<button class="chip ' + (ui.mapCat === c ? 'on' : '') + '" data-a="mapCat" data-v="' + c + '">' + (c === 'all' ? 'すべて' : c) + '</button>').join('') + '</div>';
+  h += '<div class="mapwrap" id="mainmap"></div>';
+  const top = learned.slice().sort((a, b) => S.nodes[b].mastery - S.nodes[a].mastery)[0];
+  const react = hasUnlock(20) && top ? '<br><span class="muted">' + esc(say('mapReact', { count: learned.length, node: NODES[top].name })) + '</span>' : '';
+  h += '<div class="suggest"><div class="tomo">' + owl(46, 'normal') + '<div class="small"><b>' + esc(partnerName()) + 'の' + partner().suggest + '</b><br>' + esc(sug.lead) + react + '</div></div>' +
+    (sug.review && S.reviews.length ? '<button class="btn btn-mint" style="margin-top:12px" data-a="reviewEarly">復習で知識を固める</button>' :
+      '<button class="btn btn-primary" style="margin-top:12px" data-a="startMin" data-v="' + sug.rec.t.id + '" data-m="10">「' + esc(sug.rec.t.title.split('：')[0]) + '」を10分で学ぶ</button>') + '</div>';
+  h += '<p class="tiny muted" style="margin:10px 2px">ドラッグで移動、ピンチやボタンで拡大・縮小、知識をタップすると詳細が見られます。点線の知識は、次に学ぶとつながる候補です。</p>';
+  return h;
+}
+function visibleNodes() {
+  const learned = new Set(learnedIds());
+  const vis = new Set(learned);
+  if (!learned.size) { const rec = recommend()[0]; rec.t.nodes.forEach(n => vis.add(n)); }
+  learned.forEach(k => ADJ[k].forEach(a => vis.add(a.id)));
+  return { vis, learned };
+}
+function mapSVG(opts) {
+  opts = opts || {};
+  const { vis, learned } = visibleNodes();
+  const hl = new Set(opts.highlight || []);
+  const cat = opts.cat || 'all';
+  let edges = '', nodes = '';
+  EDGES.forEach(([s, t, type, w]) => {
+    if (!vis.has(s) || !vis.has(t)) return;
+    const both = learned.has(s) && learned.has(t);
+    const dimCat = cat !== 'all' && NODES[s].cat !== cat && NODES[t].cat !== cat;
+    const a = NODES[s], b = NODES[t];
+    const isNew = hl.has(s) || hl.has(t);
+    edges += '<line x1="' + a.x + '" y1="' + a.y + '" x2="' + b.x + '" y2="' + b.y + '" stroke="' + (both ? (isNew ? '#FFE08A' : '#9AA6FF') : '#4A5390') + '" stroke-opacity="' + (dimCat ? 0.15 : both ? 0.75 : 0.6) + '" stroke-width="' + (both ? 2.5 + w * 4 : 2.5) + '" ' + (both ? '' : 'stroke-dasharray="8 10"') + ' stroke-linecap="round"/>';
+  });
+  Object.keys(NODES).forEach(k => {
+    if (!vis.has(k)) return;
+    const n = NODES[k], st = S.nodes[k] || { mastery: 0 };
+    const on = learned.has(k);
+    const col = MAP_CATS[n.cat];
+    const r = on ? 22 + st.mastery / 100 * 16 : 17;
+    const dim = cat !== 'all' && n.cat !== cat;
+    const op = dim ? 0.2 : 1;
+    let g = '<g data-node="' + k + '" opacity="' + op + '" style="cursor:pointer">';
+    if (hl.has(k)) g += '<circle class="newpulse" cx="' + n.x + '" cy="' + n.y + '" r="40" fill="none" stroke="#FFE08A" stroke-width="4"/>';
+    if (on) {
+      g += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + (r + 10) + '" fill="' + col + '" opacity=".18"/>';
+      g += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + r + '" fill="' + col + '"/>';
+      const c = 2 * Math.PI * (r + 4);
+      g += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + (r + 4) + '" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="2.5" stroke-dasharray="' + (c * st.mastery / 100) + ' ' + c + '" transform="rotate(-90 ' + n.x + ' ' + n.y + ')"/>';
+    } else {
+      g += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + r + '" fill="#141A48" stroke="' + col + '" stroke-width="2" stroke-dasharray="6 5"/>';
+      g += '<text x="' + n.x + '" y="' + (n.y + 8) + '" text-anchor="middle" font-size="22" font-weight="800" fill="' + col + '">?</text>';
+    }
+    g += '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + Math.max(r + 12, 36) + '" fill="transparent"/>';
+    g += '<text class="node-label ' + (on ? '' : 'dim') + '" x="' + n.x + '" y="' + (n.y + r + 34) + '" text-anchor="middle">' + esc(n.name) + '</text></g>';
+    nodes += g;
+  });
+  return '<svg viewBox="0 0 1100 800" preserveAspectRatio="xMidYMid meet" role="img" aria-label="知識マップ"><g class="vp">' + edges + nodes + '</g></svg>';
+}
+function fitView(aspect) {
+  const { vis } = visibleNodes();
+  const ks = [...vis];
+  if (!ks.length) return { x: 0, y: 0, k: 1 };
+  aspect = aspect || 800 / 1100;
+  let vw = 1100, vh = 800;
+  if (aspect > 800 / 1100) vh = 1100 * aspect; else vw = 800 / aspect;
+  const xs = ks.map(k => NODES[k].x), ys = ks.map(k => NODES[k].y);
+  const minx = Math.min(...xs) - 110, maxx = Math.max(...xs) + 110, miny = Math.min(...ys) - 80, maxy = Math.max(...ys) + 110;
+  const k = clamp(Math.min(vw / (maxx - minx), vh / (maxy - miny)), 0.6, 2.4);
+  return { x: 550 - (maxx + minx) / 2 * k, y: 400 - (maxy + miny) / 2 * k, k };
+}
+function mountMap(sel, interactive, highlight) {
+  const wrap = $(sel); if (!wrap) return;
+  wrap.innerHTML = mapSVG({ cat: interactive ? ui.mapCat : 'all', highlight }) +
+    (interactive ? '<div class="mapzoom"><button data-a="zoom" data-v="1.25" aria-label="拡大">＋</button><button data-a="zoom" data-v="0.8" aria-label="縮小">－</button><button data-a="zoom" data-v="0" aria-label="全体表示" style="font-size:14px">⤢</button></div>' : '') +
+    (!learnedIds().length ? '<div class="mapempty">点線の知識は、今日のテーマで手に入る知識です。学習を終えると光ってつながります。</div>' : '');
+  if (!wrap.nextElementSibling || !wrap.nextElementSibling.classList.contains('maplegend')) wrap.insertAdjacentHTML('afterend', '<div class="maplegend">' + Object.keys(MAP_CATS).map(c => '<span><i style="background:' + MAP_CATS[c] + '"></i>' + c + '</span>').join('') + '</div>');
+  const svg = wrap.querySelector('svg');
+  const vp = svg.querySelector('.vp');
+  const aspect = wrap.clientHeight / Math.max(1, wrap.clientWidth);
+  let view = interactive ? (ui.mapView || fitView(aspect)) : fitView(aspect);
+  const apply = () => vp.setAttribute('transform', 'translate(' + view.x + ' ' + view.y + ') scale(' + view.k + ')');
+  apply();
+  if (!interactive) {
+    svg.addEventListener('click', e => { const g = e.target.closest('[data-node]'); if (g) openNode(g.getAttribute('data-node')); });
+    return;
+  }
+  ui.mapApply = (f) => { if (f === 0) view = fitView(aspect); else zoomAt(550, 400, f); ui.mapView = view; apply(); };
+  const toSvg = (cx, cy) => { const m = svg.getScreenCTM(); if (!m) return { x: 0, y: 0 }; const p = svg.createSVGPoint(); p.x = cx; p.y = cy; const r = p.matrixTransform(m.inverse()); return { x: r.x, y: r.y }; };
+  function zoomAt(px, py, f) {
+    const k2 = clamp(view.k * f, 0.4, 3.5); const ratio = k2 / view.k;
+    view = { x: px - (px - view.x) * ratio, y: py - (py - view.y) * ratio, k: k2 };
+  }
+  const ptrs = new Map(); let downNode = null, moved = 0, last = null, pinch = null;
+  svg.addEventListener('pointerdown', e => {
+    svg.setPointerCapture(e.pointerId);
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.size === 1) { downNode = e.target.closest('[data-node]'); moved = 0; last = toSvg(e.clientX, e.clientY); }
+    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: view.k }; downNode = null; }
+  });
+  svg.addEventListener('pointermove', e => {
+    if (!ptrs.has(e.pointerId)) return;
+    const prev = ptrs.get(e.pointerId);
+    moved += Math.abs(e.clientX - prev.x) + Math.abs(e.clientY - prev.y);
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.size === 2 && pinch) {
+      const [a, b] = [...ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y);
+      const c = toSvg((a.x + b.x) / 2, (a.y + b.y) / 2);
+      zoomAt(c.x, c.y, (pinch.k * d / pinch.d) / view.k); apply();
+    } else if (ptrs.size === 1 && last) {
+      const p = toSvg(e.clientX, e.clientY);
+      view.x += p.x - last.x; view.y += p.y - last.y; last = toSvg(e.clientX, e.clientY);
+      apply();
+    }
+  });
+  const up = e => {
+    if (ptrs.size === 1 && downNode && moved < 8) openNode(downNode.getAttribute('data-node'));
+    ptrs.delete(e.pointerId);
+    if (ptrs.size < 2) pinch = null;
+    if (ptrs.size === 1) { const v = [...ptrs.values()][0]; last = toSvg(v.x, v.y); }
+    if (!ptrs.size) { downNode = null; last = null; }
+    ui.mapView = view;
+  };
+  svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
+  svg.addEventListener('wheel', e => { e.preventDefault(); const c = toSvg(e.clientX, e.clientY); zoomAt(c.x, c.y, e.deltaY < 0 ? 1.12 : 0.89); ui.mapView = view; apply(); }, { passive: false });
+}
+function openNode(id) {
+  const n = NODES[id]; if (!n) return;
+  const st = S.nodes[id] || { mastery: 0 };
+  const topic = TOPICS.find(t => t.nodes.includes(id));
+  const rel = ADJ[id].map(a => '<button class="chip" data-a="openNode" data-v="' + a.id + '">' + (isLearned(a.id) ? '' : '？ ') + esc(NODES[a.id].name) + ' <span class="tiny muted">' + REL_LABEL[a.type] + '</span></button>').join('');
+  const revN = S.reviews.filter(r => QBANK[r.qid] && topic && QBANK[r.qid].topicId === topic.id).length;
+  ui.modal = '<div class="grabber"></div><div class="row"><span style="width:14px;height:14px;border-radius:50%;background:' + MAP_CATS[n.cat] + '"></span><span class="small muted">' + n.cat + ' ＞ ' + n.sub + '</span></div>' +
+    '<h3 style="font-size:24px;margin-top:4px">' + esc(n.name) + '</h3>' +
+    (st.mastery > 0 ? '<div class="row" style="margin-top:12px"><span class="small" style="width:56px">理解度</span><div class="bar grow"><i style="width:' + st.mastery + '%;background:' + MAP_CATS[n.cat] + '"></i></div><b class="num">' + st.mastery + '%</b></div>' +
+      '<div class="statgrid" style="grid-template-columns:repeat(3,1fr)"><div class="stat"><span class="lbl">最終学習</span><b class="small">' + fmtDate(st.last) + '</b></div><div class="stat"><span class="lbl">次の復習</span><b class="small">' + fmtDate(st.next) + '</b></div><div class="stat"><span class="lbl">難易度</span><b class="small">' + '★'.repeat(n.diff) + '</b></div></div>'
+      : '<p class="small muted" style="margin-top:8px">まだ学んでいない知識です。学ぶと、既存の知識とつながります。</p>') +
+    '<div class="small" style="margin:14px 0 8px"><b>つながっている知識</b></div><div class="chips">' + rel + '</div>' +
+    (topic ? '<div style="margin-top:16px" class="stack"><button class="btn btn-primary" data-a="startMin" data-v="' + topic.id + '" data-m="10">' + (st.mastery > 0 ? '関連テーマで理解を深める（10分）' : 'このテーマを学ぶ（10分）') + '</button>' +
+      (revN ? '<button class="btn btn-ghost" data-a="reviewEarly">このテーマを復習する</button>' : '') + '<button class="btn btn-ghost" data-a="news" data-v="' + topic.id + '">関連ニュースを読む</button></div>' : '');
+  showModal();
+}
+function showModal() {
+  let m = $('#modal');
+  if (!ui.modal) { if (m) m.remove(); return; }
+  if (!m) { m = document.createElement('div'); m.id = 'modal'; document.body.appendChild(m); }
+  m.innerHTML = '<div class="scrim" data-a="closeModal"><div class="modal" role="dialog" aria-modal="true">' + ui.modal + '</div></div>';
+}
+
+/* =========================================================
+   lesson
+   ========================================================= */
+function openOverlay(kind) { ui.overlay = kind; renderOverlay(); }
+function closeOverlay() { ui.overlay = null; const o = $('#overlay'); o.innerHTML = ''; o.classList.add('hide'); document.body.style.overflow = ''; render(); }
+function renderOverlay() {
+  const o = $('#overlay');
+  if (!ui.overlay) { o.classList.add('hide'); return; }
+  o.classList.remove('hide'); document.body.style.overflow = 'hidden';
+  const v = { lesson: viewLesson, results: viewResults, mapupdate: viewMapUpdate, chat: viewChat, news: viewNews }[ui.overlay];
+  o.innerHTML = '<div class="overlay-in">' + v() + '</div>';
+  o.scrollTop = 0;
+  if (ui.overlay === 'mapupdate') mountMap('#minimap', false, ui.lastResult ? ui.lastResult.newNodes : []);
+  if (ui.overlay === 'chat') { const log = $('#chatlog'); if (log) o.scrollTop = o.scrollHeight; }
+}
+function startLesson(topicId, minutes) {
+  ui.L = buildLesson(topicId, minutes || ui.minutes || S.profile.minutes, S.profile.mode);
+  ui.modal = null; showModal();
+  openOverlay('lesson');
+}
+function lessonTop(L) {
+  const total = L.steps.length - 1;
+  const pct = Math.round(L.i / total * 100);
+  return '<div class="lesson-top"><button class="iconbtn" data-a="quitLesson" aria-label="学習を中断">' + IC.close + '</button><div class="bar"><i style="width:' + pct + '%"></i></div>' +
+    (L.combo >= 2 ? '<span class="combo">🔥' + L.combo + '</span>' : '<span class="num small" style="color:var(--sun-deep)">⚡' + L.xp + '</span>') + '</div>';
+}
+function viewLesson() {
+  const L = ui.L, step = L.steps[L.i];
+  const t = L.kind === 'topic' ? topicById(L.topicId) : null;
+  let body = '', foot = '';
+  if (step.k === 'intro') {
+    const plan = [];
+    plan.push(L.depth === 's30' ? '30秒の要点' : L.depth === 's3' ? '3分の解説' : '10分の深掘り解説');
+    const nq = L.steps.filter(s => s.k === 'quiz' && !s.review).length, nr = L.steps.filter(s => s.k === 'quiz' && s.review).length;
+    plan.push('クイズ' + nq + '問'); if (nr) plan.push('復習' + nr + '問');
+    if (L.steps.some(s => s.k === 'thought')) plan.push('思考問題'); if (L.steps.some(s => s.k === 'apply')) plan.push('仕事への応用');
+    body = '<div style="text-align:center;margin-top:10px">' + owl(108, 'normal', 'bob ctr') + '</div>' +
+      '<div class="kicker" style="justify-content:center;margin-top:8px">今日のテーマ・約' + L.minutes + '分</div>' +
+      '<h2 style="font-size:24px;text-align:center;margin-top:6px">' + t.emoji + ' ' + esc(t.title) + '</h2>' +
+      '<p class="small muted" style="text-align:center;margin-top:6px">' + esc(t.path.join(' ＞ ')) + '</p>' +
+      '<div class="tomo" style="justify-content:center;margin-top:14px"><div class="say">' + esc(say('start')) + '</div></div>' +
+      '<div class="card" style="margin-top:14px"><b class="small">' + MODES[L.mode].icon + ' ' + MODES[L.mode].name + 'モード' + (L.modeSel === 'auto' ? '（おまかせ）' : '') + '</b>' +
+      (L.modeReason ? '<p class="small muted" style="margin-top:4px">' + esc(L.modeReason) + '</p>' : '') +
+      '<div class="chain" style="margin-top:10px">' + plan.map((p, i) => (i ? '<i>↓</i>' : '') + '<span>' + p + '</span>').join('') + '</div></div>';
+    foot = '<button class="btn btn-primary" data-a="next">はじめる</button>';
+  } else if (step.k === 'read') {
+    body = '<div class="kicker">📰 ニュース解説</div><h2 class="qtitle" style="margin-bottom:4px">' + esc(t.title) + '</h2>' + readingHTML(t, L.depth, 'lessonDepth');
+    foot = '<div class="row"><button class="btn btn-ghost" style="width:auto" data-a="chat" data-v="' + t.id + '">AIに質問</button><button class="btn btn-primary grow" data-a="next">クイズへ進む</button></div>';
+  } else if (step.k === 'quiz') {
+    const q = QBANK[step.qid];
+    body = quizHTML(q, L, step);
+    if (!L.checked) foot = '<button class="btn btn-primary" data-a="check" ' + (canCheck(q, L) ? '' : 'disabled') + '>回答する</button>';
+    else foot = feedbackSheet(q, L);
+  } else if (step.k === 'thought') {
+    body = thoughtHTML(t, step, L);
+    if (!L.thought || !L.thought.fb) foot = L.thought && L.thought.loading ? '<button class="btn btn-primary" disabled><span class="spinner"></span>' + esc(partnerName()) + 'が読んでいます</button>' :
+      '<button class="btn btn-primary" data-a="submitThought">AIにフィードバックをもらう</button><button class="link" style="display:block;margin:12px auto 0" data-a="skipThought">今回はスキップ</button>';
+    else foot = '<div class="row"><button class="btn btn-ghost" style="width:auto" data-a="chat" data-v="' + t.id + '">AIと深掘り</button><button class="btn btn-primary grow" data-a="next">つぎへ</button></div>';
+  } else if (step.k === 'apply') {
+    const items = isHRish() ? t.apply.hr : t.apply.general;
+    body = '<div class="kicker">💼 仕事への応用</div><h2 class="qtitle">' + (isHRish() ? esc(S.profile.occupation) + 'にとって、何が重要か' : 'あなたの仕事にどう使うか') + '</h2>' +
+      '<div class="card">' + items.map((x, i) => '<div class="row" style="align-items:flex-start' + (i ? ';margin-top:12px' : '') + '"><span class="oitem" style="padding:0;border:0;box-shadow:none;background:none;width:auto"><span class="n">' + (i + 1) + '</span></span><span>' + esc(x) + '</span></div>').join('') + '</div>' +
+      '<div class="sec-title">明日の会話で使えるひとこと</div><div class="tomo">' + owl(46, 'happy') + '<div class="say">' + esc(t.talk) + '</div></div>' +
+      '<div class="card flat" style="margin-top:14px"><span class="tag ai">AIの解釈</span><p class="small" style="margin-top:6px">' + esc(t.s10.opinion.replace(/^AIの解釈：/, '')) + '</p></div>';
+    foot = '<button class="btn btn-mint" data-a="next">学習を完了する</button>';
+  }
+  return lessonTop(L) + '<div class="lesson-body">' + body + '</div><div class="lesson-foot" id="lfoot"' + (step.k === 'quiz' && L.checked ? ' style="padding:0;border:0;background:none"' : '') + '>' + foot + '</div>';
+}
+function readingHTML(t, depth, action) {
+  let h = '<div class="depthtabs" role="tablist">' + [['s30', '30秒'], ['s3', '3分'], ['s10', '10分']].map(([k, l]) => '<button role="tab" aria-selected="' + (depth === k) + '" class="' + (depth === k ? 'on' : '') + '" data-a="' + action + '" data-v="' + k + '">' + l + '</button>').join('') + '</div><div class="read">';
+  h += '<div class="blk"><span class="tag fact">要点</span><p style="margin-top:6px">' + esc(t.s30) + '</p></div>';
+  if (depth !== 's30') h += t.s3.map(b => '<div class="blk"><span class="tag ' + (/事実/.test(b.label) ? 'fact' : '') + '">' + esc(b.label) + '</span><p style="margin-top:6px">' + esc(b.text) + '</p></div>').join('');
+  if (depth === 's10') {
+    h += '<div class="blk"><span class="tag">因果関係</span><div class="chain">' + t.s10.causal.map((c, i) => (i ? '<i>↓</i>' : '') + '<span>' + esc(c) + '</span>').join('') + '</div></div>';
+    h += '<div class="blk"><span class="tag">多角的な視点</span><div class="persp" style="margin-top:8px">' + t.s10.perspectives.map(p => '<b>' + esc(p.who) + '</b><span>' + esc(p.text) + '</span>').join('') + '</div></div>';
+    h += '<div class="blk"><span class="tag">実務への応用</span><p style="margin-top:6px">' + esc((isHRish() ? t.apply.hr : t.apply.general).join('／')) + '</p></div>';
+    h += '<div class="blk"><span class="tag ai">AIの解釈</span><p style="margin-top:6px">' + esc(t.s10.opinion.replace(/^AIの解釈：/, '')) + '</p></div>';
+  }
+  h += '</div><div class="source"><b>情報源</b>（公開 ' + fmtYMD(t.date) + '・更新 ' + fmtYMD(t.updated) + '）<br>' + t.sources.map(s => '・' + esc(s.name) + '（' + esc(s.type) + '）<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.url) + '</a>').join('<br>') +
+    '<p style="margin-top:8px">「事実」と「AIの解釈」はラベルで区別しています。' + esc(SAMPLE_NOTE) + '</p></div>';
+  return h;
+}
+const TYPE_LABEL = { mc: '4択', tf: '○×', fill: '穴埋め', order: '並べ替え', cause: '因果関係', case: 'ケーススタディ' };
+function quizHTML(q, L, step) {
+  const kick = '<div class="kicker">' + (step.review ? '🔁 復習・' : '') + TYPE_LABEL[q.type] + '<span class="tag" style="margin-left:4px">' + SKILLS[q.skill] + '</span></div>';
+  const ord = q.options ? optionOrder(q) : null;
+  const optBtn = (i, label) => {
+    let cls = 'opt';
+    if (L.checked) { if (i === q.answer) cls += ' ok'; else if (L.sel === i) cls += ' ng'; }
+    else if (L.sel === i) cls += ' sel';
+    return '<button class="' + cls + '" data-a="sel" data-v="' + i + '" ' + (L.checked ? 'disabled' : '') + '>' + esc(label) + '</button>';
+  };
+  if (q.type === 'tf') {
+    const btn = (val, lab) => { let cls = 'opt'; if (L.checked) { if (val === q.answer) cls += ' ok'; else if (L.sel === val) cls += ' ng'; } else if (L.sel === val) cls += ' sel'; return '<button class="' + cls + '" data-a="sel" data-v="' + val + '" ' + (L.checked ? 'disabled' : '') + ' aria-label="' + (val ? '正しい' : '誤り') + '">' + lab + '</button>'; };
+    return kick + '<h2 class="qtitle">' + esc(q.q) + '</h2><div class="tfgrid">' + btn(true, '○') + btn(false, '×') + '</div>';
+  }
+  if (q.type === 'fill') {
+    const filled = L.sel != null ? esc(q.options[L.sel]) : '　';
+    return kick + '<h2 class="qtitle" style="font-size:16px">空欄に入る言葉を選ぼう</h2><div class="fillbox">' + esc(q.q).replace('＿＿＿', '<span class="blank">' + filled + '</span>') + '</div>' +
+      '<div class="tfgrid">' + ord.map(i => optBtn(i, q.options[i]).replace('class="opt', 'style="font-size:15px;padding:14px 8px;text-align:center" class="opt')).join('') + '</div>';
+  }
+  if (q.type === 'order') {
+    const pool = shuffleSeeded(q.items.map((_, i) => i), q.id).filter(i => !L.order.includes(i));
+    let h = kick + '<h2 class="qtitle">' + esc(q.q) + '</h2><div class="ordered">' +
+      (L.order.length ? L.order.map((v, pos) => '<button class="oitem' + (L.checked ? (v === pos ? ' ok' : ' ng') : '') + '" data-a="unorder" data-v="' + pos + '" ' + (L.checked ? 'disabled' : '') + '><span class="n">' + (pos + 1) + '</span>' + esc(q.items[v]) + '</button>').join('') : '<p class="small muted" style="padding:10px;text-align:center">下のカードを、原因から順にタップ</p>') + '</div>';
+    if (!L.checked) h += '<div class="pool">' + pool.map(i => '<button class="oitem" data-a="order" data-v="' + i + '">' + esc(q.items[i]) + '</button>').join('') + '</div>' + (L.order.length ? '<button class="link" style="display:block;margin:12px auto 0" data-a="orderReset">やり直す</button>' : '');
+    else if (!grade(q, L)) h += '<div class="card flat small"><b>正しい順番</b><div class="chain" style="margin-top:6px">' + q.items.map((x, i) => (i ? '<i>↓</i>' : '') + '<span>' + esc(x) + '</span>').join('') + '</div></div>';
+    return h;
+  }
+  if (q.type === 'cause') return kick + '<div class="causebox">原因：' + esc(q.cause) + '</div><div class="arrowdown">↓</div><h2 class="qtitle" style="margin-top:0">' + esc(q.q) + '</h2>' + ord.map(i => optBtn(i, q.options[i])).join('');
+  if (q.type === 'case') return kick + '<div class="scenario">💬 ' + esc(q.scenario) + '</div><h2 class="qtitle">' + esc(q.q) + '</h2>' + ord.map(i => optBtn(i, q.options[i])).join('');
+  return kick + '<h2 class="qtitle">' + esc(q.q) + '</h2>' + ord.map(i => optBtn(i, q.options[i])).join('');
+}
+function canCheck(q, L) { return q.type === 'order' ? L.order.length === q.items.length : L.sel !== null && L.sel !== undefined; }
+function feedbackSheet(q, L) {
+  const ok = L.lastOk;
+  const acc = L.total ? L.correct / L.total : 1;
+  const expand = !ok || L.showExp || acc < 0.7;
+  const ex = q.ex;
+  const answerText = q.type === 'tf' ? (q.answer ? '○（正しい）' : '×（誤り）') : q.type === 'order' ? q.items.join(' → ') : q.options[q.answer];
+  return '<div class="sheet ' + (ok ? 'ok' : 'ng') + '" style="position:relative">' +
+    '<div class="row">' + owl(48, ok ? (L.combo >= 3 ? 'proud' : 'happy') : 'think') + '<div class="grow"><h3>' + esc(L.lastLine) + '</h3>' +
+    (ok ? '<span class="small">+' + L.lastXp + ' XP</span> ' + (L.combo >= 2 ? '<span class="combo">🔥 ' + L.combo + 'コンボ</span>' : '') : '<span class="small">正解：' + esc(answerText) + '</span>') + '</div></div>' +
+    (expand ? '<dl class="exp">' +
+      '<dt>なぜ正解なのか</dt><dd>' + esc(ex.why) + '</dd>' + (q.type === 'tf' || q.type === 'order' ? '' : '<dt>ほかの選択肢が違う理由</dt><dd>' + esc(ex.others) + '</dd>') + (q.type === 'order' ? '<dt>よくある間違い</dt><dd>' + esc(ex.others) + '</dd>' : '') + (q.type === 'tf' ? '<dt>補足</dt><dd>' + esc(ex.others) + '</dd>' : '') +
+      '<dt>背景</dt><dd>' + esc(ex.bg) + '</dd><dt>関連知識</dt><dd>' + esc(ex.related) + '</dd><dt>仕事への応用</dt><dd>' + esc(ex.apply) + '</dd><dt>覚え方</dt><dd>' + esc(ex.memo) + '</dd></dl>'
+      : '<div class="exp"><b>ポイント：</b>' + esc(ex.why) + '<br><button class="link" style="margin-top:6px" data-a="moreExp">背景・関連知識・覚え方も見る</button></div>') +
+    '<button class="btn ' + (ok ? 'btn-mint' : 'btn-coral') + '" data-a="next">つぎへ</button></div>';
+}
+function pickPraise() { const p = ['正解！', 'お見事！', 'その通り！', 'いい読みです！']; return p[(ui.L.correct + ui.L.i) % p.length]; }
+function thoughtHTML(t, step, L) {
+  const th = t.thoughts[step.variant];
+  const lab = { think: '💭 思考問題', multi: '⚖️ 多角的思考', business: '💼 ビジネス思考' }[step.variant];
+  let h = '<div class="kicker">' + lab + '<span data-ai-status style="margin-left:6px">' + aiStatusHTML() + '</span></div><h2 class="qtitle">' + esc(th.q) + '</h2>';
+  if (!L.thought || !L.thought.fb) {
+    h += '<p class="small muted" style="margin:-6px 0 12px">正解はひとつではありません。思ったことを自分の言葉で書いてみましょう。</p>' +
+      '<textarea class="answer" id="thoughtText" placeholder="例：まず〜。なぜなら〜。一方で〜の立場から見ると…" ' + (L.thought && L.thought.loading ? 'disabled' : '') + '>' + esc(L.thought ? L.thought.text : '') + '</textarea>' +
+      '<details style="margin-top:10px"><summary class="link" style="cursor:pointer">ヒントを見る</summary><p class="small" style="margin-top:6px">' + esc(th.hint) + '</p></details>';
+    return h;
+  }
+  const fb = L.thought.fb;
+  h += '<div class="card flat small" style="background:var(--surface2);border:0"><b>あなたの回答</b><p style="margin-top:4px;white-space:pre-wrap">' + esc(L.thought.text) + '</p></div>';
+  h += '<div class="card" style="margin-top:12px"><div class="row between"><b style="font-family:var(--f-head)">' + esc(partnerName()) + 'のフィードバック</b>' + (fb.offline ? '<span class="tag">簡易評価</span>' : '<span class="tag ai">AI評価</span>') + '</div><div style="margin-top:10px">' +
+    AXES.map(([k, l]) => '<div class="axis"><span>' + l + '</span><div class="dots">' + [1, 2, 3, 4, 5].map(i => '<i class="' + (i <= fb.scores[k] ? 'on' : '') + '"></i>').join('') + '</div><b class="num small">' + fb.scores[k] + '</b></div>').join('') + '</div>' +
+    '<div class="blk" style="margin-top:12px"><span class="tag fact">よかった点</span><p class="small" style="margin-top:4px">' + esc(fb.good) + '</p></div>' +
+    '<div class="blk" style="margin-top:10px"><span class="tag" style="background:var(--sun-soft);color:var(--sun-deep)">ここを足すともっと良くなる</span><p class="small" style="margin-top:4px">' + esc(fb.improve) + '</p></div>' +
+    (fb.next ? '<div class="blk" style="margin-top:10px"><span class="tag ai">次に考えたい問い</span><p class="small" style="margin-top:4px">' + esc(fb.next) + '</p></div>' : '') + '</div>';
+  h += '<details class="card flat" style="margin-top:12px"><summary class="link" style="cursor:pointer">考え方の一例を見る</summary><p class="small" style="margin-top:8px">' + esc(th.example) + '</p><p class="tiny muted" style="margin-top:6px">あくまで一例です。あなたの視点と比べて、足りない視点だけ取り入れましょう。</p></details>';
+  return h;
+}
+
+/* ---------------- lesson actions ---------------- */
+function lessonRerender(keepScroll) {
+  const o = $('#overlay'); const y = o.scrollTop;
+  renderOverlay();
+  if (keepScroll) o.scrollTop = y;
+}
+function checkAnswer() {
+  const L = ui.L, step = L.steps[L.i], q = QBANK[step.qid];
+  if (!canCheck(q, L)) return;
+  const ok = grade(q, L);
+  L.checked = true; L.lastOk = ok; L.total++;
+  const cat = topicById(q.topicId).path[0];
+  addSkill(q.skill, ok, cat);
+  if (ok) {
+    L.correct++; L.combo++; L.maxCombo = Math.max(L.maxCombo, L.combo);
+    L.lastXp = (step.review ? 8 : 10) + (L.combo >= 3 ? 2 * (L.combo - 2) : 0);
+    L.xp += L.lastXp;
+  } else { L.combo = 0; L.lastXp = 0; }
+  L.results.push({ qid: q.id, ok, review: !!step.review });
+  L.lastLine = ok ? say('correct') : say('wrong');
+  lessonRerender(true);
+  const foot = $('#lfoot'); if (foot) foot.scrollIntoView({ block: 'end', behavior: 'smooth' });
+}
+function nextStep() {
+  const L = ui.L;
+  L.i++; L.sel = null; L.order = []; L.checked = false; L.showExp = false;
+  const step = L.steps[L.i];
+  if (!step || step.k === 'finish') return finishLesson();
+  lessonRerender(false);
+}
+async function submitThought() {
+  const L = ui.L, step = L.steps[L.i], t = topicById(L.topicId);
+  const ta = $('#thoughtText'); const text = ta ? ta.value.trim() : '';
+  if (text.length < 10) { toast('あと少し書いてみましょう（10文字以上）'); if (ta) ta.focus(); return; }
+  L.thought = { text, loading: true };
+  lessonRerender(true);
+  const fb = await aiFeedback(t, step.variant, text);
+  if (ui.L !== L) return;
+  L.thought = { text, fb };
+  const avg = AXES.reduce((a, [k]) => a + fb.scores[k], 0) / AXES.length;
+  const gain = 15 + Math.round(avg * 3);
+  L.xp += gain; L.thoughtDone = true;
+  const cat = t.path[0];
+  addSkill('logic', fb.scores.logic >= 3, cat); addSkill('multi', fb.scores.multi >= 3, cat);
+  addSkill('verbal', fb.scores.verbal >= 3, cat); addSkill('applied', fb.scores.practical >= 3, cat);
+  addSkill('critical', fb.scores.evidence >= 3, cat);
+  if (step.variant === 'think') addSkill('future', (fb.scores.logic + fb.scores.concrete) / 2 >= 3, cat);
+  S.thoughtCount++;
+  lessonRerender(false);
+  toast('+' + gain + ' XP　思考問題に回答しました');
+}
+
+/* ---------------- finish ---------------- */
+function finishLesson() {
+  const L = ui.L, now = Date.now();
+  const t = L.kind === 'topic' ? topicById(L.topicId) : null;
+  const prevLearned = new Set(learnedIds());
+  const lvBefore = levelInfo(S.xp).lv;
+  const bonus = L.kind === 'topic' ? 30 : 15;
+  L.xp += bonus;
+  // reviews
+  L.results.forEach(r => {
+    let it = S.reviews.find(x => x.qid === r.qid);
+    if (r.review) {
+      if (!it) return;
+      if (r.ok) { it.stage++; if (it.stage >= REVIEW_STEPS.length) { S.reviews = S.reviews.filter(x => x !== it); return; } it.due = dayStart(now) + REVIEW_STEPS[it.stage] * DAY; }
+      else { it.stage = 0; it.due = dayStart(now) + DAY; }
+    } else {
+      if (!it) { it = { qid: r.qid, stage: 0, due: 0 }; S.reviews.push(it); }
+      if (r.ok) { it.stage = 1; it.due = dayStart(now) + REVIEW_STEPS[1] * DAY; } else { it.stage = 0; it.due = now; }
+    }
+  });
+  if (L.kind === 'review') S.reviewDone++;
+  // knowledge nodes
+  const acc = L.total ? L.correct / L.total : 0.7;
+  let newNodes = [], links = [];
+  if (t) {
+    t.nodes.forEach(k => {
+      const n = S.nodes[k] || (S.nodes[k] = { mastery: 0, count: 0 });
+      n.mastery = clamp(Math.round(n.mastery + 22 + 38 * acc), 0, 100);
+      n.count++; n.last = now; n.next = dayStart(now) + (acc >= 0.8 ? 2 : 0) * DAY;
+      if (!prevLearned.has(k)) newNodes.push(k);
+    });
+    newNodes.forEach(k => ADJ[k].forEach(a => { if (prevLearned.has(a.id) && !t.nodes.includes(a.id)) links.push([k, a.id, a.type]); }));
+    t.nodes.forEach(k => { if (prevLearned.has(k)) ADJ[k].forEach(a => { if (prevLearned.has(a.id) && !t.nodes.includes(a.id) && !links.some(l => l[0] === k && l[1] === a.id)) links.push([k, a.id, a.type]); }); });
+    S.completed[t.id] = (S.completed[t.id] || 0) + 1;
+  } else {
+    const ts = new Set(L.results.map(r => QBANK[r.qid].topicId));
+    ts.forEach(id => topicById(id).nodes.forEach(k => { const n = S.nodes[k]; if (n) { n.mastery = clamp(n.mastery + Math.round(8 * acc), 0, 100); n.last = now; } }));
+  }
+  // streak
+  const tk = dkey(now);
+  const streakNew = S.streak.last !== tk;
+  if (S.streak.last !== tk) {
+    S.streak.count = S.streak.last && daysBetween(new Date(S.streak.last + 'T00:00:00'), now) === 1 ? S.streak.count + 1 : 1;
+    S.streak.last = tk;
+  }
+  // missions bonus (before history push, compare)
+  const mBefore = missions().map(m => m.done);
+  S.history.push({ at: now, topicId: t ? t.id : null, title: t ? t.title : '復習セッション', xp: 0, correct: L.correct, total: L.total, minutes: L.minutes, mode: t ? L.mode : null, review: L.kind === 'review', thought: !!L.thoughtDone, maxCombo: L.maxCombo });
+  const mAfter = missions();
+  let mXp = 0; mAfter.forEach((m, i) => { if (m.done && !mBefore[i]) mXp += m.xp; });
+  L.xp += mXp;
+  S.history[S.history.length - 1].xp = L.xp;
+  S.xp += L.xp;
+  // snapshot
+  S.snapshots.push({ at: now, cats: catScores() });
+  if (S.snapshots.length > 120) S.snapshots = S.snapshots.slice(-120);
+  // badges
+  const nb = [];
+  const give = id => { if (!S.badges.includes(id)) { S.badges.push(id); nb.push(id); } };
+  give('first');
+  if (L.maxCombo >= 3) give('combo3');
+  if (S.thoughtCount >= 3) give('thinker');
+  if (learnedIds().length >= 10) give('connector');
+  if (S.streak.count >= 3) give('streak3');
+  if (catScores()['採用・人事'] >= 80) give('hr');
+  if (S.reviewDone >= 1) give('reviewer');
+  if (Object.keys(S.completed).length >= 3) give('explorer');
+  save();
+  pushRanking();
+  ui.lastResult = { xp: L.xp, bonus, mXp, correct: L.correct, total: L.total, maxCombo: L.maxCombo, newNodes, links, topicId: t ? t.id : null, kind: L.kind, badges: nb, lvUp: levelInfo(S.xp).lv > lvBefore, streakUp: streakNew && S.streak.count >= 2, thought: !!L.thoughtDone, skills: [...new Set(L.results.map(r => QBANK[r.qid].skill))] };
+  ui.L = null;
+  openOverlay('results');
+  confetti();
+}
+function viewResults() {
+  const R = ui.lastResult, lv = levelInfo(S.xp);
+  const acc = R.total ? Math.round(R.correct / R.total * 100) : 0;
+  let h = '<div class="lesson-body" style="text-align:center;padding-top:24px">' + owl(110, R.lvUp ? 'proud' : 'happy', 'bob ctr') +
+    '<div class="tomo" style="justify-content:center;margin-top:6px"><div class="say">' + esc(R.lvUp ? say('levelup') : R.streakUp ? say('streak', { n: S.streak.count }) : say('finish')) + '</div></div>' +
+    '<h2 style="font-size:26px;margin-top:8px">' + (R.kind === 'review' ? '復習完了！' : '今日の学習、完了！') + '</h2>' +
+    '<p class="muted small" style="margin-top:4px">' + (acc >= 80 ? '素晴らしい理解度です。この調子で知識をつなげていきましょう。' : '学んだことは、復習のタイミングでもう一度届きます。') + '</p>' +
+    '<div class="big-xp num" style="margin-top:18px">+' + R.xp + '</div><div class="small muted">XP 獲得</div>' +
+    '<div class="resgrid" style="margin-top:18px"><div class="stat"><span class="num" style="color:var(--mint)">' + acc + '%</span><span class="lbl">正答率</span></div><div class="stat"><span class="num" style="color:#F0723B">' + R.maxCombo + '</span><span class="lbl">最大コンボ</span></div><div class="stat"><span class="num" style="color:var(--primary)">🔥' + S.streak.count + '</span><span class="lbl">連続日数</span></div></div>' +
+    '<div class="card" style="margin-top:14px;text-align:left"><div class="row between small"><b>Lv.' + lv.lv + (R.lvUp ? '　<span class="combo">LEVEL UP!</span>' : '') + '</b><span class="muted">次まで ' + (lv.need - lv.cur) + ' XP</span></div><div class="bar sun" style="margin-top:8px"><i style="width:' + lv.pct + '%"></i></div>' +
+    '<div class="tiny muted" style="margin-top:8px">内訳：問題・思考 ' + (R.xp - R.bonus - R.mXp) + ' ＋ 完了ボーナス ' + R.bonus + (R.mXp ? ' ＋ ミッション ' + R.mXp : '') + '</div></div>';
+  if (R.badges.length) h += '<div style="margin-top:12px" class="stack">' + R.badges.map(id => { const b = BADGES.find(x => x.id === id); return '<div class="badge-new"><span style="font-size:30px">' + b.icon + '</span><div style="text-align:left"><b>新しいバッジ：' + b.name + '</b><div class="tiny muted">' + b.desc + '</div></div></div>'; }).join('') + '</div>';
+  h += '<div class="card" style="margin-top:12px;text-align:left"><b class="small">今日鍛えたスキル</b><div class="chips" style="margin-top:8px">' + R.skills.map(k => '<span class="chip soft">' + SKILLS[k] + '</span>').join('') + (R.thought ? '<span class="chip soft">論理</span><span class="chip soft">言語化</span><span class="chip soft">多角的思考</span>' : '') + '</div>' +
+    '<p class="tiny muted" style="margin-top:8px">次の復習：' + (S.reviews.length ? fmtDate(dueReviews(true)[0].due) : '—') + '（当日 → 2日後 → 7日後 → 21日後）</p></div>';
+  h += '</div><div class="lesson-foot">' + (R.kind === 'topic' ? '<button class="btn btn-primary" data-a="toMapUpdate">知識マップの変化を見る</button>' : '<button class="btn btn-primary" data-a="closeOverlay">ホームに戻る</button>') + '</div>';
+  return h;
+}
+function viewMapUpdate() {
+  const R = ui.lastResult, t = topicById(R.topicId);
+  const rec = recommend().find(r => r.t.id !== R.topicId && !r.done);
+  let msg;
+  if (R.links.length) {
+    const names = [...new Set(R.links.map(l => NODES[l[1]].name))].slice(0, 3);
+    msg = 'このニュースは、あなたの既存知識の「' + names.join('」「') + '」とつながりました。';
+  } else if (R.newNodes.length) msg = '新しく ' + R.newNodes.length + ' つの知識がマップに加わりました。次のテーマを学ぶと、知識同士がつながりはじめます。';
+  else msg = '既存の知識の理解度が上がりました。光が強くなっています。';
+  let h = '<div class="lesson-top"><button class="iconbtn" data-a="closeOverlay" aria-label="閉じる">' + IC.close + '</button><b style="font-family:var(--f-head)">知識マップが更新されました</b></div><div class="lesson-body">';
+  h += '<div class="mapwrap" id="minimap" style="height:340px"></div>';
+  h += '<div class="tomo" style="margin-top:14px">' + owl(48, 'happy') + '<div class="say"><b>' + esc(say('map')) + '</b><br>' + esc(msg) + '</div></div>';
+  if (R.newNodes.length) h += '<div class="chips" style="margin-top:12px">' + R.newNodes.map(k => '<span class="chip"><i style="width:8px;height:8px;border-radius:50%;background:' + MAP_CATS[NODES[k].cat] + ';display:inline-block"></i>' + esc(NODES[k].name) + ' <span class="tiny" style="color:var(--mint-deep)">NEW</span></span>').join('') + '</div>';
+  if (R.links.length) h += '<div class="card flat small" style="margin-top:12px">' + R.links.slice(0, 4).map(l => '<div>🔗 ' + esc(NODES[l[0]].name) + ' ⇄ ' + esc(NODES[l[1]].name) + ' <span class="tag">' + REL_LABEL[l[2]] + '</span></div>').join('') + '</div>';
+  if (rec) {
+    h += '<div class="suggest"><div class="tomo">' + owl(40, 'normal') + '<div class="small"><span class="tag ai">次のおすすめテーマ</span><br>' + esc(say('recommend')) + '</div></div><h3 style="font-size:18px;margin-top:8px">' + rec.t.emoji + ' ' + esc(rec.t.title) + '</h3><p class="small muted" style="margin-top:4px">' + esc(rec.reasons.join('／')) + '</p>' +
+      '<p class="small" style="margin-top:8px">このテーマを学ぶと「' + rec.t.nodes.filter(k => !isLearned(k)).slice(0, 3).map(k => NODES[k].name).join('」「') + '」が加わり、' + esc(t.title.split('：')[0]) + 'の知識とつながります。</p>' +
+      '<button class="btn btn-primary" style="margin-top:12px" data-a="startMin" data-v="' + rec.t.id + '" data-m="10">このテーマを10分で学ぶ</button></div>';
+  } else h += '<div class="suggest"><b>すべてのテーマを学習しました</b><p class="small muted" style="margin-top:4px">復習で知識を定着させましょう。新しいニュースは本番接続後に毎日届きます。</p></div>';
+  h += '</div><div class="lesson-foot"><div class="row"><button class="btn btn-ghost grow" data-a="goGrowth">成長を見る</button><button class="btn btn-ghost grow" data-a="closeOverlay">ホームへ</button></div></div>';
+  return h;
+}
+
+/* ---------------- news & chat ---------------- */
+function viewNews() {
+  const t = topicById(ui.news);
+  return '<div class="lesson-top"><button class="iconbtn" data-a="closeOverlay" aria-label="戻る">' + IC.back + '</button><b class="small muted grow">' + esc(t.path.slice(0, 3).join(' ＞ ')) + '</b></div><div class="lesson-body">' +
+    '<div class="kicker">' + t.emoji + ' ' + esc(t.kind) + '</div><h2 class="qtitle" style="margin-bottom:0">' + esc(t.title) + '</h2>' +
+    '<div class="chips" style="margin-top:8px">' + t.industries.map(i => '<span class="chip soft tiny">' + i + '</span>').join('') + '</div>' +
+    readingHTML(t, ui.newsDepth, 'newsDepth') + '</div>' +
+    '<div class="lesson-foot"><div class="row"><button class="btn btn-ghost" style="width:auto" data-a="chat" data-v="' + t.id + '">AIと話す</button><button class="btn btn-primary grow" data-a="start" data-v="' + t.id + '">このテーマを学ぶ</button></div></div>';
+}
+function viewChat() {
+  const c = ui.chat, t = topicById(c.topicId);
+  const presets = ['採用業界にはどう影響する？', '逆に企業側にはメリットない？', '採用コンサルなら何を提案する？', 'このニュースの反対意見は？'];
+  return '<div class="lesson-top"><button class="iconbtn" data-a="closeChat" aria-label="戻る">' + IC.back + '</button><div class="grow"><b style="font-family:var(--f-head);font-size:14px">AIディスカッション</b><div class="tiny muted">' + esc(t.title) + '</div></div><span data-ai-status>' + aiStatusHTML() + '</span></div>' +
+    '<div class="chatlog" id="chatlog">' +
+    '<div class="row" style="align-items:flex-end;gap:8px">' + owl(34, 'normal') + '<div class="msg ai">' + esc(say('start')) + '\nこのニュースについて、何でも聞いてね。事実と解釈は分けて答えます。</div></div>' +
+    c.log.map(m => '<div class="msg ' + (m.role === 'user' ? 'me' : 'ai') + '">' + esc(m.content) + '</div>').join('') +
+    (c.busy ? '<div class="msg ai" id="streaming">' + (c.partial ? esc(c.partial) : '<span class="spinner" style="display:inline-block;vertical-align:middle"></span> 考えています') + '</div>' : '') +
+    '</div>' +
+    (!c.busy ? '<div class="scroll-x" style="padding:0 18px 8px">' + presets.map(p => '<button class="chip" data-a="chatPreset" data-v="' + esc(p) + '">' + esc(p) + '</button>').join('') + '</div>' : '') +
+    '<div class="chatin"><input id="chatInput" placeholder="質問を入力" maxlength="300" ' + (c.busy ? 'disabled' : '') + ' aria-label="質問"><button class="btn btn-primary btn-sm" data-a="chatSend" ' + (c.busy ? 'disabled' : '') + '>送信</button></div>';
+}
+async function sendChat(text) {
+  const c = ui.chat; text = (text || '').trim(); if (!text || c.busy) return;
+  const t = topicById(c.topicId);
+  c.log.push({ role: 'user', content: text }); c.busy = true; c.partial = '';
+  renderOverlay();
+  let answer = '';
+  if (SAMPLE) {
+    const ctx = 'あなたはユーザーの学習パートナー「' + partnerName() + '」（先生ではなく一緒に知識を育てる相棒）。ユーザーと次のニュースについて対話し、理解を深めさせる。話し方: ' + partner().voice + '。ただし説明の正確さ・情報量・質は話し方によって変えない。' +
+      '事実とAIの解釈を区別し、政治・社会の話題では特定の政党・候補者・思想を支持せず、複数の立場を示す。300字程度で、日本語で、やさしく具体的に。最後に考えを深める短い問いを1つ添える。\n' +
+      'テーマ: ' + t.title + '\n要点: ' + t.s30 + '\n因果: ' + t.s10.causal.join('→') + '\nユーザーの職種: ' + (S.profile.occupation || '未設定') + '、業界: ' + (S.profile.industry || '未設定');
+    const turns = c.log.map((m, i) => ({ role: m.role, content: i === 0 ? ctx + '\n\n質問: ' + m.content : m.content }));
+    try {
+      const r = await SAMPLE(turns, { cache: false, onText: ({ text }) => { c.partial = text; const el = $('#streaming'); if (el) el.textContent = text; } });
+      answer = r.text;
+    } catch (e) { answer = e && e.text ? e.text : fallbackChat(t, text); }
+  } else {
+    await new Promise(r => setTimeout(r, 500));
+    answer = fallbackChat(t, text);
+  }
+  c.log.push({ role: 'assistant', content: answer }); c.busy = false; c.partial = '';
+  if (ui.overlay === 'chat') renderOverlay();
+}
+
+/* =========================================================
+   misc ui
+   ========================================================= */
+let toastTimer;
+function toast(msg, notif) {
+  let el = $('#toast'); if (el) el.remove();
+  el = document.createElement('div'); el.id = 'toast'; el.className = 'toast' + (notif ? ' notif' : ''); el.setAttribute('role', 'status');
+  el.innerHTML = notif ? owl(36) + '<div><b class="small">' + esc(S.appName) + '</b><div class="small">' + esc(msg) + '</div></div>' : esc(msg);
+  document.body.appendChild(el);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.remove(), notif ? 3800 : 2400);
+}
+function confetti() {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const box = document.createElement('div'); box.className = 'confetti';
+  const cols = ['#4F5BEF', '#FFC53D', '#12B886', '#FF6B7F', '#5CC8FF'];
+  for (let i = 0; i < 46; i++) { const s = document.createElement('i'); s.style.left = Math.random() * 100 + '%'; s.style.background = cols[i % cols.length]; s.style.animationDelay = (Math.random() * 0.5) + 's'; s.style.animationDuration = (1.2 + Math.random()) + 's'; box.appendChild(s); }
+  document.body.appendChild(box); setTimeout(() => box.remove(), 2800);
+}
+function setPath(path, val) {
+  const ks = path.split('.'); let o = S; for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]]; o[ks[ks.length - 1]] = val;
+}
+
+/* =========================================================
+   actions
+   ========================================================= */
+const A = {
+  tab: el => { ui.tab = el.dataset.v; ui.modal = null; showModal(); if (ui.overlay) closeOverlay(); render(); window.scrollTo(0, 0); },
+  login: el => {
+    S.loggedIn = true; S.account = el.dataset.v;
+    if (el.dataset.v === 'account' && !Remote.db) toast(window.claude ? 'クラウド同期の準備中です。準備ができるまでこの端末にも保存します' : 'この環境ではクラウド同期が使えないため、この端末に保存します');
+    save(); render();
+  },
+  pick: el => { const k = el.dataset.k; S.profile[k] = k === 'minutes' ? Number(el.dataset.v) : el.dataset.v; save(); render(); },
+  pickMode: el => { S.profile.mode = el.dataset.v; save(); render(); },
+  toggleInterest: el => { const v = el.dataset.v, a = S.profile.interests; const i = a.indexOf(v); if (i >= 0) a.splice(i, 1); else a.push(v); save(); render(); },
+  partnerPick: el => confirmPartner(el.dataset.v, S.profile.onboarded ? 'change' : 'onboard'),
+  partnerConfirm: el => {
+    S.partner = el.dataset.v; ui.modal = null; showModal(); save();
+    if (el.dataset.ctx === 'onboard') { ui.ob = 1; render(); window.scrollTo(0, 0); }
+    else { render(); toast(partnerName() + 'が新しいパートナーになりました。学習データはそのままです'); }
+  },
+  partnerSkip: () => { S.partner = 'owl'; save(); ui.ob = 1; render(); toast('フクロウと始めます。パートナーは「その他」からいつでも変更できます'); },
+  openPartnerChange: () => { ui.modal = '<div class="grabber"></div><h3 style="font-size:20px">学習パートナーを変更</h3><p class="tiny muted" style="margin:4px 0 12px">学習履歴・知識マップ・レベル・XPはリセットされません。</p>' + partnerCards('partnerPick', partnerId()); showModal(); },
+  closeModalBtn: () => { ui.modal = null; showModal(); },
+  obNext: () => { if (ui.ob < 4) { ui.ob++; render(); window.scrollTo(0, 0); } else { S.profile.onboarded = true; ui.tab = 'home'; save(); render(); toast('準備ができました。今日の学習をはじめましょう'); } },
+  obBack: () => { ui.ob = Math.max(0, ui.ob - 1); render(); },
+  minutes: el => { ui.minutes = Number(el.dataset.v); render(); },
+  start: el => startLesson(el.dataset.v),
+  startMin: el => { if (ui.overlay) { ui.overlay = null; $('#overlay').classList.add('hide'); } startLesson(el.dataset.v, Number(el.dataset.m)); },
+  review: () => { ui.L = buildReview(false); if (ui.L.steps.length < 2) return toast('いま復習する問題はありません'); openOverlay('lesson'); },
+  reviewEarly: () => { ui.modal = null; showModal(); ui.L = buildReview(true); if (ui.L.steps.length < 2) return toast('復習できる問題はまだありません。まず学習しましょう'); openOverlay('lesson'); },
+  next: () => nextStep(),
+  sel: el => { const L = ui.L; if (L.checked) return; const v = el.dataset.v; L.sel = v === 'true' ? true : v === 'false' ? false : Number(v); lessonRerender(true); },
+  order: el => { const L = ui.L; if (L.checked) return; L.order.push(Number(el.dataset.v)); lessonRerender(true); },
+  unorder: el => { const L = ui.L; if (L.checked) return; L.order.splice(Number(el.dataset.v), 1); lessonRerender(true); },
+  orderReset: () => { ui.L.order = []; lessonRerender(true); },
+  check: () => checkAnswer(),
+  moreExp: () => { ui.L.showExp = true; lessonRerender(true); },
+  lessonDepth: el => { ui.L.depth = el.dataset.v; lessonRerender(true); },
+  newsDepth: el => { ui.newsDepth = el.dataset.v; lessonRerender(true); },
+  submitThought: () => submitThought(),
+  skipThought: () => nextStep(),
+  quitLesson: () => {
+    if (ui.L && ui.L.i > 0 && !confirm('学習を中断しますか？ ここまでの進捗は保存されません。')) return;
+    ui.L = null; save(); closeOverlay();
+  },
+  toMapUpdate: () => openOverlay('mapupdate'),
+  closeOverlay: () => closeOverlay(),
+  goGrowth: () => { ui.tab = 'growth'; closeOverlay(); },
+  news: el => { ui.modal = null; showModal(); ui.news = el.dataset.v; ui.newsDepth = 's3'; openOverlay('news'); },
+  chat: el => { ui.chat = { topicId: el.dataset.v, log: [], busy: false, back: ui.overlay }; openOverlay('chat'); },
+  closeChat: () => { const back = ui.chat && ui.chat.back; ui.chat = null; if (back) openOverlay(back); else closeOverlay(); },
+  chatPreset: el => sendChat(el.dataset.v),
+  chatSend: () => { const i = $('#chatInput'); if (i) sendChat(i.value); },
+  setMode: el => { S.profile.mode = el.dataset.v; save(); render(); toast(MODES[el.dataset.v].name + 'モードにしました'); },
+  setMinutes: el => { S.profile.minutes = Number(el.dataset.v); ui.minutes = null; save(); render(); },
+  learnCat: el => { ui.learnCat = el.dataset.v; render(); },
+  learnInd: el => { ui.learnInd = el.dataset.v; render(); },
+  learnReset: () => { ui.learnCat = 'すべて'; ui.learnInd = ''; render(); },
+  mapCat: el => { ui.mapCat = el.dataset.v; render(); },
+  zoom: el => { if (ui.mapApply) ui.mapApply(Number(el.dataset.v)); },
+  openNode: el => openNode(el.dataset.v),
+  closeModal: (el, e) => { if (e.target === el) { ui.modal = null; showModal(); } },
+  notifToggle: () => { S.notif.enabled = !S.notif.enabled; save(); render(); },
+  slotToggle: el => { const s = S.notif.slots[el.dataset.v]; s.on = !s.on; save(); render(); },
+  notifPreview: () => {
+    if (!S.notif.enabled) return toast('通知がOFFになっています');
+    const due = dueReviews().length;
+    const msgs = { morning: '☀️ 今日の10分教養：「' + recommend()[0].t.title + '」', noon: '💡 今日のおすすめニュースが届いています', night: due ? '🧠 ' + say('review', { n: due }) : '🧠 今日の学習をふりかえりましょう' };
+    const on = Object.keys(S.notif.slots).filter(k => S.notif.slots[k].on);
+    if (!on.length) return toast('通知する時間帯がすべてOFFです');
+    on.forEach((k, i) => setTimeout(() => toast(S.notif.slots[k].time + '　' + msgs[k], true), i * 2600));
+  },
+  rankToggle: () => { S.ranking = !S.ranking; save(); if (S.ranking) { pushRanking(); toast('ランキングに参加しました'); } else if (Remote.db && Remote.uid) { Remote.db.collection('ranking').doc(Remote.uid).delete().catch(() => {}); toast('ランキングから外れました'); } ui.rankRows = null; render(); },
+  theme: el => { S.theme = el.dataset.v; save(); render(); },
+  logout: () => { S.loggedIn = false; save(); ui.tab = 'home'; render(); toast('ログアウトしました'); },
+  reset: () => {
+    if (!confirm('学習データ（XP・知識マップ・履歴・復習）をすべて消去します。プロフィールは残ります。よろしいですか？')) return;
+    const keep = { profile: S.profile, loggedIn: S.loggedIn, account: S.account, appName: S.appName, theme: S.theme, notif: S.notif };
+    S = Object.assign(defaults(), keep); ui.mapView = null; save(); render(); toast('学習データをリセットしました');
+  }
+};
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-a]'); if (!el) return;
+  const fn = A[el.dataset.a]; if (!fn) return;
+  if (el.tagName === 'BUTTON' && el.disabled) return;
+  fn(el, e);
+});
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (el.id === 'chatInput') return;
+  if (el.dataset && el.dataset.f && el.tagName === 'INPUT' && el.type !== 'time') {
+    setPath(el.dataset.f, el.value);
+    save();
+    if (el.dataset.f === 'appName') { const b = document.querySelector('.brand span'); if (b) b.textContent = el.value; }
+    if (!S.profile.onboarded) { const btn = document.querySelector('[data-a="obNext"]'); if (btn) btn.disabled = !(S.profile.name.trim() && S.profile.occupation); }
+  }
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset && el.dataset.f && (el.tagName === 'SELECT' || el.type === 'time')) { setPath(el.dataset.f, el.value); save(); toast('保存しました'); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.id === 'chatInput' && !e.isComposing) { e.preventDefault(); sendChat(e.target.value); }
+  if (e.key === 'Escape' && ui.modal) { ui.modal = null; showModal(); }
+});
+
+render();
+initRuntime();
+</script></body></html>
