@@ -100,7 +100,7 @@ function viewHome() {
   const mins = ui.minutes || S.profile.minutes;
   const doneToday = todayHistory().some(h => !h.review);
   const due = dueReviews();
-  const allRev = S.reviews.length;
+  const allRev = dueReviews(true).length;
   const learned = learnedIds().sort((a, b) => (S.nodes[b].last || 0) - (S.nodes[a].last || 0)).slice(0, 8);
   const bubble = doneToday ? say('finish') + '　もう1テーマいくと、知識がさらにつながります。' : say('greet') + (today.reasons.length ? '　今日のテーマを選んだ理由は「' + today.reasons[0] + '」。' : '');
   const days = new Set(S.history.map(x => dkey(x.at))).size;
@@ -134,7 +134,7 @@ function viewHome() {
   if (learned.length) h += '<div class="chips">' + learned.map(k => '<button class="chip" data-a="openNode" data-v="' + k + '"><i style="width:8px;height:8px;border-radius:50%;background:' + MAP_CATS[NODES[k].cat] + ';display:inline-block"></i>' + esc(NODES[k].name) + '</button>').join('') + '</div>';
   else h += '<div class="card flat small muted">まだ知識ノードはありません。今日の学習を終えると、ここに追加されます。</div>';
   h += '<div class="sec-title">デイリーミッション</div><div class="card">' + missionsHTML() + '</div>';
-  h += '<div class="sec-title">今日のニュース</div>' + TOPICS.map(t => '<button class="card listcard" data-a="news" data-v="' + t.id + '"><span class="ic">' + t.emoji + '</span><span class="grow"><b style="font-family:var(--f-head);font-size:14.5px">' + esc(t.title) + '</b><br><span class="tiny muted">' + fmtYMD(t.date) + '／' + esc(t.sources.map(s => s.name).join('・')) + '</span></span></button>').join('');
+  h += '<div class="sec-title">今日のニュース</div>' + newsList(5).map(t => '<button class="card listcard" data-a="news" data-v="' + t.id + '"><span class="ic">' + t.emoji + '</span><span class="grow"><b style="font-family:var(--f-head);font-size:14.5px">' + esc(t.title) + '</b><br><span class="tiny muted">' + fmtYMD(t.date) + '／' + esc(t.sources.map(s => s.name).join('・')) + '</span></span></button>').join('');
   return h;
 }
 function missions() {
@@ -162,7 +162,7 @@ function viewLearn() {
   h += '<div class="sec-title">業界<span class="tiny muted" style="font-weight:500">あなたの業界と関連業界を先頭に表示</span></div><div class="scroll-x">' +
     '<button class="chip ' + (!ui.learnInd ? 'on' : '') + '" data-a="learnInd" data-v="">すべて</button>' +
     indOrder.map(c => '<button class="chip ' + (ui.learnInd === c ? 'on' : '') + '" data-a="learnInd" data-v="' + c + '">' + (c === p.industry ? '★ ' : '') + c + '</button>').join('') + '</div>';
-  const list = TOPICS.filter(t => {
+  const list = newsList().filter(t => {
     const catOk = ui.learnCat === 'すべて' || t.tags.includes(ui.learnCat) || t.path.some(x => x.includes(ui.learnCat)) || (ui.learnCat === '人事' && t.tags.includes('採用'));
     const indOk = !ui.learnInd || t.industries.includes(ui.learnInd);
     return catOk && indOk;
@@ -299,7 +299,7 @@ function viewMore() {
     '<label class="field"><span>アプリ名（正式名称の変更用）</span><input class="input" data-f="appName" value="' + esc(S.appName) + '" maxlength="20"></label></div>';
   h += aiServerCard();
   h += '<div class="sec-title">本番接続の状態</div><div class="card small">' +
-    [['LLM（AI解説・採点・ディスカッション）', AI.connected() ? '接続中' : '簡易AIで動作'], ['データベース', Remote.ready ? 'クラウド同期中' : 'この端末に保存'], ['ニュースAPI・検索API', 'サンプルニュースで動作'], ['プッシュ通知', 'アプリ版で接続予定'], ['分析基盤', '未接続']].map(([a, b]) => '<div class="setrow"><span>' + a + '</span><span class="tag">' + b + '</span></div>').join('') +
+    [['LLM（AI解説・採点・ディスカッション）', AI.connected() ? '接続中' : '簡易AIで動作'], ['データベース', Remote.ready ? 'クラウド同期中' : 'この端末に保存'], ['ニュースAPI・検索API', contentStatus()], ['プッシュ通知', 'アプリ版で接続予定'], ['分析基盤', '未接続']].map(([a, b]) => '<div class="setrow"><span>' + a + '</span><span class="tag">' + b + '</span></div>').join('') +
     '<p class="tiny muted" style="margin-top:8px">APIキーなどの秘密情報は端末に保存せず、サーバー経由で接続する構成です。</p></div>';
   h += '<div class="sec-title">アカウント</div><div class="card"><div class="small muted">' + (S.account === 'account' && Remote.ready ? 'アカウントでログイン中（クラウドに保存）' : S.account === 'account' ? 'アカウントでログイン中（同期の準備中・この端末にも保存）' : 'ゲスト（この端末に保存）') + '</div>' +
     '<button class="btn btn-ghost" style="margin-top:12px" data-a="logout">ログアウト</button>' +

@@ -36,6 +36,7 @@ async function newPage(opts = {}) {
   await page.addInitScript(() => { let s = 42; Math.random = () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; });
   if (opts.init) await page.addInitScript(opts.init);
   if (opts.route) await ctx.route(new URL('api/**', url).href, opts.route);
+  if (opts.content) await ctx.route(new URL('content/**', url).href, opts.content);
   return page;
 }
 
@@ -236,6 +237,64 @@ if (isNew) {
     await chat(page, 'down');
   }, { route: r => r.fulfill({ status: 503, body: 'down' }) });
 }
+
+// 6. 毎日の配信教材（GitHub Actions が作ったもの）を受け取って学べる
+if (fs.existsSync(path.join(root, 'src', 'content.js'))) {
+  const { loadApp } = await import('../tools/content/load-app.mjs');
+  const A = loadApp();
+  const t = JSON.parse(JSON.stringify(A.TOPICS[0]));
+  Object.assign(t, { id: 'n20261004', title: '労働市場の動向調査（配信テスト）', kind: '最新ニュース', date: '2026-10-03', updated: '2026-10-04',
+    sources: [{ name: 'テスト省', type: '公的機関', url: 'https://example.go.jp/release' }], note: 'テスト省の公式発表をもとにAIが作成した教材です。' });
+  t.s3[0].label = '事実';
+  t.nodes = t.nodes.slice(0, 5).concat(['laborsurvey']);
+  t.questions = t.questions.map((q, i) => Object.assign({}, q, { id: 'n20261004-' + (i + 1) }));
+  const bundle = { version: 1, date: '2026-10-04', topic: t, nodes: { laborsurvey: { name: '労働市場調査', cat: '経済', sub: '労働', diff: 2 } }, edges: [['laborsurvey', 'labor', 'related', 0.7], ['laborsurvey', 'agent', 'related', 0.5]] };
+  const broken = { version: 1, date: '2026-10-03', topic: Object.assign({}, t, { id: 'n20261003', questions: [] }), nodes: {}, edges: [] };
+  const files = {
+    'index.json': { version: 1, items: [{ date: '2026-10-04', id: 'n20261004', title: t.title, file: 'daily/2026-10-04.json' }, { date: '2026-10-03', id: 'n20261003', title: '壊れた教材', file: 'daily/2026-10-03.json' }] },
+    'daily/2026-10-04.json': bundle, 'daily/2026-10-03.json': broken
+  };
+  let online = true;
+  await scenario('delivered', async page => {
+    await onboard(page);
+    await page.waitForFunction(() => document.querySelector('#app').textContent.includes('配信テスト'));
+    const home = await snap(page, 'home');
+    check(home.app.includes('今日の配信') && home.app.includes('data-a="start" data-v="n20261004"'), '今日の配信が「今日のテーマ」になっていない');
+    check(!home.app.includes('壊れた教材'), '形式チェックに落ちた教材が表示されている');
+    await click(page, '#nav [data-a="tab"][data-v="learn"]');
+    const learn = await snap(page, 'learn');
+    check(learn.app.indexOf('n20261004') < learn.app.indexOf('ai-agent-hiring'), '学習タブで配信教材が先頭にない');
+    await click(page, '#nav [data-a="tab"][data-v="more"]');
+    check((await snap(page, 'more')).app.includes('毎日配信（最新 2026年10月4日）'), '本番接続の状態に配信状況が出ない');
+    await click(page, '#nav [data-a="tab"][data-v="home"]');
+    await click(page, '[data-a="start"][data-v="n20261004"]');
+    await click(page, '#overlay [data-a="next"]');
+    check((await snap(page, 'reading')).overlay.includes('テスト省の公式発表をもとにAIが作成'), '配信教材の注意書きが出ない');
+    const seen = await runLesson(page, 'lesson');
+    check(seen.has('quiz') && seen.has('thought') && seen.has('mapupdate'), '配信教材で学習を最後まで進められない');
+    await click(page, '#nav [data-a="tab"][data-v="map"]');
+    const map = await snap(page, 'map');
+    check(map.app.includes('data-node="laborsurvey"') && map.app.includes('労働市場調査'), '新しい知識ノードがマップに出ない');
+    // ネットにつながらなくても、端末に保存した配信教材で起動できる
+    online = false;
+    await page.reload();
+    await click(page, '#nav [data-a="tab"][data-v="learn"]');
+    check((await snap(page, 'offline-learn')).app.includes('n20261004'), 'オフラインで配信教材が消える');
+    await click(page, '#nav [data-a="tab"][data-v="map"]');
+    check((await snap(page, 'offline-map')).app.includes('data-node="laborsurvey"'), 'オフラインで新しいノードが消える');
+  }, { content: r => { const f = new URL(r.request().url()).pathname.replace(/^.*\/content\//, ''); return online && files[f] ? r.fulfill({ json: files[f] }) : r.abort(); } });
+}
+
+// 7. 学習記録が、この端末に無い知識ノードを指していても（配信教材の保存が消えた場合など）起動できる
+await scenario('missing-node', async page => {
+  await page.goto(url);
+  await page.evaluate(() => localStorage.setItem('tomotomo:v1', JSON.stringify({ loggedIn: true, partner: 'dog', profile: { name: 'テスト', occupation: '営業', industry: 'IT', role: 'メンバー', interests: ['AI'], minutes: 10, mode: 'auto', onboarded: true }, nodes: { labor: { mastery: 50 }, ghostnode: { mastery: 40 } }, completed: { n20200101: 1 }, reviews: [{ qid: 'n20200101-1', stage: 0, due: 0 }] })));
+  await page.reload();
+  for (const t of ['home', 'map', 'learn', 'growth', 'more']) {
+    await click(page, '#nav [data-a="tab"][data-v="' + t + '"]');
+    check((await snap(page, 'tab-' + t)).app.includes('<main class="screen">'), t + ' タブが表示されない');
+  }
+});
 
 // 5. PWA：ホーム画面に追加できる情報があり、オフラインでも起動して学習できる
 if (fs.existsSync(path.join(root, 'service-worker.js'))) {

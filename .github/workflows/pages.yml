@@ -28,6 +28,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm test
+      - run: node tools/content/test.mjs
 
   deploy:
     needs: test
@@ -40,7 +41,7 @@ jobs:
       - name: 公開するファイルだけを集める
         run: |
           mkdir _site
-          cp -r index.html manifest.json service-worker.js src icons _site/
+          cp -r index.html manifest.json service-worker.js src icons content _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

@@ -90,8 +90,8 @@ function levelInfo(xp) {
   while (rest >= need) { rest -= need; lv++; need = 60 + (lv - 1) * 20; }
   return { lv, cur: rest, need, pct: Math.round(rest / need * 100) };
 }
-function learnedIds() { return Object.keys(S.nodes).filter(k => (S.nodes[k].mastery || 0) > 0); }
-function isLearned(id) { return S.nodes[id] && S.nodes[id].mastery > 0; }
+function learnedIds() { return Object.keys(S.nodes).filter(k => NODES[k] && (S.nodes[k].mastery || 0) > 0); }
+function isLearned(id) { return !!NODES[id] && !!S.nodes[id] && S.nodes[id].mastery > 0; }
 function catScores() {
   const out = {};
   Object.keys(MAP_CATS).forEach(c => {
@@ -114,7 +114,7 @@ function isHRish() { return /採用|人事|コンサル/.test(S.profile.occupati
 function todayHistory() { const k = dkey(); return S.history.filter(h => dkey(h.at) === k); }
 function dueReviews(all) {
   const now = Date.now();
-  return S.reviews.filter(r => all || r.due <= now).sort((a, b) => a.due - b.due);
+  return S.reviews.filter(r => QBANK[r.qid] && (all || r.due <= now)).sort((a, b) => a.due - b.due);
 }
 function weekDays() {
   const wk = weekKey(Date.now());
