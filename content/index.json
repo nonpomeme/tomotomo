@@ -1,4 +1,16 @@
 {
  "version": 1,
- "items": []
+ "items": [
+  {
+   "date": "2026-10-11",
+   "id": "n20261011",
+   "title": "教育と技術の競争：賃金格差はなぜ広がり、なぜ縮むのか",
+   "emoji": "🎓",
+   "file": "daily/2026-10-11.json",
+   "links": [
+    "https://prtimes.jp/main/html/rd/p/000000575.000158730.html"
+   ]
+  }
+ ],
+ "updated": "2026-10-11T00:31:04.060Z"
 }
