@@ -13,6 +13,7 @@ function recommend() {
     if (interest.length) { sc += interest.length * 1.1; reasons.push({ w: interest.length * 1.1, s: '興味：' + interest.slice(0, 2).join('・') }); }
     if (S.profile.industry && t.industries.includes(S.profile.industry)) { sc += 1.6; reasons.push({ w: 1.6, s: 'あなたの業界（' + S.profile.industry + '）に関係' }); }
     if (isHRish() && t.tags.includes('採用')) { sc += 1.8; reasons.push({ w: 1.8, s: '仕事に直結' }); }
+    if (t.deliveredOn === dkey() && !S.completed[t.id]) { sc += 4; reasons.push({ w: 9, s: '今日の配信' }); }
     const age = daysBetween(new Date(t.date), Date.now());
     const fresh = Math.max(0, 1.6 - age / 10); sc += fresh;
     if (age <= 7) reasons.push({ w: fresh, s: '最新ニュース' });

@@ -1,0 +1,12 @@
+{
+  "_説明": "教材のもとにする情報源（RSS / Atom）。一次情報（公的機関・企業の公式発表）だけを使う。取得に失敗した情報源はその日は飛ばす。",
+  "feeds": [
+    { "name": "日本銀行", "type": "公的機関", "url": "https://www.boj.or.jp/rss/whatsnew.xml" },
+    { "name": "厚生労働省", "type": "公的機関", "url": "https://www.mhlw.go.jp/stf/news.rdf" },
+    { "name": "経済産業省", "type": "公的機関", "url": "https://www.meti.go.jp/ml_index_release_atom.xml" },
+    { "name": "金融庁", "type": "公的機関", "url": "https://www.fsa.go.jp/fsaNewsListAll_rss2.xml" },
+    { "name": "内閣府", "type": "公的機関", "url": "https://www.cao.go.jp/rss/news.rdf" },
+    { "name": "総務省", "type": "公的機関", "url": "https://www.soumu.go.jp/news.rdf" },
+    { "name": "PR TIMES（企業の公式プレスリリース）", "type": "企業公式", "url": "https://prtimes.jp/index.rdf", "max": 40 }
+  ]
+}

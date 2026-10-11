@@ -14,6 +14,8 @@
   - `styles.css` 見た目
 - `manifest.json` / `service-worker.js` / `icons/` … PWA（ホーム画面に追加・オフライン学習）。アイコンは `node tools/make-icons.mjs` でパートナーのSVGから生成
 - `.github/workflows/pages.yml` … main に入ると自動テスト → GitHub Pages に公開
+- `.github/workflows/daily-content.yml` ＋ `tools/content/` … 毎朝の教材の自動生成（下の「毎日の教材」参照）
+- `content/` … 配信中の教材（`index.json` と `daily/日付.json`）。`src/content.js` が読み込み、`src/content-schema.js` で形式を確認
 - `server/` … AIサーバー（Cloudflare Workers）。採点 `/api/feedback`・対話 `/api/chat`・接続確認 `/api/health`
 - `tests/` … 操作フローの自動テスト
 - `CLAUDE.md` … Claude Code 用のプロジェクトガイド
@@ -56,6 +58,26 @@ cd server && npm install && npm test   # AIサーバー（本物のAPIは呼ば�
 4. ホーム画面の TomoTomo アイコンから開くと、Safari のバーがない全画面で起動します。一度開けば、電波がなくても学習できます（AIの採点・対話は簡易AIになります）。
 
 Android は Chrome で開き、右上の「︙」→「ホーム画面に追加」（または「アプリをインストール」）。
+
+## 毎日の教材（自動生成）
+
+毎朝 4:17（日本時間）に GitHub Actions が次の順で1テーマ作ります。合格しなかった日は配信せず、アプリは前日までの教材とサンプルで動きます。
+
+1. **収集**：公的機関・企業の公式発表の新着（`tools/content/sources.json`）
+2. **選定**：社会人の学びになる発表をAI（Claude Opus）が選ぶ（政治的な対立が中心の話題・告知・宣伝は選ばない）
+3. **生成**：出典の本文を材料に、サンプル3テーマと同じ形式で教材を作る（出典URL・公開日はプログラムが入れるので、実在するURLだけになる）
+4. **形式チェック**：6形式の問題・思考問題3種・事実ラベル・知識ノードなど（`src/content-schema.js`）。不備は1回だけ直させる
+5. **品質検査**：別の呼び出しで、出典とサンプルに照らして9項目を検査（出典・事実の裏付け・事実と解釈の区別・正解の一意性・誤答の自然さ・中立性・一般知識の正確さ・サンプル並みの質・著作権）。1項目でも不合格なら破棄
+6. **公開**：合格した教材を `content/` に保存し、GitHub Pages に公開。アプリは次に開いたとき取り込む
+
+記事の本文は保存も表示もしません（教材は自分の言葉の要約＋出典リンク）。不合格になった理由は `tools/content/log/rejected.json` に残ります。
+費用の目安：Anthropic の利用料が 1日あたり約60〜130円（不合格でやり直した日は増える）。
+
+### オーナーが行う設定（最初の1回だけ）
+1. **GitHub に APIキーを登録**：リポジトリの「Settings」→ 左メニュー「Secrets and variables」→「Actions」→ 緑の「New repository secret」を押し、Name に `ANTHROPIC_API_KEY`、Secret に Anthropic のキー（`sk-ant-…`）を入れて「Add secret」。
+   - Cloudflare に登録したものと同じキーで構いません。Anthropic の画面で新しいキー（名前 `tomotomo-content` など）を作って分けると、あとで止めたいときに片方だけ止められます。
+2. **Anthropic の月の上限を上げる**：platform.claude.com の「Settings」→「Limits」で、月の上限を **40ドル** 程度にする（採点・対話と教材づくりの合計に余裕を持たせるため）。
+3. **試しに1回動かす**：「Actions」→ 左の「毎日の教材づくり」→「Run workflow」→ 緑の「Run workflow」。数分後に開いて、結果のまとめ（Summary）で「配信」か「不合格の理由」を確認できます。
 
 ## AIサーバーの準備（オーナーが行う作業）
 

@@ -109,7 +109,12 @@ try {
   r = await fetch(api + '/health', { headers: H });
   check((await r.json()).remaining === 0, '残り回数は 0');
 
-  // 合言葉の総当たり対策（10回失敗で締め出し）
+  // 合言葉なしのアクセス（ブラウザでの動作確認）は何回あっても締め出さない
+  for (let i = 0; i < 12; i++) await fetch(api + '/health');
+  r = await fetch(api + '/health', { headers: H });
+  check(r.status === 200, '合言葉なしのアクセスで締め出されてはいけない: ' + r.status);
+
+  // 合言葉の総当たり対策（違う合言葉が10回で締め出し）
   for (let i = 0; i < 10; i++) await fetch(api + '/health', { headers: { Authorization: 'Bearer wrong' + i } });
   r = await fetch(api + '/health', { headers: H });
   check(r.status === 429, '失敗が続いたら正しい合言葉でも締め出すべき: ' + r.status);

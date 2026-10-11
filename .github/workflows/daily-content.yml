@@ -1,0 +1,50 @@
+# 毎朝、教材を1テーマ自動でつくる（CLAUDE.md ステップ2）。
+# 収集 → 生成 → 形式チェック → 別のAIによる品質検査 → 合格したものだけ content/ に保存して公開する。
+name: 毎日の教材づくり
+
+on:
+  schedule:
+    - cron: '17 19 * * *'   # 毎日 4:17（日本時間）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: daily-content
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --omit=dev
+
+      - name: 教材をつくる
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node tools/content/daily.mjs
+
+      - name: 保存して公開する
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add content
+          if [ -d tools/content/log ]; then git add tools/content/log; fi
+          if git diff --cached --quiet; then echo "保存するものはありません"; exit 0; fi
+          NEW_CONTENT=$(git diff --cached --name-only -- content | wc -l)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "毎日の教材：$(TZ=Asia/Tokyo date +%F)"
+          git pull --rebase origin main
+          git push origin HEAD:main
+          # このワークフローからの push では公開が自動で走らないため、明示的に起動する
+          if [ "$NEW_CONTENT" -gt 0 ]; then gh workflow run pages.yml --ref main; fi

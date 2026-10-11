@@ -79,7 +79,7 @@ function readingHTML(t, depth, action) {
     h += '<div class="blk"><span class="tag ai">AIの解釈</span><p style="margin-top:6px">' + esc(t.s10.opinion.replace(/^AIの解釈：/, '')) + '</p></div>';
   }
   h += '</div><div class="source"><b>情報源</b>（公開 ' + fmtYMD(t.date) + '・更新 ' + fmtYMD(t.updated) + '）<br>' + t.sources.map(s => '・' + esc(s.name) + '（' + esc(s.type) + '）<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.url) + '</a>').join('<br>') +
-    '<p style="margin-top:8px">「事実」と「AIの解釈」はラベルで区別しています。' + esc(SAMPLE_NOTE) + '</p></div>';
+    '<p style="margin-top:8px">「事実」と「AIの解釈」はラベルで区別しています。' + esc(t.note || SAMPLE_NOTE) + '</p></div>';
   return h;
 }
 const TYPE_LABEL = { mc: '4択', tf: '○×', fill: '穴埋め', order: '並べ替え', cause: '因果関係', case: 'ケーススタディ' };
@@ -290,7 +290,7 @@ function viewResults() {
     '<div class="tiny muted" style="margin-top:8px">内訳：問題・思考 ' + (R.xp - R.bonus - R.mXp) + ' ＋ 完了ボーナス ' + R.bonus + (R.mXp ? ' ＋ ミッション ' + R.mXp : '') + '</div></div>';
   if (R.badges.length) h += '<div style="margin-top:12px" class="stack">' + R.badges.map(id => { const b = BADGES.find(x => x.id === id); return '<div class="badge-new"><span style="font-size:30px">' + b.icon + '</span><div style="text-align:left"><b>新しいバッジ：' + b.name + '</b><div class="tiny muted">' + b.desc + '</div></div></div>'; }).join('') + '</div>';
   h += '<div class="card" style="margin-top:12px;text-align:left"><b class="small">今日鍛えたスキル</b><div class="chips" style="margin-top:8px">' + R.skills.map(k => '<span class="chip soft">' + SKILLS[k] + '</span>').join('') + (R.thought ? '<span class="chip soft">論理</span><span class="chip soft">言語化</span><span class="chip soft">多角的思考</span>' : '') + '</div>' +
-    '<p class="tiny muted" style="margin-top:8px">次の復習：' + (S.reviews.length ? fmtDate(dueReviews(true)[0].due) : '—') + '（当日 → 2日後 → 7日後 → 21日後）</p></div>';
+    '<p class="tiny muted" style="margin-top:8px">次の復習：' + (dueReviews(true).length ? fmtDate(dueReviews(true)[0].due) : '—') + '（当日 → 2日後 → 7日後 → 21日後）</p></div>';
   h += '</div><div class="lesson-foot">' + (R.kind === 'topic' ? '<button class="btn btn-primary" data-a="toMapUpdate">知識マップの変化を見る</button>' : '<button class="btn btn-primary" data-a="closeOverlay">ホームに戻る</button>') + '</div>';
   return h;
 }
