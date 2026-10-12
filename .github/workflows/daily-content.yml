@@ -7,6 +7,11 @@ on:
     - cron: '17 19 * * *'                # 毎日 4:17（日本時間）教材をつくる
     - cron: '43 1,5,9,13,17,22 * * *'    # 1日6回 候補を集めてためておく（朝だけだと新着が少ないため）
   workflow_dispatch:
+    inputs:
+      redo:
+        description: '今日の教材を取り下げて、作り直す'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -42,6 +47,7 @@ jobs:
         if: github.event_name != 'schedule' || github.event.schedule == '17 19 * * *'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          REDO: ${{ inputs.redo }}
         run: node tools/content/daily.mjs
 
       - name: 候補をためておく
