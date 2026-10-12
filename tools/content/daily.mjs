@@ -18,6 +18,7 @@ const T = JSON.parse(fs.readFileSync(process.env.TRACKS_FILE || path.join(ROOT, 
 const CANDIDATES_FILE = process.env.CANDIDATES_FILE || path.join(ROOT, 'tools', 'content', '.cache', 'candidates.json');
 const TODAY = process.env.TODAY || jstDate();
 const MAX_ATTEMPTS = Number(process.env.MAX_ATTEMPTS) || 2;
+let redo = 0; // 今日の作り直しの回数（id の末尾に r1, r2… を付ける）
 // 安全上の理由でAIが断ったとき、Anthropic 推奨の別モデルで自動的にやり直す
 const FALLBACK = { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' };
 
@@ -58,6 +59,16 @@ async function main() {
     say('## 候補の収集\n' + log.map(l => '- ' + l).join('\n') + '\n- ためている候補：' + items.length + '件');
     return finish();
   }
+  // 作り直し（REDO=true）：今日の教材を取り下げて、別の発表から作り直す
+  if (process.env.REDO === 'true' && index.items.some(it => it.date === TODAY)) {
+    const old = index.items.filter(it => it.date === TODAY);
+    index.retired = (index.retired || []).concat(old.flatMap(it => it.links || []));
+    index.items = index.items.filter(it => it.date !== TODAY);
+    old.forEach(it => { try { fs.unlinkSync(path.join(CONTENT_DIR, it.file)); } catch (e) { /* もう無い */ } });
+    redo = old.length + (index.redo && index.redo[TODAY] || 0);
+    index.redo = { [TODAY]: redo };
+    say('今日の教材「' + old.map(it => it.title).join('・') + '」を取り下げて、作り直します。');
+  }
   if (index.items.some(it => it.date === TODAY)) { say('今日（' + TODAY + '）の教材はすでにあります。終了します。'); return finish(); }
   if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY が設定されていません（GitHub の Secrets に登録してください）');
 
@@ -67,7 +78,7 @@ async function main() {
     const b = readJSON(path.join(CONTENT_DIR, it.file), null);
     if (b) Object.assign(A.NODES, b.nodes || {});
   }
-  const used = new Set(index.items.flatMap(it => it.links || []));
+  const used = new Set(index.items.flatMap(it => it.links || []).concat(index.retired || []));
 
   // 1. 収集
   const { items: collected, log } = await gather(used);
@@ -152,7 +163,7 @@ async function generate(client, system, A, item, doc, trackId) {
 
 /* こちらで決める項目（id・日付・出典）を入れる。出典URLはAIに書かせない（実在するURLだけにするため） */
 function complete(out, item, trackId) {
-  const id = 'n' + TODAY.replace(/-/g, '');
+  const id = 'n' + TODAY.replace(/-/g, '') + (redo ? 'r' + redo : '');
   const topic = Object.assign({}, out.topic, {
     id, kind: '最新ニュース', track: trackId, trackLabel: T.tracks[trackId].label, date: jstDate(item.date), updated: TODAY,
     sources: [{ name: item.publisher, type: item.type, url: item.link }],
