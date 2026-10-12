@@ -73,10 +73,10 @@ const mock = http.createServer((req, res) => {
 await new Promise(r => mock.listen(0, '127.0.0.1', r));
 
 const contentDir = path.join(tmp, 'content'), logDir = path.join(tmp, 'log'), candFile = path.join(tmp, 'cache', 'candidates.json');
-function run(today, args = []) {
+function run(today, args = [], extra = {}) {
   calls.length = 0;
   return new Promise(resolve => {
-    const env = { ...process.env, ANTHROPIC_API_KEY: 'sk-test', ANTHROPIC_BASE_URL: 'http://127.0.0.1:' + mock.address().port, SOURCES_FILE: sources, CONTENT_DIR: contentDir, LOG_DIR: logDir, TODAY: today, MOCK_WEB_DIR: web, CANDIDATES_FILE: candFile };
+    const env = { ...process.env, ANTHROPIC_API_KEY: 'sk-test', ANTHROPIC_BASE_URL: 'http://127.0.0.1:' + mock.address().port, SOURCES_FILE: sources, CONTENT_DIR: contentDir, LOG_DIR: logDir, TODAY: today, MOCK_WEB_DIR: web, CANDIDATES_FILE: candFile, ...extra };
     // 偽 API へのリクエストを受けるため、子プロセスは非同期に動かす
     import('node:child_process').then(({ spawn }) => {
       const p = spawn(process.execPath, ['--import', path.join(ROOT, 'tools/content/test-fetch-mock.mjs'), path.join(ROOT, 'tools/content/daily.mjs'), ...args], { env });
@@ -134,6 +134,14 @@ try {
   r = await run('2026-10-10');
   check(r.code === 0 && calls.length === 0 && r.out.includes('すでにあります'), '同じ日の再実行で二重に作っている');
 
+  // 作り直し：今日の教材を取り下げて、別の発表から作り直す（同じ発表は使わない）
+  mode = {};
+  r = await run('2026-10-10', [], { REDO: 'true' });
+  const idx2 = JSON.parse(fs.readFileSync(path.join(contentDir, 'index.json'), 'utf8'));
+  check(r.code === 0 && idx2.items.length === 1 && idx2.items[0].id === 'n20261010r1', '作り直しで新しい id にならない: ' + JSON.stringify(idx2.items) + r.out);
+  check(idx2.items[0].links[0] !== 'https://news.test/release3.html' && idx2.retired.includes('https://news.test/release3.html'), '取り下げた発表をまた使っている');
+  check(JSON.parse(fs.readFileSync(path.join(contentDir, 'daily', '2026-10-10.json'), 'utf8')).topic.id === 'n20261010r1', '作り直した教材が保存されていない');
+
   // 2日目：品質検査で不合格 → 破棄。1日目に使った記事は候補から外れる
   mode = { failVerify: true, reuse: true };
   r = await run('2026-10-11');
@@ -143,7 +151,7 @@ try {
   check(rej.length >= 1 && rej[0].reasons[0].includes('expertise'), '不合格の記録: ' + JSON.stringify(rej));
   check(JSON.parse(fs.readFileSync(path.join(contentDir, 'index.json'), 'utf8')).items.length === 1, '不合格なのに index が増えた');
   const sel = calls.find(c => c.kind === 'select');
-  check(sel && !sel.body.messages[0].content.includes('求人広告の新料金プラン') && sel.body.messages[0].content.includes('人材育成支援'), '使った記事が候補に残っている');
+  check(sel && !sel.body.messages[0].content.includes('求人広告の新料金プラン') && !sel.body.messages[0].content.includes('労働市場の動向調査の結果'), '使った記事が候補に残っている');
 } finally {
   mock.close();
   fs.rmSync(tmp, { recursive: true, force: true });
