@@ -107,7 +107,7 @@ function viewHome() {
   const histNote = hasUnlock(50) && days ? '<div class="small muted" style="margin-top:4px">' + esc(say('history', { days })) + '</div>' : '';
   let h = '<div class="tomo" style="margin:6px 0 12px">' + owl(52, doneToday ? 'happy' : 'normal', 'bob') + '<div class="say"><b>' + greeting() + '、' + esc(S.profile.name) + 'さん</b><br>' + esc(bubble) + histNote + '</div></div>';
   h += '<section class="hero">' +
-    '<div class="meta">' + (doneToday ? '次のおすすめ' : '今日のテーマ') + '　' + esc(today.t.kind) + '・' + fmtYMD(today.t.date) + '</div>' +
+    '<div class="meta">' + (doneToday ? '次のおすすめ' : '今日のテーマ') + '　' + (today.t.trackLabel ? esc(today.t.trackLabel) + '｜' : '') + esc(today.t.kind) + '・' + fmtYMD(today.t.date) + '</div>' +
     '<h2>' + today.t.emoji + ' ' + esc(today.t.title) + '</h2>' +
     '<div class="meta">' + esc(today.t.path.slice(0, 3).join(' ＞ ')) + '</div>' +
     '<div class="why">' + today.reasons.map(r => '<span>' + esc(r) + '</span>').join('') + '</div>' +
@@ -183,7 +183,7 @@ function topicCard(t) {
   return '<div class="card" style="margin-bottom:10px"><div class="row" style="align-items:flex-start"><span style="font-size:28px">' + t.emoji + '</span><div class="grow">' +
     '<div class="tiny muted">' + esc(t.path.join(' ＞ ')) + '</div>' +
     '<b style="font-family:var(--f-head);font-size:16px;display:block;margin-top:2px">' + esc(t.title) + '</b>' +
-    '<div class="tiny muted" style="margin-top:2px">' + esc(t.kind) + '・' + fmtYMD(t.date) + (done ? '　<span class="tag fact">学習済み ×' + done + '</span>' : '') + '</div>' +
+    '<div class="tiny muted" style="margin-top:2px">' + (t.trackLabel ? esc(t.trackLabel) + '｜' : '') + esc(t.kind) + '・' + fmtYMD(t.date) + (done ? '　<span class="tag fact">学習済み ×' + done + '</span>' : '') + '</div>' +
     '<div class="row" style="margin-top:8px"><div class="bar mint grow" style="height:7px"><i style="width:' + m + '%"></i></div><span class="tiny num">' + m + '%</span></div>' +
     '</div></div><div class="row" style="margin-top:12px"><button class="btn btn-ghost btn-sm grow" data-a="news" data-v="' + t.id + '">ニュースを読む</button><button class="btn btn-primary btn-sm grow" data-a="start" data-v="' + t.id + '">' + S.profile.minutes + '分で学ぶ</button></div></div>';
 }

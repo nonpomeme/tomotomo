@@ -7,6 +7,8 @@ const CONTENT_RULES = {
   EX_KEYS: ['why', 'others', 'bg', 'related', 'apply', 'memo'],
   SOURCE_TYPES: ['公的機関', '企業公式', '国際機関・研究'],
   KINDS: ['最新ニュース', '今後重要になるテーマ', '基礎知識×ニュース'],
+  // 職種別の応用（apply.roles）。サンプルには無く、配信教材にだけある
+  ROLES: { consultant: '採用コンサルタント', media_sales: '求人広告・媒体の営業', agency: '人材紹介（RA・CA）', inhouse: '企業の人事・採用担当', executive: '経営者' },
   ID_RE: /^[a-z0-9][a-z0-9-]{2,60}$/,
   NODE_ID_RE: /^[a-z][a-z0-9]{1,30}$/
 };
@@ -41,6 +43,8 @@ function validateTopic(t, ctx) {
   need(Array.isArray(s10.perspectives) && s10.perspectives.length >= 4 && s10.perspectives.length <= 7 && s10.perspectives.every(p => p && isStr(p.who) && isStr(p.text, 20)), 's10.perspectives（多角的視点）は4〜7個');
   need(isStr(s10.opinion) && s10.opinion.indexOf('AIの解釈：') === 0, 's10.opinion は「AIの解釈：」で始める');
   need(t.apply && strArr(t.apply.hr, 3, 3) && strArr(t.apply.general, 3, 3), 'apply.hr / apply.general は3個ずつ');
+  if (t.apply && t.apply.roles != null) need(typeof t.apply.roles === 'object' && Object.keys(R.ROLES).every(k => isStr(t.apply.roles[k], 15)), 'apply.roles は5職種（' + Object.keys(R.ROLES).join(' / ') + '）すべてに具体的な行動を書く');
+  if (t.trackLabel != null) need(isStr(t.trackLabel) && t.trackLabel.length <= 20, 'trackLabel が不正');
   need(isStr(t.talk, 10), 'talk が必要');
   need(t.thoughts && R.THOUGHTS.every(k => t.thoughts[k] && isStr(t.thoughts[k].q) && isStr(t.thoughts[k].hint) && isStr(t.thoughts[k].example, 40)), '思考問題3種（think / multi / business）が必要');
   need(strArr(t.keywords, 8, 25), 'keywords は8〜25個');
