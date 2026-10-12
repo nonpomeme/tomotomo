@@ -19,26 +19,43 @@ export function commonContext(A) {
   ].join('\n');
 }
 
-export const SELECT_SYSTEM = [
-  'あなたは社会人向け教養アプリ TomoTomo の編集者です。公的機関・企業の公式発表の新着一覧から、今日の教材にするものを選びます。',
-  '選ぶ基準：',
-  '1. 社会人（採用・人事・営業・経営・企画など）が仕事や教養として知っておく価値が高い（経済・労働・金融・産業・テクノロジー・企業経営など）。',
-  '2. 発表の中身に具体的な事実（数字・制度・方針・調査結果など）があり、背景・因果・多角的な視点・実務への応用まで掘り下げられる。',
-  '3. 政治的な対立が中心の話題（選挙・特定の政党や政治家の主張など）は避ける。',
-  '4. 人事異動・入札・行事の告知・単なる商品の宣伝・キャンペーンなど、学びの少ないものは選ばない。',
-  '5. 直近に配信したテーマと重ならない。',
-  '良いものがなければ picks を空にしてよい。無理に選ばない。'
-].join('\n');
+/* 選定の指示。T は tracks.json、track は今日のトラック（なければ全トラックから） */
+export function selectSystem(T, track) {
+  const list = Object.entries(T.tracks).map(([k, t]) => '- ' + t.label + '：' + t.focus).join('\n');
+  return [
+    'あなたは TomoTomo の編集者です。読者は ' + T.audience + '。',
+    '公的機関・企業の公式発表の新着一覧から、今日の教材にするものを選びます。',
+    track ? '今日のテーマは「' + track.label + '」：' + track.focus + '。このテーマに合うものを最優先で選んでください。' : '今日のテーマに合う候補がなかったため、次のテーマのいずれかに合うものを選んでください。',
+    '',
+    '## テーマ一覧', list, '',
+    '## 選ぶ基準（すべて満たすもの）',
+    '1. 採用・人材ビジネス・労働・人と組織の経営判断に、はっきりつながる（つながりが弱いもの、どの業界にも言える一般論にしかならないものは選ばない）。',
+    '2. 読者が仕事で使える専門的な知識（仕組み・数字・制度名・料金や手法の違い・業界構造・判断の基準）を引き出せる、具体的な中身がある。',
+    '3. 政治的な対立が中心の話題（選挙・特定の政党や政治家の主張など）ではない。',
+    '4. 人事異動・入札・行事の告知・単なる商品の宣伝・キャンペーンではない。',
+    '5. 直近に配信したテーマと重ならない。',
+    '基準を満たすものがなければ picks を空にする。無理に選ばない。'
+  ].join('\n');
+}
 
 export const PICK_SCHEMA = {
   type: 'object',
-  properties: { picks: { type: 'array', items: { type: 'object', properties: { index: { type: 'integer' }, reason: { type: 'string' } }, required: ['index', 'reason'], additionalProperties: false } } },
+  properties: { picks: { type: 'array', items: { type: 'object', properties: { index: { type: 'integer' }, track: { type: 'string' }, reason: { type: 'string' } }, required: ['index', 'track', 'reason'], additionalProperties: false } } },
   required: ['picks'], additionalProperties: false
 };
 
-export const GENERATE_RULES = [
+export function generateRules(T, track) {
+  return [
   '# 依頼',
   '添付の出典ドキュメント（公的機関または企業の公式発表）をもとに、TomoTomo の教材を1テーマ作ってください。',
+  '読者は ' + T.audience + '。テーマは「' + track.label + '」（' + track.focus + '）。',
+  '',
+  '## 専門性（いちばん大事）',
+  '- 「どの業界にも言える一般論」で終わらせない。採用・人材の実務者や経営者が、明日の提案・営業・面談・採用計画・経営判断で使える専門知識を中心にする。',
+  '- 具体的に書く：仕組み（お金・情報・人の流れ）、用語の正確な定義、数字（出典の数字。業界の一般的な相場は「一般に」と明示して背景に書く）、制度名・施行時期、手法やプランの違いと選び方、関わるプレイヤーと業界構造。',
+  '- 6問のうち少なくとも4問は、仕事で使う専門知識・判断を問う（単なる記事の読み取り問題にしない）。case 問題は、下の職種のいずれかの具体的な場面にする。',
+  '- apply.roles に職種別の「明日からの使い方」を書く（各1〜2文、その職種ならではの具体的な行動）: ' + JSON.stringify(T.roles) + '。apply.hr は採用・人材の実務者向け、apply.general は経営・他職種向けに3つずつ。',
+  '- thoughts.business は、上の職種のいずれかの立場で考える問いにする。',
   '',
   '## 守ること（品質最優先）',
   '- 事実の根拠は出典ドキュメントだけ。出典に書かれていない数字・固有名詞・日付・出来事を「事実」として書かない。',
@@ -50,7 +67,7 @@ export const GENERATE_RULES = [
   '- 文体・分量・深さはサンプルと同じ。社会人が仕事で使える具体性を持たせる。',
   '',
   '## 形式（サンプルと同じ JSON）',
-  '- topic に入れる項目: title, emoji, path, tags, industries, nodes, difficulty(1〜3), future(0〜1), s30, s3, s10{causal, perspectives, opinion}, apply{hr[3], general[3]}, talk, thoughts{think, multi, business}（各 q, hint, example）, keywords(8〜25), questions(6問), chat。',
+  '- topic に入れる項目: title, emoji, path, tags, industries, nodes, difficulty(1〜3), future(0〜1), s30, s3, s10{causal, perspectives, opinion}, apply{hr[3], general[3], roles{consultant, media_sales, agency, inhouse, executive}}, talk, thoughts{think, multi, business}（各 q, hint, example）, keywords(8〜25), questions(6問), chat。',
   '  （id・kind・date・updated・sources はこちらで入れるので不要）',
   '- questions は6問で、type を mc・tf・fill・order・cause・case から1問ずつ。各問に skill と ex{why, others, bg, related, apply, memo} を必ず付ける。',
   '  - mc / fill / cause / case: options は4個。**正解は必ず options[0]**（表示時に並べ替える）にして answer は 0。誤答はもっともらしいが明確に誤りで、正解は一意。ex.others で誤答それぞれがなぜ違うかを説明する。',
@@ -61,7 +78,8 @@ export const GENERATE_RULES = [
   '',
   '## 出力',
   'JSON だけを出力する（前置き・コードフェンス不要）: {"topic": {...}, "nodes": {...}, "edges": [...]}'
-].join('\n');
+  ].join('\n');
+}
 
 export const VERIFY_SYSTEM = [
   'あなたは TomoTomo の教材の品質検査員です。生成された教材を、出典ドキュメントとサンプル3テーマ（品質基準）に照らして厳しく検査します。',
@@ -79,6 +97,9 @@ export const CHECKS = [
   ['neutrality', '政治・社会の話題で特定の政党・候補者・思想・立場を支持していない'],
   ['background_accuracy', '背景・解説・解説文の一般知識に誤りや根拠の乏しい断定がない'],
   ['quality', 'サンプル3テーマと同等以上の深さ・具体性・仕事への役立ちがある'],
+  ['relevance', '採用・人材ビジネス・労働・人と組織の経営判断に、はっきりつながっている'],
+  ['expertise', '一般論で終わらず、採用・人材の実務者や経営者が仕事で使える専門知識（仕組み・数字・制度・手法の違い・業界構造・判断の基準）が具体的に含まれ、問題もそれを問うている'],
+  ['roles', '職種別の応用（apply.roles）が、それぞれの職種ならではの具体的な行動になっている'],
   ['copyright', '出典の文章を長く写しておらず、自分の言葉で要約している']
 ];
 

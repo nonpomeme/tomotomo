@@ -4,7 +4,8 @@ name: 毎日の教材づくり
 
 on:
   schedule:
-    - cron: '17 19 * * *'   # 毎日 4:17（日本時間）
+    - cron: '17 19 * * *'                # 毎日 4:17（日本時間）教材をつくる
+    - cron: '43 1,5,9,13,17,22 * * *'    # 1日6回 候補を集めてためておく（朝だけだと新着が少ないため）
   workflow_dispatch:
 
 permissions:
@@ -26,14 +27,32 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --omit=dev
+      - name: ためておいた候補を読み込む
+        uses: actions/cache/restore@v4
+        with:
+          path: tools/content/.cache
+          key: candidates-${{ github.run_id }}
+          restore-keys: candidates-
+
+      - name: 候補を集める
+        if: github.event_name == 'schedule' && github.event.schedule != '17 19 * * *'
+        run: node tools/content/daily.mjs --collect
 
       - name: 教材をつくる
+        if: github.event_name != 'schedule' || github.event.schedule == '17 19 * * *'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node tools/content/daily.mjs
 
-      - name: 保存して公開する
+      - name: 候補をためておく
         if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: tools/content/.cache
+          key: candidates-${{ github.run_id }}
+
+      - name: 保存して公開する
+        if: always() && (github.event_name != 'schedule' || github.event.schedule == '17 19 * * *')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

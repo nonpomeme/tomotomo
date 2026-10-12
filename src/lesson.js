@@ -62,11 +62,22 @@ function viewLesson() {
     const items = isHRish() ? t.apply.hr : t.apply.general;
     body = '<div class="kicker">💼 仕事への応用</div><h2 class="qtitle">' + (isHRish() ? esc(S.profile.occupation) + 'にとって、何が重要か' : 'あなたの仕事にどう使うか') + '</h2>' +
       '<div class="card">' + items.map((x, i) => '<div class="row" style="align-items:flex-start' + (i ? ';margin-top:12px' : '') + '"><span class="oitem" style="padding:0;border:0;box-shadow:none;background:none;width:auto"><span class="n">' + (i + 1) + '</span></span><span>' + esc(x) + '</span></div>').join('') + '</div>' +
+      rolesHTML(t) +
       '<div class="sec-title">明日の会話で使えるひとこと</div><div class="tomo">' + owl(46, 'happy') + '<div class="say">' + esc(t.talk) + '</div></div>' +
       '<div class="card flat" style="margin-top:14px"><span class="tag ai">AIの解釈</span><p class="small" style="margin-top:6px">' + esc(t.s10.opinion.replace(/^AIの解釈：/, '')) + '</p></div>';
     foot = '<button class="btn btn-mint" data-a="next">学習を完了する</button>';
   }
   return lessonTop(L) + '<div class="lesson-body">' + body + '</div><div class="lesson-foot" id="lfoot"' + (step.k === 'quiz' && L.checked ? ' style="padding:0;border:0;background:none"' : '') + '>' + foot + '</div>';
+}
+/* 職種別の「明日からの使い方」（配信教材のみ）。自分の職種を先頭に、ほかの立場もすべて見せる */
+const OCC_ROLE = { '採用コンサルタント': 'consultant', '人事・採用担当': 'inhouse', '経営者・役員': 'executive', '営業': 'media_sales' };
+function rolesHTML(t) {
+  const roles = t.apply && t.apply.roles;
+  if (!roles) return '';
+  const mine = OCC_ROLE[S.profile.occupation];
+  const keys = Object.keys(CONTENT_RULES.ROLES).filter(k => roles[k]).sort((a, b) => (b === mine) - (a === mine));
+  return '<div class="sec-title">立場別：明日からの使い方</div><div class="card">' + keys.map((k, i) =>
+    '<div' + (i ? ' style="margin-top:12px"' : '') + '><span class="tag' + (k === mine ? ' ai' : '') + '">' + esc(CONTENT_RULES.ROLES[k]) + (k === mine ? '（あなた）' : '') + '</span><p class="small" style="margin-top:4px">' + esc(roles[k]) + '</p></div>').join('') + '</div>';
 }
 function readingHTML(t, depth, action) {
   let h = '<div class="depthtabs" role="tablist">' + [['s30', '30秒'], ['s3', '3分'], ['s10', '10分']].map(([k, l]) => '<button role="tab" aria-selected="' + (depth === k) + '" class="' + (depth === k ? 'on' : '') + '" data-a="' + action + '" data-v="' + k + '">' + l + '</button>').join('') + '</div><div class="read">';

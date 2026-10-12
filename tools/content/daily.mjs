@@ -1,18 +1,21 @@
 // 毎日の教材づくり（GitHub Actions から1日1回実行）
 //   収集 → 選定 → 生成 → 形式チェック → 別のAIで品質検査 → 合格したものだけ content/ に保存
 // 使い方: ANTHROPIC_API_KEY=... node tools/content/daily.mjs
-// 環境変数（テスト用）: SOURCES_FILE, CONTENT_DIR, LOG_DIR, TODAY, ANTHROPIC_BASE_URL, CONTENT_MODEL, MAX_ATTEMPTS
+//         node tools/content/daily.mjs --collect   … 候補の収集だけ（1日に何回か実行して、候補をためておく）
+// 環境変数（テスト用）: SOURCES_FILE, TRACKS_FILE, CONTENT_DIR, LOG_DIR, CANDIDATES_FILE, TODAY, ANTHROPIC_BASE_URL, CONTENT_MODEL, MAX_ATTEMPTS
 import Anthropic from '@anthropic-ai/sdk';
 import fs from 'node:fs';
 import path from 'node:path';
 import { loadApp, ROOT } from './load-app.mjs';
 import { collect, fetchArticle, jstDate } from './collect.mjs';
-import { commonContext, SELECT_SYSTEM, PICK_SCHEMA, GENERATE_RULES, VERIFY_SYSTEM, CHECKS, VERDICT_SCHEMA } from './prompts.mjs';
+import { commonContext, selectSystem, PICK_SCHEMA, generateRules, VERIFY_SYSTEM, CHECKS, VERDICT_SCHEMA } from './prompts.mjs';
 
 const MODEL = process.env.CONTENT_MODEL || 'claude-opus-5-5';
 const CONTENT_DIR = process.env.CONTENT_DIR || path.join(ROOT, 'content');
 const LOG_DIR = process.env.LOG_DIR || path.join(ROOT, 'tools', 'content', 'log');
 const SOURCES = JSON.parse(fs.readFileSync(process.env.SOURCES_FILE || path.join(ROOT, 'tools', 'content', 'sources.json'), 'utf8'));
+const T = JSON.parse(fs.readFileSync(process.env.TRACKS_FILE || path.join(ROOT, 'tools', 'content', 'tracks.json'), 'utf8'));
+const CANDIDATES_FILE = process.env.CANDIDATES_FILE || path.join(ROOT, 'tools', 'content', '.cache', 'candidates.json');
 const TODAY = process.env.TODAY || jstDate();
 const MAX_ATTEMPTS = Number(process.env.MAX_ATTEMPTS) || 2;
 // 安全上の理由でAIが断ったとき、Anthropic 推奨の別モデルで自動的にやり直す
@@ -33,10 +36,28 @@ function usable(msg, what) {
   return msg;
 }
 
+/* 収集した候補をファイルにためる（直近3日分）。朝の1回だけだと新着が少ないため、1日に何回か集める */
+async function gather(used) {
+  const { items, log } = await collect(SOURCES.feeds, { exclude: used });
+  const old = readJSON(CANDIDATES_FILE, []).filter(it => Date.now() - new Date(it.date).getTime() <= 3 * 86400000 && !used.has(it.link));
+  const seen = new Set(), all = [];
+  for (const it of items.concat(old)) { if (!seen.has(it.link)) { seen.add(it.link); all.push(it); } }
+  all.sort((a, b) => b.date.localeCompare(a.date));
+  fs.mkdirSync(path.dirname(CANDIDATES_FILE), { recursive: true });
+  fs.writeFileSync(CANDIDATES_FILE, JSON.stringify(all.slice(0, 600)));
+  return { items: all, log };
+}
+const matches = (it, track) => track.keywords.some(k => (it.title + ' ' + it.summary).includes(k));
+
 async function main() {
   const indexFile = path.join(CONTENT_DIR, 'index.json');
   const index = readJSON(indexFile, { version: 1, items: [] });
   const dayFile = 'daily/' + TODAY + '.json';
+  if (process.argv.includes('--collect')) {
+    const { items, log } = await gather(new Set(index.items.flatMap(it => it.links || [])));
+    say('## 候補の収集\n' + log.map(l => '- ' + l).join('\n') + '\n- ためている候補：' + items.length + '件');
+    return finish();
+  }
   if (index.items.some(it => it.date === TODAY)) { say('今日（' + TODAY + '）の教材はすでにあります。終了します。'); return finish(); }
   if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY が設定されていません（GitHub の Secrets に登録してください）');
 
@@ -49,9 +70,13 @@ async function main() {
   const used = new Set(index.items.flatMap(it => it.links || []));
 
   // 1. 収集
-  const { items, log } = await collect(SOURCES.feeds, { exclude: used });
-  say('## 収集\n' + log.map(l => '- ' + l).join('\n'));
-  if (!items.length) { say('新着がありませんでした。今日は配信しません。'); return finish(); }
+  const { items: collected, log } = await gather(used);
+  // 今日のテーマ（曜日ごと）に合う候補を先頭に。どのテーマのキーワードにも合わないものは使わない
+  const trackId = T.schedule[String(new Date(TODAY + 'T12:00:00Z').getUTCDay())];
+  const track = T.tracks[trackId];
+  const items = collected.filter(it => matches(it, track)).concat(collected.filter(it => !matches(it, track) && Object.values(T.tracks).some(t => matches(it, t)))).slice(0, 80);
+  say('## 収集\n' + log.map(l => '- ' + l).join('\n') + '\n- 候補：' + collected.length + '件（今日のテーマ「' + track.label + '」に合うもの ' + collected.filter(it => matches(it, track)).length + '件）');
+  if (!items.length) { say('採用・人材に関わる新着がありませんでした。今日は配信しません。'); return finish(); }
 
   const client = new Anthropic({ baseURL: process.env.ANTHROPIC_BASE_URL || undefined });
   const common = commonContext(A);
@@ -61,12 +86,12 @@ async function main() {
   const recent = index.items.slice(0, 14).map(it => it.title);
   const list = items.slice(0, 60).map((it, i) => i + '. [' + it.publisher + '｜' + jstDate(it.date) + '] ' + it.title + (it.summary ? ' — ' + it.summary.slice(0, 120) : '')).join('\n');
   const sel = usable(await client.beta.messages.create({
-    model: MODEL, max_tokens: 8000, system: SELECT_SYSTEM,
-    messages: [{ role: 'user', content: '直近に配信したテーマ:\n' + (recent.join('\n') || '（なし）') + '\n\n今日の新着一覧:\n' + list + '\n\n教材にするのに良いものを、良い順に最大3つ選んでください。' }],
+    model: MODEL, max_tokens: 8000, system: selectSystem(T, track),
+    messages: [{ role: 'user', content: '直近に配信したテーマ:\n' + (recent.join('\n') || '（なし）') + '\n\n新着一覧（今日のテーマに合いそうなものが先頭）:\n' + list + '\n\n教材にするのに良いものを、良い順に最大3つ選んでください。track には、そのテーマの id（' + Object.keys(T.tracks).join(' / ') + '）を入れてください。' }],
     output_config: { effort: 'medium', format: { type: 'json_schema', schema: PICK_SCHEMA } }, ...FALLBACK
   }), '選定');
-  const picks = parseJSON(textOf(sel)).picks.filter(p => items[p.index]).slice(0, 3);
-  say('## 選定\n' + (picks.map(p => '- ' + items[p.index].title + '（' + p.reason + '）').join('\n') || '- 良い候補がありませんでした'));
+  const picks = parseJSON(textOf(sel)).picks.filter(p => items[p.index] && T.tracks[p.track]).slice(0, 3);
+  say('## 選定（今日のテーマ：' + track.label + '）\n' + (picks.map(p => '- [' + T.tracks[p.track].label + '] ' + items[p.index].title + '（' + p.reason + '）').join('\n') || '- 良い候補がありませんでした'));
 
   // 3〜5. 生成 → 形式チェック → 品質検査（合格するまで最大 MAX_ATTEMPTS 件）
   let attempts = 0;
@@ -77,7 +102,7 @@ async function main() {
     try { doc = await fetchArticle(item.link); } catch (e) { say('- 本文を取得できず飛ばしました：' + item.title + '（' + e.message + '）'); continue; }
     attempts++;
     try {
-      const bundle = await generate(client, system, A, item, doc);
+      const bundle = await generate(client, system, A, item, doc, p.track);
       const verdict = await verify(client, system, bundle, item, doc);
       if (!verdict.pass) {
         reject(item, verdict.failed);
@@ -102,20 +127,21 @@ async function main() {
 }
 
 /* 生成：形式チェックに落ちたら、理由を伝えて1回だけ直させる */
-async function generate(client, system, A, item, doc) {
+async function generate(client, system, A, item, doc, trackId) {
   const docBlock = doc.kind === 'pdf'
     ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: doc.data }, title: item.title }
     : { type: 'document', source: { type: 'text', media_type: 'text/plain', data: doc.text }, title: item.title };
   const meta = '出典: ' + item.publisher + '（' + item.type + '）\nタイトル: ' + item.title + '\nURL: ' + item.link + '\n公開日: ' + jstDate(item.date) + '\n今日の日付: ' + TODAY;
-  const messages = [{ role: 'user', content: [docBlock, { type: 'text', text: meta + '\n\n' + GENERATE_RULES }] }];
+  const messages = [{ role: 'user', content: [docBlock, { type: 'text', text: meta + '\n\n' + generateRules(T, T.tracks[trackId]) }] }];
   for (let round = 0; round < 2; round++) {
     const msg = usable(await client.beta.messages.stream({ model: MODEL, max_tokens: 32000, system: system('あなたは TomoTomo の教材作者です。'), messages, output_config: { effort: 'high' }, ...FALLBACK }).finalMessage(), '生成');
     let bundle, errors;
     try {
-      bundle = complete(parseJSON(textOf(msg)), item);
+      bundle = complete(parseJSON(textOf(msg)), item, trackId);
       const ctx = { nodes: Object.assign({}, A.NODES, bundle.nodes), cats: A.MAP_CATS, rels: A.REL_LABEL, skills: A.SKILLS, newNodes: bundle.nodes, newEdges: bundle.edges };
       errors = A.validateTopic(bundle.topic, ctx);
       Object.keys(bundle.nodes).forEach(k => { if (A.NODES[k]) errors.push('新ノード ' + k + '：既存のノードと同じ id です（既存を使ってください）'); });
+      if (!bundle.topic.apply || !bundle.topic.apply.roles) errors.push('apply.roles（職種別の応用）が必要');
     } catch (e) { errors = ['JSON として読めません：' + e.message]; }
     if (!errors.length) return bundle;
     say('- 形式チェックで ' + errors.length + ' 件の不備' + (round === 0 ? '（直させます）' : '') + '：' + errors.slice(0, 5).join('／'));
@@ -125,10 +151,10 @@ async function generate(client, system, A, item, doc) {
 }
 
 /* こちらで決める項目（id・日付・出典）を入れる。出典URLはAIに書かせない（実在するURLだけにするため） */
-function complete(out, item) {
+function complete(out, item, trackId) {
   const id = 'n' + TODAY.replace(/-/g, '');
   const topic = Object.assign({}, out.topic, {
-    id, kind: '最新ニュース', date: jstDate(item.date), updated: TODAY,
+    id, kind: '最新ニュース', track: trackId, trackLabel: T.tracks[trackId].label, date: jstDate(item.date), updated: TODAY,
     sources: [{ name: item.publisher, type: item.type, url: item.link }],
     note: 'この教材は、' + item.publisher + 'の公式発表をもとにAIが作成し、別のAIによる品質検査に合格したものです。正確な内容は出典をご確認ください。'
   });

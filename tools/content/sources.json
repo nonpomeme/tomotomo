@@ -7,6 +7,6 @@
     { "name": "金融庁", "type": "公的機関", "url": "https://www.fsa.go.jp/fsaNewsListAll_rss2.xml" },
     { "name": "内閣府", "type": "公的機関", "url": "https://www.cao.go.jp/rss/news.rdf" },
     { "name": "総務省", "type": "公的機関", "url": "https://www.soumu.go.jp/news.rdf" },
-    { "name": "PR TIMES（企業の公式プレスリリース）", "type": "企業公式", "url": "https://prtimes.jp/index.rdf", "max": 40 }
+    { "name": "PR TIMES（企業の公式プレスリリース）", "type": "企業公式", "url": "https://prtimes.jp/index.rdf", "max": 100 }
   ]
 }
