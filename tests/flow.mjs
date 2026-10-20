@@ -314,6 +314,18 @@ if (fs.existsSync(path.join(root, 'src', 'content.js'))) {
   }, { content: r => { const f = new URL(r.request().url()).pathname.replace(/^.*\/content\//, ''); return files[f] ? r.fulfill({ json: files[f] }) : r.abort(); } });
 }
 
+// 9. 4択の正解の表示位置が偏らない（以前は必ず最後の選択肢になっていた）
+await scenario('answer-position', async page => {
+  await page.goto(url);
+  const pos = await page.evaluate(() => {
+    const p = [0, 0, 0, 0];
+    Object.values(QBANK).filter(q => q.options).forEach(q => [0, 1, 2, 3].forEach(n => { S.completed[q.topicId] = n; p[optionOrder(q).indexOf(q.answer)]++; }));
+    return p;
+  });
+  const total = pos.reduce((a, b) => a + b, 0);
+  check(pos.every(n => n >= total * 0.1), '正解の表示位置が偏っている: ' + pos);
+});
+
 // 7. 学習記録が、この端末に無い知識ノードを指していても（配信教材の保存が消えた場合など）起動できる
 await scenario('missing-node', async page => {
   await page.goto(url);
