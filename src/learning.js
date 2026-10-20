@@ -122,7 +122,8 @@ function buildReview(early) {
 /* ---------------- grading ---------------- */
 function shuffleSeeded(arr, seed) {
   const a = arr.slice(); let s = 0; for (const ch of seed) s = (s * 31 + ch.charCodeAt(0)) >>> 0;
-  for (let i = a.length - 1; i > 0; i--) { s = (s * 1103515245 + 12345) >>> 0; const j = s % (i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+  // 下位ビットは周期が短く偏る（正解がいつも最後になっていた）ため、上位ビットで位置を決める
+  for (let i = a.length - 1; i > 0; i--) { s = (Math.imul(s, 1103515245) + 12345) >>> 0; const j = Math.floor(s / 4294967296 * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   return a;
 }
 function optionOrder(q) { return shuffleSeeded(q.options.map((_, i) => i), q.id + (S.completed[q.topicId] || 0)); }

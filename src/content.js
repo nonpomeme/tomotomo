@@ -98,6 +98,15 @@ async function refreshContent() {
       if (addBundle(b, true)) { c.bundles[it.id] = b; added = true; }
     } catch (e) { /* 次回また試す */ }
   }
+  // 取り下げられた教材（作り直しなど）は、学習済み・復習中でなければすぐ外す
+  for (let i = TOPICS.length - 1; i >= 0; i--) {
+    const t = TOPICS[i];
+    if (!t.deliveredOn || keep.has(t.id) || items.some(it => it.id === t.id)) continue;
+    t.questions.forEach(q => { delete QBANK[q.id]; });
+    TOPICS.splice(i, 1);
+    delete Content.loaded[t.id];
+    added = true;
+  }
   // 知識ノードと線は消さずに残す（学習記録が参照するため）。教材本文は必要な分だけ残す
   Object.keys(NODES).forEach(k => { if (!DATA_NODE_IDS[k]) c.graph.nodes[k] = NODES[k]; });
   c.graph.edges = EDGES.slice(DATA_EDGE_COUNT);

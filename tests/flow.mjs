@@ -290,6 +290,42 @@ if (fs.existsSync(path.join(root, 'src', 'content.js'))) {
   }, { content: r => { const f = new URL(r.request().url()).pathname.replace(/^.*\/content\//, ''); return online && files[f] ? r.fulfill({ json: files[f] }) : r.abort(); } });
 }
 
+// 8. 作り直しで取り下げられた教材は消え、新しい教材に置き換わる
+if (fs.existsSync(path.join(root, 'src', 'content.js'))) {
+  const { loadApp } = await import('../tools/content/load-app.mjs');
+  const A = loadApp();
+  const make = (id, title) => {
+    const t = JSON.parse(JSON.stringify(A.TOPICS[0]));
+    Object.assign(t, { id, title, kind: '最新ニュース', date: '2026-10-03', updated: '2026-10-04', sources: [{ name: 'テスト省', type: '公的機関', url: 'https://example.go.jp/r' }] });
+    t.s3[0].label = '事実';
+    t.questions = t.questions.map((q, i) => Object.assign({}, q, { id: id + '-' + (i + 1) }));
+    return { version: 1, date: '2026-10-04', topic: t, nodes: {}, edges: [] };
+  };
+  let files = { 'index.json': { items: [{ date: '2026-10-04', id: 'n20261004', file: 'a.json' }] }, 'a.json': make('n20261004', '最初の教材（取り下げ予定）') };
+  await scenario('retired', async page => {
+    await onboard(page);
+    await page.waitForFunction(() => document.querySelector('#app').textContent.includes('取り下げ予定'));
+    files = { 'index.json': { items: [{ date: '2026-10-04', id: 'n20261004r1', file: 'b.json' }] }, 'b.json': make('n20261004r1', '作り直した教材') };
+    await page.reload();
+    await page.waitForFunction(() => document.querySelector('#app').textContent.includes('作り直した教材'));
+    await click(page, '#nav [data-a="tab"][data-v="learn"]');
+    const s = await snap(page, 'learn');
+    check(!s.app.includes('取り下げ予定') && s.app.includes('作り直した教材'), '取り下げた教材が残っている');
+  }, { content: r => { const f = new URL(r.request().url()).pathname.replace(/^.*\/content\//, ''); return files[f] ? r.fulfill({ json: files[f] }) : r.abort(); } });
+}
+
+// 9. 4択の正解の表示位置が偏らない（以前は必ず最後の選択肢になっていた）
+await scenario('answer-position', async page => {
+  await page.goto(url);
+  const pos = await page.evaluate(() => {
+    const p = [0, 0, 0, 0];
+    Object.values(QBANK).filter(q => q.options).forEach(q => [0, 1, 2, 3].forEach(n => { S.completed[q.topicId] = n; p[optionOrder(q).indexOf(q.answer)]++; }));
+    return p;
+  });
+  const total = pos.reduce((a, b) => a + b, 0);
+  check(pos.every(n => n >= total * 0.1), '正解の表示位置が偏っている: ' + pos);
+});
+
 // 7. 学習記録が、この端末に無い知識ノードを指していても（配信教材の保存が消えた場合など）起動できる
 await scenario('missing-node', async page => {
   await page.goto(url);

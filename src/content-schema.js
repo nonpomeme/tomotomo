@@ -6,7 +6,7 @@ const CONTENT_RULES = {
   THOUGHTS: ['think', 'multi', 'business'],
   EX_KEYS: ['why', 'others', 'bg', 'related', 'apply', 'memo'],
   SOURCE_TYPES: ['公的機関', '企業公式', '国際機関・研究'],
-  KINDS: ['最新ニュース', '今後重要になるテーマ', '基礎知識×ニュース'],
+  KINDS: ['最新ニュース', '今後重要になるテーマ', '基礎知識×ニュース', '専門知識'],
   // 職種別の応用（apply.roles）。サンプルには無く、配信教材にだけある
   ROLES: { consultant: '採用コンサルタント', media_sales: '求人広告・媒体の営業', agency: '人材紹介（RA・CA）', inhouse: '企業の人事・採用担当', executive: '経営者' },
   ID_RE: /^[a-z0-9][a-z0-9-]{2,60}$/,
@@ -32,7 +32,7 @@ function validateTopic(t, ctx) {
   need(typeof t.future === 'number' && t.future >= 0 && t.future <= 1, 'future は0〜1');
   need(R.KINDS.includes(t.kind), 'kind が不正');
   need(/^\d{4}-\d{2}-\d{2}$/.test(t.date || '') && /^\d{4}-\d{2}-\d{2}$/.test(t.updated || ''), 'date / updated（公開日・更新日）が必要');
-  need(Array.isArray(t.sources) && t.sources.length >= 1 && t.sources.every(s => s && isStr(s.name) && R.SOURCE_TYPES.includes(s.type) && /^https:\/\/\S+$/.test(s.url || '')), 'sources（名前・種類・https のURL）が必要');
+  need(Array.isArray(t.sources) && t.sources.length >= 1 && t.sources.length <= 8 && t.sources.every(s => s && isStr(s.name) && R.SOURCE_TYPES.includes(s.type) && /^https:\/\/\S+$/.test(s.url || '')), 'sources（名前・種類・https のURL）が必要');
 
   // 解説（30秒／3分／10分）。事実とAIの解釈を分ける
   need(isStr(t.s30, 60) && t.s30.length <= 400, 's30（30秒の要点）は60〜400字');
