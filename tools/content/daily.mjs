@@ -60,19 +60,36 @@ async function withTools(client, params, what) {
   }
   throw new Error(what + '：調べものが終わりませんでした');
 }
-/* 実際に開いた（web_fetch）ページのURL */
+/* URL の表記ゆれ（http/https・www・末尾の /・# 以降）をそろえて比べる */
+function normUrl(u) {
+  try {
+    const x = new URL(String(u).trim());
+    return x.hostname.replace(/^www\./, '').toLowerCase() + x.pathname.replace(/\/+$/, '') + x.search;
+  } catch (e) { return ''; }
+}
+/* 実際に開いた（web_fetch で取得できた）ページのURL。依頼したURLと転送先の両方 */
 function fetchedUrls(blocks) {
-  const fetched = new Set();
+  const fetched = new Set(), asked = {};
   for (const b of blocks) {
-    if (b.type === 'web_fetch_tool_result' && b.content && b.content.type === 'web_fetch_result') fetched.add(b.content.url);
+    if (b.type === 'server_tool_use' && b.name === 'web_fetch' && b.input && b.input.url) asked[b.id] = b.input.url;
+    if (b.type === 'web_fetch_tool_result' && b.content && b.content.type === 'web_fetch_result') {
+      fetched.add(normUrl(b.content.url));
+      if (asked[b.tool_use_id]) fetched.add(normUrl(asked[b.tool_use_id]));
+    }
   }
+  fetched.delete('');
   return fetched;
 }
-/* 最後のツール結果より後ろの文章（＝最終的な回答） */
-function finalText(blocks) {
-  let last = -1;
-  blocks.forEach((b, i) => { if (b.type !== 'text') last = i; });
-  return blocks.slice(last + 1).filter(b => b.type === 'text').map(b => b.text).join('');
+/* 回答の JSON を取り出す。最後のほうの文章から、key を含む JSON として読めるものを探す */
+function lastJSON(blocks, key) {
+  const texts = blocks.filter(b => b.type === 'text').map(b => b.text);
+  for (let i = texts.length - 1; i >= 0; i--) {
+    for (const cand of [texts.slice(i).join(''), texts[i]]) {
+      if (cand.indexOf('"' + key + '"') < 0) continue;
+      try { return parseJSON(cand); } catch (e) { /* 次の候補へ */ }
+    }
+  }
+  throw new Error('回答から JSON（' + key + '）を読み取れませんでした');
 }
 const webTools = (search, fetchN) => [
   { type: 'web_search_20260209', name: 'web_search', max_uses: search, allowed_domains: T.research_domains },
@@ -195,7 +212,7 @@ async function main() {
 const docBlock = (sj, doc, prefix) => doc.kind === 'pdf'
   ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: doc.data }, title: (prefix || '') + sj.item.title }
   : { type: 'document', source: { type: 'text', media_type: 'text/plain', data: doc.text }, title: (prefix || '') + sj.item.title };
-const notesText = notes => '# 調査メモ（資料で確かめた事実）\n' + notes.map((n, i) => (i + 1) + '. ' + n.fact + '\n   出典：' + n.source + '（' + n.type + '） ' + n.url).join('\n');
+const notesText = notes => '# 調査メモ（資料で確かめた事実）\n' + notes.map((n, i) => (i + 1) + '. ' + n.fact + '\n   出典：' + n.source + '（' + n.type + '・信頼度ランク' + n.rank + (n.published ? '・' + n.published : '') + '） ' + n.url).join('\n');
 
 /* 調査：公的機関などの資料を検索して読み、確かめた事実をURLつきで集める。開いていないページ・許可していないサイトの事実は捨てる */
 async function research(client, sj, doc) {
@@ -214,9 +231,23 @@ async function research(client, sj, doc) {
     r = await withTools(client, Object.assign({}, params, { tools: params.tools.map(t => { const c = Object.assign({}, t); delete c.allowed_domains; return c; }) }), '調査');
   }
   const fetched = fetchedUrls(r.blocks);
-  const out = parseJSON(finalText(r.blocks));
-  const notes = (Array.isArray(out.notes) ? out.notes : []).filter(n => n && typeof n.fact === 'string' && n.fact.length >= 20 && fetched.has(n.url) && allowedUrl(n.url))
-    .map(n => ({ fact: n.fact.slice(0, 400), url: n.url, source: String(n.source || new URL(n.url).hostname).slice(0, 60), type: SOURCE_TYPES.includes(n.type) ? n.type : '公的機関' }));
+  const out = lastJSON(r.blocks, 'notes');
+  const raw = Array.isArray(out.notes) ? out.notes : [];
+  const drop = { 短い: 0, 開いていない: 0, 許可外のサイト: 0, ランクD: 0 };
+  const notes = raw.filter(n => {
+    if (!n || typeof n.fact !== 'string' || n.fact.length < 20) { drop.短い++; return false; }
+    if (!allowedUrl(n.url)) { drop.許可外のサイト++; return false; }
+    if (!fetched.has(normUrl(n.url))) { drop.開いていない++; return false; }
+    if (n.rank === 'D') { drop.ランクD++; return false; }
+    return true;
+  }).map(n => ({
+    fact: n.fact.slice(0, 400), url: n.url, source: String(n.source || new URL(n.url).hostname).slice(0, 60),
+    type: SOURCE_TYPES.includes(n.type) ? n.type : '公的機関',
+    // ランクが付いていない・おかしいときは、いちばん低い C（参考）として扱う
+    rank: ['A', 'B', 'C'].includes(n.rank) ? n.rank : 'C',
+    published: /^\d{4}(-\d{2}(-\d{2})?)?$/.test(n.published || '') ? n.published : undefined
+  }));
+  say('- 調査の内訳：開いたページ ' + fetched.size + '件／事実 ' + raw.length + '件のうち採用 ' + notes.length + '件' + (raw.length > notes.length ? '（除外：' + Object.entries(drop).filter(([, v]) => v).map(([k, v]) => k + ' ' + v).join('・') + '）' : ''));
   if (notes.length < 4) throw new Error('調査で確かめられた事実が少なすぎます（' + notes.length + '件）');
   return notes;
 }
@@ -235,14 +266,15 @@ async function generate(client, system, A, sj, doc, notes) {
     try {
       const out = parseJSON(textOf(msg));
       bundle = complete(out, sj, notes);
-      const ctx = { nodes: Object.assign({}, A.NODES, bundle.nodes), cats: A.MAP_CATS, rels: A.REL_LABEL, skills: A.SKILLS, newNodes: bundle.nodes, newEdges: bundle.edges };
+      const ctx = { nodes: Object.assign({}, A.NODES, bundle.nodes), cats: A.MAP_CATS, rels: A.REL_LABEL, skills: A.SKILLS, newNodes: bundle.nodes, newEdges: bundle.edges, requireEvidence: true };
       errors = A.validateTopic(bundle.topic, ctx);
+      if (bundle.droppedEvidence.length) errors.push('evidence に調査メモ・出典ドキュメントにないURLがあります：' + bundle.droppedEvidence.slice(0, 3).join(' '));
       Object.keys(bundle.nodes).forEach(k => { if (A.NODES[k]) errors.push('新ノード ' + k + '：既存のノードと同じ id です（既存を使ってください）'); });
       if (!bundle.topic.apply || !bundle.topic.apply.roles) errors.push('apply.roles（職種別の応用）が必要');
       const refs = Array.isArray(out.references) ? out.references : [];
-      if (refs.filter(u => notes.some(n => n.url === u)).length < 2) errors.push('references に調査メモのURLを2つ以上（調査メモにあるURLだけ）');
+      if (refs.filter(u => notes.some(n => normUrl(n.url) === normUrl(u))).length < 2) errors.push('references に調査メモのURLを2つ以上（調査メモにあるURLだけ）');
     } catch (e) { errors = ['JSON として読めません：' + e.message]; }
-    if (!errors.length) return bundle;
+    if (!errors.length) { delete bundle.droppedEvidence; return bundle; }
     say('- 形式チェックで ' + errors.length + ' 件の不備' + (round === 0 ? '（直させます）' : '') + '：' + errors.slice(0, 5).join('／'));
     messages.push({ role: 'assistant', content: msg.content }, { role: 'user', content: '形式チェックで次の不備が見つかりました。直した JSON 全体をもう一度出力してください。\n- ' + errors.join('\n- ') });
   }
@@ -261,17 +293,28 @@ function shuffleOptions(q) {
 function complete(out, sj, notes) {
   const id = 'n' + TODAY.replace(/-/g, '') + (redo ? 'r' + redo : '');
   const tr = T.tracks[sj.trackId];
-  const refs = (Array.isArray(out.references) ? out.references : []).map(u => notes.find(n => n.url === u)).filter(Boolean);
-  const sources = (sj.kind === 'news' ? [{ name: sj.item.publisher, type: sj.item.type, url: sj.item.link }] : [])
-    .concat(refs.map(n => ({ name: n.source, type: n.type, url: n.url })))
+  const refs = (Array.isArray(out.references) ? out.references : []).map(u => notes.find(n => normUrl(n.url) === normUrl(u))).filter(Boolean);
+  const main = sj.kind === 'news' ? { name: sj.item.publisher, type: sj.item.type, url: sj.item.link, rank: sj.item.rank || 'C', published: jstDate(sj.item.date) } : null;
+  const sources = (main ? [{ name: main.name, type: main.type, url: main.url, rank: main.rank }] : [])
+    .concat(refs.map(n => ({ name: n.source, type: n.type, url: n.url, rank: n.rank })))
     .filter((s, i, a) => a.findIndex(x => x.url === s.url) === i).slice(0, 7);
+  // 根拠：AIにはURLだけ書かせ、名前と信頼度ランクは調査メモ・出典からこちらで付ける（ないURLは使わない）
+  const dropped = [];
+  const toEvidence = urls => (Array.isArray(urls) ? urls : []).map(u => {
+    const n = notes.find(x => normUrl(x.url) === normUrl(u));
+    if (n) return { name: n.source, url: n.url, rank: n.rank, published: n.published };
+    if (main && normUrl(main.url) === normUrl(u)) return { name: main.name, url: main.url, rank: main.rank, published: main.published };
+    dropped.push(String(u)); return null;
+  }).filter(Boolean).filter((e, i, a) => a.findIndex(x => x.url === e.url) === i).slice(0, 3)
+    .map(e => { if (!e.published) delete e.published; return e; });
   const topic = Object.assign({}, out.topic, {
     id, kind: sj.kind === 'news' ? '最新ニュース' : '専門知識', track: sj.trackId, trackLabel: tr.label,
     date: sj.kind === 'news' ? jstDate(sj.item.date) : TODAY, updated: TODAY, sources,
     note: (sj.kind === 'news' ? 'この教材は、' + sj.item.publisher + 'の公式発表と、' : 'この教材は、') + '公的機関などの資料をAIが調べて作成し、別のAIによる品質検査に合格したものです。正確な内容は出典をご確認ください。'
   });
-  if (Array.isArray(topic.questions)) topic.questions = topic.questions.map((q, i) => shuffleOptions(Object.assign({}, q, { id: id + '-' + (i + 1) })));
-  return { version: 1, date: TODAY, topic, nodes: out.nodes && typeof out.nodes === 'object' ? out.nodes : {}, edges: Array.isArray(out.edges) ? out.edges : [] };
+  if (Array.isArray(topic.questions)) topic.questions = topic.questions.map((q, i) => shuffleOptions(Object.assign({}, q, { id: id + '-' + (i + 1), evidence: toEvidence(q.evidence) })));
+  if (Array.isArray(topic.s3)) topic.s3 = topic.s3.map(b => { const e = toEvidence(b && b.evidence); const c = Object.assign({}, b); if (e.length) c.evidence = e; else delete c.evidence; return c; });
+  return { version: 1, date: TODAY, droppedEvidence: dropped, topic, nodes: out.nodes && typeof out.nodes === 'object' ? out.nodes : {}, edges: Array.isArray(out.edges) ? out.edges : [] };
 }
 
 /* 品質検査：別の呼び出しで、出典・調査メモ・サンプルに照らしてチェック（資料を開いて確かめる）。1項目でも不合格なら破棄 */
@@ -286,7 +329,7 @@ async function verify(client, system, bundle, sj, doc, notes) {
     const p2 = Object.assign({}, params); delete p2.tools;
     r = await withTools(client, p2, '品質検査');
   }
-  const v = parseJSON(finalText(r.blocks));
+  const v = lastJSON(r.blocks, 'checks');
   const checks = CHECKS.map(([id]) => v.checks.find(c => c.id === id) || { id, ok: false, note: '検査結果がありません' });
   const failed = checks.filter(c => !c.ok);
   return { pass: failed.length === 0, checks, failed, summary: v.summary };

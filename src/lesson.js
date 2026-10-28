@@ -79,17 +79,32 @@ function rolesHTML(t) {
   return '<div class="sec-title">立場別：明日からの使い方</div><div class="card">' + keys.map((k, i) =>
     '<div' + (i ? ' style="margin-top:12px"' : '') + '><span class="tag' + (k === mine ? ' ai' : '') + '">' + esc(CONTENT_RULES.ROLES[k]) + (k === mine ? '（あなた）' : '') + '</span><p class="small" style="margin-top:4px">' + esc(roles[k]) + '</p></div>').join('') + '</div>';
 }
+/* 根拠の信頼度ランクのバッジ（設計書4章）。説明はタップ／ホバーで出す */
+function rankBadge(rank) {
+  return rank ? '<span class="rank rank-' + esc(rank) + '" title="根拠ランク' + esc(rank) + '：' + esc(CONTENT_RULES.RANKS[rank] || '') + '">' + esc(rank) + '</span>' : '';
+}
+function evidenceHTML(list) {
+  if (!Array.isArray(list) || !list.length) return '';
+  return '<div class="evid"><b>根拠</b>' + list.map(e => '<div>' + rankBadge(e.rank) + ' <a href="' + esc(e.url) + '" target="_blank" rel="noopener">' + esc(e.name) + '</a>' + (e.published ? '<span class="muted">（' + esc(e.published) + '）</span>' : '') + '</div>').join('') + '</div>';
+}
+/* 出典がランクC以下だけの教材は、根拠の教材と分けて「トレンド（参考）」と明示する */
+function isTrendOnly(t) {
+  const ranks = (t.sources || []).map(s => s.rank).filter(Boolean);
+  return ranks.length > 0 && ranks.every(r => r === 'C');
+}
 function readingHTML(t, depth, action) {
   let h = '<div class="depthtabs" role="tablist">' + [['s30', '30秒'], ['s3', '3分'], ['s10', '10分']].map(([k, l]) => '<button role="tab" aria-selected="' + (depth === k) + '" class="' + (depth === k ? 'on' : '') + '" data-a="' + action + '" data-v="' + k + '">' + l + '</button>').join('') + '</div><div class="read">';
+  if (isTrendOnly(t)) h += '<div class="blk"><span class="tag trend">トレンド（参考）</span><p class="small muted" style="margin-top:6px">この教材の出典は企業の調査・発表など（根拠ランクC）です。傾向をつかむ参考として読み、数字や結論は公的統計などで確かめてから使いましょう。</p></div>';
   h += '<div class="blk"><span class="tag fact">要点</span><p style="margin-top:6px">' + esc(t.s30) + '</p></div>';
-  if (depth !== 's30') h += t.s3.map(b => '<div class="blk"><span class="tag ' + (/事実/.test(b.label) ? 'fact' : '') + '">' + esc(b.label) + '</span><p style="margin-top:6px">' + esc(b.text) + '</p></div>').join('');
+  if (depth !== 's30') h += t.s3.map(b => '<div class="blk"><span class="tag ' + (/事実/.test(b.label) ? 'fact' : '') + '">' + esc(b.label) + '</span><p style="margin-top:6px">' + esc(b.text) + '</p>' + evidenceHTML(b.evidence) + '</div>').join('');
   if (depth === 's10') {
     h += '<div class="blk"><span class="tag">因果関係</span><div class="chain">' + t.s10.causal.map((c, i) => (i ? '<i>↓</i>' : '') + '<span>' + esc(c) + '</span>').join('') + '</div></div>';
     h += '<div class="blk"><span class="tag">多角的な視点</span><div class="persp" style="margin-top:8px">' + t.s10.perspectives.map(p => '<b>' + esc(p.who) + '</b><span>' + esc(p.text) + '</span>').join('') + '</div></div>';
     h += '<div class="blk"><span class="tag">実務への応用</span><p style="margin-top:6px">' + esc((isHRish() ? t.apply.hr : t.apply.general).join('／')) + '</p></div>';
     h += '<div class="blk"><span class="tag ai">AIの解釈</span><p style="margin-top:6px">' + esc(t.s10.opinion.replace(/^AIの解釈：/, '')) + '</p></div>';
   }
-  h += '</div><div class="source"><b>情報源</b>（公開 ' + fmtYMD(t.date) + '・更新 ' + fmtYMD(t.updated) + '）<br>' + t.sources.map(s => '・' + esc(s.name) + '（' + esc(s.type) + '）<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.url) + '</a>').join('<br>') +
+  h += '</div><div class="source"><b>情報源</b>（公開 ' + fmtYMD(t.date) + '・更新 ' + fmtYMD(t.updated) + '）<br>' + t.sources.map(s => '・' + (s.rank ? rankBadge(s.rank) + ' ' : '') + esc(s.name) + '（' + esc(s.type) + '）<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.url) + '</a>').join('<br>') +
+    ((t.sources || []).some(s => s.rank) ? '<p class="tiny" style="margin-top:6px">根拠ランク　' + Object.keys(CONTENT_RULES.RANKS).slice(0, 3).map(k => rankBadge(k) + ' ' + esc(CONTENT_RULES.RANKS[k])).join('　') + '</p>' : '') +
     '<p style="margin-top:8px">「事実」と「AIの解釈」はラベルで区別しています。' + esc(t.note || SAMPLE_NOTE) + '</p></div>';
   return h;
 }
@@ -136,8 +151,8 @@ function feedbackSheet(q, L) {
     (ok ? '<span class="small">+' + L.lastXp + ' XP</span> ' + (L.combo >= 2 ? '<span class="combo">🔥 ' + L.combo + 'コンボ</span>' : '') : '<span class="small">正解：' + esc(answerText) + '</span>') + '</div></div>' +
     (expand ? '<dl class="exp">' +
       '<dt>なぜ正解なのか</dt><dd>' + esc(ex.why) + '</dd>' + (q.type === 'tf' || q.type === 'order' ? '' : '<dt>ほかの選択肢が違う理由</dt><dd>' + esc(ex.others) + '</dd>') + (q.type === 'order' ? '<dt>よくある間違い</dt><dd>' + esc(ex.others) + '</dd>' : '') + (q.type === 'tf' ? '<dt>補足</dt><dd>' + esc(ex.others) + '</dd>' : '') +
-      '<dt>背景</dt><dd>' + esc(ex.bg) + '</dd><dt>関連知識</dt><dd>' + esc(ex.related) + '</dd><dt>仕事への応用</dt><dd>' + esc(ex.apply) + '</dd><dt>覚え方</dt><dd>' + esc(ex.memo) + '</dd></dl>'
-      : '<div class="exp"><b>ポイント：</b>' + esc(ex.why) + '<br><button class="link" style="margin-top:6px" data-a="moreExp">背景・関連知識・覚え方も見る</button></div>') +
+      '<dt>背景</dt><dd>' + esc(ex.bg) + '</dd><dt>関連知識</dt><dd>' + esc(ex.related) + '</dd><dt>仕事への応用</dt><dd>' + esc(ex.apply) + '</dd><dt>覚え方</dt><dd>' + esc(ex.memo) + '</dd></dl>' + evidenceHTML(q.evidence)
+      : '<div class="exp"><b>ポイント：</b>' + esc(ex.why) + (evidenceHTML(q.evidence) || '<br>') + '<button class="link" style="margin-top:6px" data-a="moreExp">背景・関連知識・覚え方も見る</button></div>') +
     '<button class="btn ' + (ok ? 'btn-mint' : 'btn-coral') + '" data-a="next">つぎへ</button></div>';
 }
 function pickPraise() { const p = ['正解！', 'お見事！', 'その通り！', 'いい読みです！']; return p[(ui.L.correct + ui.L.i) % p.length]; }

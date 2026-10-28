@@ -9,11 +9,31 @@ const CONTENT_RULES = {
   KINDS: ['最新ニュース', '今後重要になるテーマ', '基礎知識×ニュース', '専門知識'],
   // 職種別の応用（apply.roles）。サンプルには無く、配信教材にだけある
   ROLES: { consultant: '採用コンサルタント', media_sales: '求人広告・媒体の営業', agency: '人材紹介（RA・CA）', inhouse: '企業の人事・採用担当', executive: '経営者' },
+  // 根拠の信頼度ランク（設計書 docs/design-brief.md 4章）。D は教材の根拠に使わない
+  RANKS: {
+    A: 'メタ分析・査読付き論文・公的統計',
+    B: '大手調査機関・学術機関のレポート、信頼できる業界団体の調査',
+    C: '企業の調査・専門メディアの記事（参考）',
+    D: '個人の意見・SNS（根拠には使わない）'
+  },
+  EVIDENCE_RANKS: ['A', 'B', 'C'],
   ID_RE: /^[a-z0-9][a-z0-9-]{2,60}$/,
   NODE_ID_RE: /^[a-z][a-z0-9]{1,30}$/
 };
 
-/* t: 教材、ctx: { nodes: 既存＋新規ノード, cats, rels, skills, newNodes, newEdges }
+/* 根拠（出典と信頼度ランク）1件の形式。問題があればエラー文、なければ空文字 */
+function evidenceError(e) {
+  if (!e || typeof e !== 'object') return '形式が不正';
+  if (typeof e.name !== 'string' || !e.name.trim()) return '出典名がない';
+  if (!/^https:\/\/\S+$/.test(e.url || '')) return '出典のURL（https）がない';
+  if (e.rank === 'D') return 'ランクD（個人の意見・SNS）は根拠に使えない';
+  if (CONTENT_RULES.EVIDENCE_RANKS.indexOf(e.rank) < 0) return '信頼度ランク（A〜C）がない';
+  if (e.published != null && !/^\d{4}(-\d{2}(-\d{2})?)?$/.test(e.published)) return '公表時期は YYYY / YYYY-MM / YYYY-MM-DD';
+  return '';
+}
+
+/* t: 教材、ctx: { nodes: 既存＋新規ノード, cats, rels, skills, newNodes, newEdges, requireEvidence }
+   requireEvidence: 出典のランク・各問題の根拠を必須にする（新しく作る教材用。サンプルや過去の教材は任意）
    問題があればエラー文の配列を返す（空なら合格） */
 function validateTopic(t, ctx) {
   const R = CONTENT_RULES, err = [];
@@ -33,6 +53,17 @@ function validateTopic(t, ctx) {
   need(R.KINDS.includes(t.kind), 'kind が不正');
   need(/^\d{4}-\d{2}-\d{2}$/.test(t.date || '') && /^\d{4}-\d{2}-\d{2}$/.test(t.updated || ''), 'date / updated（公開日・更新日）が必要');
   need(Array.isArray(t.sources) && t.sources.length >= 1 && t.sources.length <= 8 && t.sources.every(s => s && isStr(s.name) && R.SOURCE_TYPES.includes(s.type) && /^https:\/\/\S+$/.test(s.url || '')), 'sources（名前・種類・https のURL）が必要');
+  // 根拠と信頼度ランク（任意。ある場合は正しい形式で）
+  const req = !!(ctx && ctx.requireEvidence);
+  const evList = (list, at) => {
+    if (list == null) return;
+    if (!Array.isArray(list) || list.length > 5) { err.push(at + '：根拠は5件までの配列'); return; }
+    list.forEach((e, i) => { const m = evidenceError(e); if (m) err.push(at + '：根拠' + (i + 1) + ' の' + m); });
+  };
+  (t.sources || []).forEach((s, i) => {
+    if (s && (s.rank != null || req)) need(R.EVIDENCE_RANKS.indexOf(s.rank) >= 0, '出典' + (i + 1) + '：信頼度ランク（A〜C）が必要' + (s.rank === 'D' ? '（D は使えない）' : ''));
+  });
+  (t.s3 || []).forEach((b, i) => { if (b) evList(b.evidence, '3分の解説' + (i + 1)); });
 
   // 解説（30秒／3分／10分）。事実とAIの解釈を分ける
   need(isStr(t.s30, 60) && t.s30.length <= 400, 's30（30秒の要点）は60〜400字');
@@ -63,6 +94,8 @@ function validateTopic(t, ctx) {
     need(R.QTYPES.includes(q.type), at + 'type が不正');
     need(ctx && ctx.skills && Object.prototype.hasOwnProperty.call(ctx.skills, q.skill), at + 'skill が不正');
     need(isStr(q.q, 8), at + '問題文が必要');
+    evList(q.evidence, at.replace('：', ''));
+    if (req) need(Array.isArray(q.evidence) && q.evidence.length >= 1, at + '根拠（出典と信頼度ランク）が1件以上必要');
     need(q.ex && R.EX_KEYS.every(k => isStr(q.ex[k], 8)), at + '解説（why / others / bg / related / apply / memo）が必要');
     if (q.type === 'tf') need(typeof q.answer === 'boolean', at + '○×の答えは true / false');
     else if (q.type === 'order') need(strArr(q.items, 4, 6) && new Set(q.items).size === q.items.length, at + '並べ替えは4〜6個の重複しない項目');

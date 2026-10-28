@@ -35,7 +35,7 @@ export function parseFeed(xml, feed) {
       date: isNaN(date) ? null : date.toISOString(),
       summary: text(it.description || it.summary || it.content).slice(0, 300),
       publisher: text(it['dc:creator'] || it.author && (it.author.name || it.author)) || feed.name,
-      feed: feed.name, type: feed.type
+      feed: feed.name, type: feed.type, rank: feed.rank || (feed.type === '企業公式' ? 'C' : 'A')
     };
   }).filter(it => it.title && /^https:\/\//.test(it.link) && it.date).slice(0, feed.max || 30);
 }
