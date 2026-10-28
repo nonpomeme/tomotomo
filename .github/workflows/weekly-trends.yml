@@ -1,0 +1,78 @@
+# 週1回、新しい研究・公的統計・業界ニュースを調べ、関係する章の「最新トレンド」への追記案をプルリクエストで出す。
+# 設計書 docs/design-brief.md「5. トレンドを正しくキャッチアップする仕組み」。
+#   - 調査は Claude Code（tools/trends/prompt.md の指示）。結果は tools/trends/out/proposal.json にだけ書かせる
+#   - tools/trends/apply.mjs が出典（URL・ランクA〜C・公表日）を確かめ、出典のない項目は機械的に除外する
+#   - 変更は content/trends.json と docs/trends/週.md だけ。本文は書き換えず、必ずプルリクエストで提案する
+name: 週1回のトレンド調査
+
+on:
+  schedule:
+    - cron: '13 21 * * 0'   # 毎週月曜 6:13（日本時間）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: weekly-trends
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Claude Code をインストール
+        run: npm install -g @anthropic-ai/claude-code@2.1.312
+
+      - name: 調べる（Claude Code）
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          mkdir -p tools/trends/out
+          # 使える道具は「読む・調べる・書く」だけ。費用の上限は1回 2 ドル
+          claude -p "$(cat tools/trends/prompt.md)" \
+            --model claude-opus-5-5 \
+            --allowedTools "Read,Glob,Grep,WebSearch,WebFetch,Write" \
+            --permission-mode dontAsk \
+            --max-budget-usd 2 \
+            --output-format json > "$RUNNER_TEMP/claude-result.json" || echo "Claude Code が途中で終了しました"
+          cp tools/trends/out/proposal.json "$RUNNER_TEMP/proposal.json" 2>/dev/null || echo "調査結果がありません"
+
+      - name: 調査結果以外の変更を捨てる（本文を書き換えないため）
+        run: |
+          git reset --hard HEAD
+          git clean -fd
+
+      - name: 出典を確かめて追記案にまとめる
+        id: apply
+        env:
+          PR_BODY_FILE: ${{ runner.temp }}/pr-body.md
+        run: |
+          set +e
+          node tools/trends/apply.mjs "$RUNNER_TEMP/proposal.json" | tee -a "$GITHUB_STEP_SUMMARY"
+          code=${PIPESTATUS[0]}
+          if [ "$code" = "3" ]; then echo "has_changes=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "$code" != "0" ]; then exit "$code"; fi
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
+
+      - name: プルリクエストを作る
+        if: steps.apply.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          WEEK=$(ls docs/trends/*.md | sort | tail -1 | xargs basename | sed 's/\.md$//')
+          BRANCH="trends/$WEEK-$(date -u +%Y%m%d%H%M)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add content/trends.json docs/trends
+          git commit -m "最新トレンドの追記案：$WEEK"
+          git push origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" --title "最新トレンドの追記案（$WEEK）" --body-file "$RUNNER_TEMP/pr-body.md"
