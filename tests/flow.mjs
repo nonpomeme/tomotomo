@@ -244,12 +244,14 @@ if (fs.existsSync(path.join(root, 'src', 'content.js'))) {
   const A = loadApp();
   const t = JSON.parse(JSON.stringify(A.TOPICS[0]));
   Object.assign(t, { id: 'n20261004', title: '労働市場の動向調査（配信テスト）', kind: '最新ニュース', date: '2026-10-03', updated: '2026-10-04',
-    sources: [{ name: 'テスト省', type: '公的機関', url: 'https://example.go.jp/release' }], note: 'テスト省の公式発表をもとにAIが作成した教材です。' });
+    sources: [{ name: 'テスト社', type: '企業公式', url: 'https://example.co.jp/release', rank: 'C' }], note: 'テスト省の公式発表をもとにAIが作成した教材です。' });
+  // 根拠と信頼度ランク（出典が C だけなので「トレンド（参考）」と表示される）
+  t.s3 = t.s3.map(b => Object.assign({}, b, { evidence: [{ name: 'テスト社 調査', url: 'https://example.co.jp/survey', rank: 'C' }] }));
   t.s3[0].label = '事実';
   t.track = 'media'; t.trackLabel = '採用手法・媒体';
   t.apply.roles = { consultant: '顧客に応募課金と掲載課金の費用比較を示す', media_sales: '応募単価の目安を添えて新プランを提案する', agency: '求人企業に紹介手数料との費用差を説明する', inhouse: '自社の応募単価を算出してプランを見直す', executive: '採用費を応募単価と採用単価で管理する' };
   t.nodes = t.nodes.slice(0, 5).concat(['laborsurvey']);
-  t.questions = t.questions.map((q, i) => Object.assign({}, q, { id: 'n20261004-' + (i + 1) }));
+  t.questions = t.questions.map((q, i) => Object.assign({}, q, { id: 'n20261004-' + (i + 1), evidence: [{ name: '厚生労働省 一般職業紹介状況', url: 'https://www.mhlw.go.jp/toukei/list/114-1.html', rank: 'A', published: '2026-09' }] }));
   const bundle = { version: 1, date: '2026-10-04', topic: t, nodes: { laborsurvey: { name: '労働市場調査', cat: '経済', sub: '労働', diff: 2 } }, edges: [['laborsurvey', 'labor', 'related', 0.7], ['laborsurvey', 'agent', 'related', 0.5]] };
   const broken = { version: 1, date: '2026-10-03', topic: Object.assign({}, t, { id: 'n20261003', questions: [] }), nodes: {}, edges: [] };
   const files = {
@@ -272,9 +274,13 @@ if (fs.existsSync(path.join(root, 'src', 'content.js'))) {
     await click(page, '#nav [data-a="tab"][data-v="home"]');
     await click(page, '[data-a="start"][data-v="n20261004"]');
     await click(page, '#overlay [data-a="next"]');
-    check((await snap(page, 'reading')).overlay.includes('テスト省の公式発表をもとにAIが作成'), '配信教材の注意書きが出ない');
+    const reading = await snap(page, 'reading');
+    check(reading.overlay.includes('テスト省の公式発表をもとにAIが作成'), '配信教材の注意書きが出ない');
+    check(reading.overlay.includes('トレンド（参考）') && reading.overlay.includes('class="rank rank-C"') && reading.overlay.includes('根拠ランク'), '出典のランクや「トレンド（参考）」が表示されない');
     const seen = await runLesson(page, 'lesson');
     check(seen.has('quiz') && seen.has('thought') && seen.has('mapupdate'), '配信教材で学習を最後まで進められない');
+    const checked = Object.entries(snaps).filter(([k]) => k.startsWith('delivered / lesson') && k.endsWith('checked'));
+    check(checked.length && checked.every(([, v]) => v.overlay.includes('厚生労働省 一般職業紹介状況') && v.overlay.includes('class="rank rank-A"')), '解説に根拠と信頼度ランクが表示されない');
     const applyStep = Object.entries(snaps).find(([k, v]) => k.startsWith('delivered / lesson') && v.overlay.includes('立場別：明日からの使い方'));
     check(applyStep && applyStep[1].overlay.indexOf('採用コンサルタント（あなた）') < applyStep[1].overlay.indexOf('求人広告・媒体の営業') && applyStep[1].overlay.includes('採用費を応募単価と採用単価で管理'), '立場別の使い方が出ない（自分の職種が先頭でない）');
     await click(page, '#nav [data-a="tab"][data-v="map"]');

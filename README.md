@@ -15,7 +15,7 @@
 - `manifest.json` / `service-worker.js` / `icons/` … PWA（ホーム画面に追加・オフライン学習）。アイコンは `node tools/make-icons.mjs` でパートナーのSVGから生成
 - `.github/workflows/pages.yml` … main に入ると自動テスト → GitHub Pages に公開
 - `.github/workflows/daily-content.yml` ＋ `tools/content/` … 毎朝の教材の自動生成（下の「毎日の教材」参照）
-- `content/` … 配信中の教材（`index.json` と `daily/日付.json`）。`src/content.js` が読み込み、`src/content-schema.js` で形式を確認
+- `content/` … 配信中の教材（`index.json` と `daily/日付.json`）、7章と補章の一覧（`chapters.json`）、最新トレンド（`trends.json`）。`src/content.js` が読み込み、`src/content-schema.js` で形式を確認
 - `server/` … AIサーバー（Cloudflare Workers）。採点 `/api/feedback`・対話 `/api/chat`・接続確認 `/api/health`
 - `tests/` … 操作フローの自動テスト
 - `CLAUDE.md` … Claude Code 用のプロジェクトガイド
@@ -88,6 +88,20 @@ Android は Chrome で開き、右上の「︙」→「ホーム画面に追加�
 ### 今日の教材を作り直したいとき
 「Actions」→「毎日の教材づくり」→「Run workflow」を押し、出てきた欄の **「今日の教材を取り下げて、作り直す」にチェック** を入れて、緑の「Run workflow」。
 今日の教材を取り下げ、別の発表から作り直します（同じ発表は使いません）。1回あたり約130〜200円かかります。アプリは次に開いたとき新しい教材に置き換わります（取り下げた教材をすでに学習していた場合は、学習記録とともに残ります）。
+
+## 週1回のトレンド調査（追記案のプルリクエスト）
+
+設計書（`docs/design-brief.md`）5章の仕組みです。毎週月曜 6:13（日本時間）に GitHub Actions で Claude Code を起動し、7章と補章（`content/chapters.json`）のキーワードで、新しい研究・公的統計・主要な業界ニュースを調べます。
+
+- 結果は **プルリクエスト** として届きます。中身は、章の「最新トレンド」への追記案（`content/trends.json`）と、報告（`docs/trends/週.md`：今週の要点3つ／お客さん・研修・業務改善への示唆／章ごとの追記案／除外した項目）
+- **マージするまで何も変わりません。** 本文（教材や章の本文）は書き換えません
+- 出典のない項目、ランクD・ランク不明の出典、開けないURL、公表日のない出典、すでに追記した出典は、プログラム（`tools/trends/apply.mjs`）が機械的に除外します
+- 費用：1回あたり最大2ドル（約300円、`--max-budget-usd 2`）。月4回で最大約1,200円
+- 今すぐ試すとき：「Actions」→「週1回のトレンド調査」→「Run workflow」
+
+### オーナーが行う設定（最初の1回だけ）
+GitHub Actions がプルリクエストを作れるようにします：リポジトリの「Settings」→ 左メニュー「Actions」→「General」→ 下のほうの「Workflow permissions」で **「Allow GitHub Actions to create and approve pull requests」にチェック** →「Save」。
+（APIキーは「毎日の教材」で登録した `ANTHROPIC_API_KEY` をそのまま使います）
 
 ## AIサーバーの準備（オーナーが行う作業）
 

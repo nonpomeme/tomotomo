@@ -44,7 +44,9 @@ fs.writeFileSync(tracksFile, JSON.stringify({
 }));
 // 調査で「開いた」ページ。最後の2つは使えない（開いていない／許可していないサイト）
 const R = ['https://www.mhlw.go.jp/a', 'https://www.mhlw.go.jp/b', 'https://www.stat.go.jp/c', 'https://www.example.co.jp/ir/d'];
-const notes = R.map((url, i) => ({ fact: '確かめた事実その' + (i + 1) + '：2026年9月時点で、求人倍率は1.2倍だった。', url, source: '厚生労働省 資料' + (i + 1), type: '公的機関' }))
+// 1件目は末尾に / が付いた表記ゆれ（開いたページと同じとみなす）、2件目は B、3件目は公表時期つき
+const notes = R.map((url, i) => ({ fact: '確かめた事実その' + (i + 1) + '：2026年9月時点で、求人倍率は1.2倍だった。', url: i === 0 ? url + '/' : url, source: '厚生労働省 資料' + (i + 1), type: '公的機関', rank: ['A', 'B', 'A', 'C'][i], published: i === 2 ? '2026-09' : '' }))
+  .concat([{ fact: '個人ブログの意見（ランクDなので使ってはいけない）', url: R[1], source: '個人', type: '公的機関', rank: 'D' }])
   .concat([{ fact: '開いていないページの事実（使ってはいけない）', url: 'https://www.mhlw.go.jp/notopened', source: 'x', type: '公的機関' }, { fact: '許可していないサイトの事実（使ってはいけない）', url: 'https://blog.test/x', source: 'ブログ', type: '公的機関' }]);
 
 // ---- 生成結果のお手本（サンプル1を配信形式に直したもの） ----
@@ -53,11 +55,14 @@ const s = JSON.parse(JSON.stringify(A.TOPICS[0]));
 s.s3[0].label = '事実';
 s.apply.roles = { consultant: '顧客に応募課金と掲載課金の費用比較を示す', media_sales: '応募単価の目安を添えて新プランを提案する', agency: '求人企業に紹介手数料との費用差を説明する', inhouse: '自社の応募単価を算出してプランを見直す', executive: '採用費を応募単価と採用単価で管理する' };
 s.nodes = s.nodes.slice(0, 5).concat(['laborsurvey']);
+// 根拠：AIはURLだけを書く（名前・ランクはプログラムが付ける）
+s.questions = s.questions.map((q, i) => Object.assign({}, q, { evidence: i === 0 ? [R[0], 'MAIN_SOURCE'] : [R[i % 3]] }));
+s.s3 = s.s3.map((b, i) => Object.assign({}, b, { evidence: [R[i % 3]] }));
 const refs = [R[0], R[2], 'https://fake.test/hallucinated'];
 const good = { topic: s, nodes: { laborsurvey: { name: '労働市場調査', cat: '経済', sub: '労働', diff: 2 } }, edges: [['laborsurvey', 'labor', 'related', 0.7]], references: refs };
 // 2日目以降は、前日に増えたノード（laborsurvey）を既存として使う
 const reuse = { topic: s, nodes: {}, edges: [], references: refs };
-const bad = { topic: Object.assign({}, s, { questions: s.questions.slice(0, 3) }), nodes: {}, edges: [] };
+const bad = { topic: Object.assign({}, s, { questions: s.questions.slice(0, 3).map(q => Object.assign({}, q, { evidence: ['https://fake.test/made-up'] })) }), nodes: {}, edges: [] };
 
 // ---- 偽の Anthropic API ----
 const calls = [];
@@ -84,7 +89,12 @@ const mock = http.createServer((req, res) => {
     if (kind === 'select') out = mode.noPicks ? { picks: [] } : { picks: [{ index: 0, track: 'hr', reason: '媒体の課金モデルを学べる' }, { index: 1, track: 'economy', reason: '市場データ' }] };
     else if (kind === 'verify') out = { checks: CHECKS.map(([id]) => { const ok = !(mode.failVerify && id === 'expertise'); return { id, ok, note: ok ? '問題なし' : '一般論にとどまっている' }; }), summary: 'まとめ' };
     else out = calls.filter(c => c.kind === 'generate').length === 1 && mode.badFirst ? bad : mode.reuse ? reuse : good;
-    const text = JSON.stringify(out);
+    let text = JSON.stringify(out);
+    if (kind === 'generate') {
+      // 「出典ドキュメントのURL」を根拠に書く。専門知識の教材（出典ドキュメントなし）では書かない
+      const m = /\nURL: (\S+)/.exec(JSON.stringify(body.messages[0].content).replace(/\\n/g, '\n'));
+      text = m ? text.replace(/MAIN_SOURCE/g, m[1]) : text.replace(/,"MAIN_SOURCE"/g, '');
+    }
     if (!body.stream) { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ...base, stop_reason: 'end_turn', content: [{ type: 'text', text }] })); }
     res.writeHead(200, { 'Content-Type': 'text/event-stream' });
     const ev = (type, d) => res.write('event: ' + type + '\ndata: ' + JSON.stringify({ type, ...d }) + '\n\n');
@@ -131,6 +141,7 @@ try {
   mode = { badFirst: true };
   r = await run('2026-10-10');
   check(r.code === 0, '1日目が失敗: ' + r.out);
+  if (process.env.DEBUG_OUT) console.log(r.out);
   const bundle = JSON.parse(fs.readFileSync(path.join(contentDir, 'daily', '2026-10-10.json'), 'utf8'));
   const index = JSON.parse(fs.readFileSync(path.join(contentDir, 'index.json'), 'utf8'));
   const sel1 = calls.find(c => c.kind === 'select').body;
@@ -145,8 +156,17 @@ try {
   check(res1.length === 2 && res1[1].body.messages.length === 2 && res1[0].body.model === 'claude-sonnet-5-5', '調査の一時停止（pause_turn）から続けていない');
   check(res1[0].body.tools.some(t => t.type === 'web_search_20260209' && t.allowed_domains.includes('go.jp')) && res1[0].body.tools.some(t => t.type === 'web_fetch_20260209'), '調査に検索・資料の読み込みとサイトの絞り込みが付いていない');
   const genNotes = calls.find(c => c.kind === 'generate').body.messages[0].content.find(b => b.type === 'text' && b.text.includes('調査メモ')).text;
-  check(R.every(u => genNotes.includes(u)) && !genNotes.includes('notopened') && !genNotes.includes('blog.test'), '開いていない・許可していないサイトの事実が調査メモに入っている');
-  check(bundle.topic.sources.length === 3 && bundle.topic.sources[1].url === R[0] && bundle.topic.sources[2].url === R[2] && !JSON.stringify(bundle.topic.sources).includes('fake.test'), '出典に調査の資料が入っていない（または架空のURLが入っている）: ' + JSON.stringify(bundle.topic.sources));
+  check(R.slice(1).every(u => genNotes.includes(u)) && genNotes.includes(R[0] + '/') && !genNotes.includes('notopened') && !genNotes.includes('blog.test'), '開いていない・許可していないサイトの事実が調査メモに入っている（または表記ゆれのURLが捨てられた）');
+  check(bundle.topic.sources.length === 3 && bundle.topic.sources[1].url === R[0] + '/' && bundle.topic.sources[2].url === R[2] && !JSON.stringify(bundle.topic.sources).includes('fake.test'), '出典に調査の資料が入っていない（または架空のURLが入っている）: ' + JSON.stringify(bundle.topic.sources));
+  // 根拠と信頼度ランク：出典と各問題・解説に付き、名前・ランクは調査メモから。ランクDの事実は使わない
+  check(bundle.topic.sources[0].rank === 'A' && bundle.topic.sources[1].rank === 'A' && bundle.topic.sources[2].rank === 'A', '出典に信頼度ランクが付いていない: ' + JSON.stringify(bundle.topic.sources));
+  const q1 = bundle.topic.questions[0];
+  check(q1.evidence.length === 2 && q1.evidence[0].rank === 'A' && q1.evidence[0].name === '厚生労働省 資料1' && q1.evidence[1].url === 'https://news.test/release3.html' && q1.evidence[1].name === 'テスト省', '問題の根拠（調査メモ・出典の名前とランク）: ' + JSON.stringify(q1.evidence));
+  check(bundle.topic.questions.every(q => q.evidence.length >= 1 && q.evidence.every(e => ['A', 'B', 'C'].includes(e.rank))), 'すべての問題に根拠とランクが付いていない');
+  check(bundle.topic.s3.every(b => b.evidence && b.evidence.length) && bundle.topic.s3[2].evidence[0].published === '2026-09', '解説ブロックの根拠（公表時期つき）: ' + JSON.stringify(bundle.topic.s3.map(b => b.evidence)));
+  check(!genNotes.includes('個人ブログ') && genNotes.includes('信頼度ランクB'), 'ランクDの事実が調査メモに入っている、またはランクが渡っていない');
+  check(r.out.includes('除外：') && r.out.includes('ランクD 1'), '調査の内訳（除外の理由）が記録されていない');
+  check(A.validateTopic(bundle.topic, { nodes: Object.assign({}, A.NODES, bundle.nodes), cats: A.MAP_CATS, rels: A.REL_LABEL, skills: A.SKILLS, newNodes: bundle.nodes, newEdges: bundle.edges, requireEvidence: true }).length === 0, '根拠必須の形式チェックに合格しない');
   // 4択の並びはランダム（正解の中身は変わらない）
   const orig = Object.fromEntries(s.questions.map((q, i) => [i, q]));
   const mcq = bundle.topic.questions.map((q, i) => [q, orig[i]]).filter(([q]) => q.options);
@@ -197,7 +217,7 @@ try {
   check(r.code === 0, '3日目が異常終了: ' + r.out);
   const b3 = JSON.parse(fs.readFileSync(path.join(contentDir, 'daily', '2026-10-12.json'), 'utf8'));
   const idx3 = JSON.parse(fs.readFileSync(path.join(contentDir, 'index.json'), 'utf8'));
-  check(b3.topic.kind === '専門知識' && b3.topic.date === '2026-10-12' && b3.topic.sources.every(x => R.includes(x.url)), '専門知識の教材の出典・種類: ' + JSON.stringify(b3.topic.sources));
+  check(b3.topic.kind === '専門知識' && b3.topic.date === '2026-10-12' && b3.topic.sources.every(x => R.includes(x.url.replace(/\/$/, ''))), '専門知識の教材の出典・種類: ' + JSON.stringify(b3.topic.sources));
   check(idx3.curriculumDone.includes('求人媒体の課金モデルの仕組み') && idx3.items[0].links.length === 0, '扱った専門知識の題材が記録されていない');
   check(calls.find(c => c.kind === 'research').body.messages[0].content[0].text.includes('求人媒体の課金モデルの仕組み'), '専門知識の題材で調査していない');
 
