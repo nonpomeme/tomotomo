@@ -18,7 +18,8 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # ブラウザのテスト（Playwright 1.56）は Ubuntu 26.04 に未対応のため、24.04 で動かす
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
