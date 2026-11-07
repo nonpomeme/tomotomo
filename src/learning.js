@@ -7,16 +7,20 @@ function recommend() {
   const lv = levelInfo(S.xp).lv;
   const tier = lv < 4 ? 2 : 3;
   const reviewTopics = new Set(dueReviews().map(r => QBANK[r.qid] && QBANK[r.qid].topicId));
+  const nextUnit = nextUnitTopic();
   return TOPICS.map(t => {
     let sc = 0; const reasons = [];
     const interest = t.tags.filter(x => S.profile.interests.includes(x));
     if (interest.length) { sc += interest.length * 1.1; reasons.push({ w: interest.length * 1.1, s: '興味：' + interest.slice(0, 2).join('・') }); }
     if (S.profile.industry && t.industries.includes(S.profile.industry)) { sc += 1.6; reasons.push({ w: 1.6, s: 'あなたの業界（' + S.profile.industry + '）に関係' }); }
     if (isHRish() && t.tags.includes('採用')) { sc += 1.8; reasons.push({ w: 1.8, s: '仕事に直結' }); }
-    if (t.deliveredOn === dkey() && !S.completed[t.id]) { sc += 4; reasons.push({ w: 9, s: '今日の配信' }); }
+    // 優先順位（要件 FR-1）：今日配信された単元 → カリキュラム順で次の未学習の単元 → それ以外はスコア順
+    let pri = 0;
+    if (t.deliveredOn === dkey() && !S.completed[t.id]) { pri = 2; reasons.push({ w: 9, s: '今日の配信' }); }
+    if (nextUnit && t.id === nextUnit.id) { pri = Math.max(pri, 1); reasons.push({ w: 8, s: 'カリキュラムの次の単元' }); }
     const age = daysBetween(new Date(t.date), Date.now());
     const fresh = Math.max(0, 1.6 - age / 10); sc += fresh;
-    if (age <= 7) reasons.push({ w: fresh, s: '最新ニュース' });
+    if (age <= 7 && t.deliveredOn) reasons.push({ w: fresh, s: '新しい教材' });
     const bridges = t.nodes.filter(n => !learned.has(n) && ADJ[n].some(a => learned.has(a.id)));
     if (bridges.length) {
       sc += bridges.length * 0.9;
@@ -31,8 +35,8 @@ function recommend() {
     const done = S.completed[t.id] || 0;
     if (done) sc -= 6 + done;
     reasons.sort((a, b) => b.w - a.w);
-    return { t, sc, done, reasons: reasons.slice(0, 3).map(r => r.s) };
-  }).sort((a, b) => b.sc - a.sc);
+    return { t, sc, pri, done, reasons: reasons.slice(0, 3).map(r => r.s) };
+  }).sort((a, b) => b.pri - a.pri || b.sc - a.sc);
 }
 function suggestionText() {
   const learned = learnedIds();

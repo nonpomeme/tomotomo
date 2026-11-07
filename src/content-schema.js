@@ -5,7 +5,11 @@ const CONTENT_RULES = {
   QTYPES: ['mc', 'tf', 'fill', 'order', 'cause', 'case'],
   THOUGHTS: ['think', 'multi', 'business'],
   EX_KEYS: ['why', 'others', 'bg', 'related', 'apply', 'memo'],
-  SOURCE_TYPES: ['公的機関', '企業公式', '国際機関・研究'],
+  SOURCE_TYPES: ['公的機関', '企業公式', '国際機関・研究', '学術研究'],
+  // 3つの視点（設計書 docs/design-brief.md）：お客さんに提案する／社内で教える／仕組みで改善する
+  VIEWS: { customer: 'お客さんへの提案', teach: '社内で教える', system: '仕組みで改善する' },
+  UNIT_RE: /^u(\d+|j)-\d+$/,
+  CHAPTER_RE: /^ch(\d+|j)$/,
   KINDS: ['最新ニュース', '今後重要になるテーマ', '基礎知識×ニュース', '専門知識'],
   // 職種別の応用（apply.roles）。サンプルには無く、配信教材にだけある
   ROLES: { consultant: '採用コンサルタント', media_sales: '求人広告・媒体の営業', agency: '人材紹介（RA・CA）', inhouse: '企業の人事・採用担当', executive: '経営者' },
@@ -34,6 +38,7 @@ function evidenceError(e) {
 
 /* t: 教材、ctx: { nodes: 既存＋新規ノード, cats, rels, skills, newNodes, newEdges, requireEvidence }
    requireEvidence: 出典のランク・各問題の根拠を必須にする（新しく作る教材用。サンプルや過去の教材は任意）
+   requireViews: 3つの視点（apply.views）と単元（unit / chapter）を必須にする（組織論カリキュラムの教材用）
    問題があればエラー文の配列を返す（空なら合格） */
 function validateTopic(t, ctx) {
   const R = CONTENT_RULES, err = [];
@@ -75,6 +80,10 @@ function validateTopic(t, ctx) {
   need(isStr(s10.opinion) && s10.opinion.indexOf('AIの解釈：') === 0, 's10.opinion は「AIの解釈：」で始める');
   need(t.apply && strArr(t.apply.hr, 3, 3) && strArr(t.apply.general, 3, 3), 'apply.hr / apply.general は3個ずつ');
   if (t.apply && t.apply.roles != null) need(typeof t.apply.roles === 'object' && Object.keys(R.ROLES).every(k => isStr(t.apply.roles[k], 15)), 'apply.roles は5職種（' + Object.keys(R.ROLES).join(' / ') + '）すべてに具体的な行動を書く');
+  const reqV = !!(ctx && ctx.requireViews);
+  if (t.apply && (t.apply.views != null || reqV)) need(t.apply.views && typeof t.apply.views === 'object' && Object.keys(R.VIEWS).every(k => isStr(t.apply.views[k], 30)), 'apply.views は3つの視点（' + Object.keys(R.VIEWS).join(' / ') + '）を30字以上で');
+  if (t.unit != null || reqV) need(isStr(t.unit) && R.UNIT_RE.test(t.unit), 'unit（カリキュラムの単元id）が不正');
+  if (t.chapter != null || reqV) need(isStr(t.chapter) && R.CHAPTER_RE.test(t.chapter), 'chapter（カリキュラムの章id）が不正');
   if (t.trackLabel != null) need(isStr(t.trackLabel) && t.trackLabel.length <= 20, 'trackLabel が不正');
   need(isStr(t.talk, 10), 'talk が必要');
   need(t.thoughts && R.THOUGHTS.every(k => t.thoughts[k] && isStr(t.thoughts[k].q) && isStr(t.thoughts[k].hint) && isStr(t.thoughts[k].example, 40)), '思考問題3種（think / multi / business）が必要');

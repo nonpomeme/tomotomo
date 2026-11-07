@@ -290,3 +290,9 @@ input[type=time]{padding:6px 8px;border-radius:10px;border:2px solid var(--line)
 .phello{font-size:12.5px;font-weight:600;margin-top:4px;line-height:1.5}
 .lineup{display:flex;justify-content:center;gap:4px;margin-top:6px;opacity:.9}
 .owl.ctr{margin:0 auto}
+
+/* 学習タブ：カリキュラムの章（開閉できる） */
+details.chapter > summary { list-style: none; }
+details.chapter > summary::-webkit-details-marker { display: none; }
+details.chapter .chev { flex: none; margin-top: 2px; transition: transform .2s; }
+details.chapter[open] .chev { transform: rotate(180deg); }

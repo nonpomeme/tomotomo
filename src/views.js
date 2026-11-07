@@ -3,7 +3,7 @@
 /* =========================================================
    TomoTomo — views
    ========================================================= */
-const ui = { tab: 'home', overlay: null, L: null, chat: null, news: null, newsDepth: 's3', mapView: null, mapCat: 'all', learnCat: 'すべて', learnInd: '', modal: null, ob: 0, minutes: null, lastResult: null, rankRows: null };
+const ui = { tab: 'home', overlay: null, L: null, chat: null, news: null, newsDepth: 's3', mapView: null, mapCat: 'all', modal: null, ob: 0, minutes: null, lastResult: null, rankRows: null };
 
 const IC = {
   home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
@@ -44,7 +44,7 @@ function viewLogin() {
     '<div style="display:flex;justify-content:center">' + (S.partner ? owl(120, 'normal', 'bob') : partnerArt('tomo', 120, 'normal', 'bob')) + '</div>' +
     '<div class="lineup" aria-hidden="true">' + PARTNER_ORDER.filter(id => id !== (S.partner || 'tomo')).map(id => partnerArt(id, 34)).join('') + '</div>' +
     '<h1>' + esc(S.appName) + '</h1>' +
-    '<p class="muted" style="margin-top:6px">毎日10分。ニュースと教養が、あなたの知識マップでつながっていく。</p>' +
+    '<p class="muted" style="margin-top:6px">毎日10分。研究にもとづく組織論が、あなたの知識マップでつながっていく。</p>' +
     '<div style="margin-top:32px" class="stack">' +
     '<button class="btn btn-primary" data-a="login" data-v="account">アカウントで続ける</button>' +
     '<button class="btn btn-ghost" data-a="login" data-v="guest">ゲストではじめる</button>' +
@@ -134,7 +134,7 @@ function viewHome() {
   if (learned.length) h += '<div class="chips">' + learned.map(k => '<button class="chip" data-a="openNode" data-v="' + k + '"><i style="width:8px;height:8px;border-radius:50%;background:' + MAP_CATS[NODES[k].cat] + ';display:inline-block"></i>' + esc(NODES[k].name) + '</button>').join('') + '</div>';
   else h += '<div class="card flat small muted">まだ知識ノードはありません。今日の学習を終えると、ここに追加されます。</div>';
   h += '<div class="sec-title">デイリーミッション</div><div class="card">' + missionsHTML() + '</div>';
-  h += '<div class="sec-title">今日のニュース</div>' + newsList(5).map(t => '<button class="card listcard" data-a="news" data-v="' + t.id + '"><span class="ic">' + t.emoji + '</span><span class="grow"><b style="font-family:var(--f-head);font-size:14.5px">' + esc(t.title) + '</b><br><span class="tiny muted">' + fmtYMD(t.date) + '／' + esc(t.sources.map(s => s.name).join('・')) + '</span></span></button>').join('');
+  h += '<div class="sec-title">最近の教材</div>' + newsList(5).map(t => '<button class="card listcard" data-a="news" data-v="' + t.id + '"><span class="ic">' + t.emoji + '</span><span class="grow"><b style="font-family:var(--f-head);font-size:14.5px">' + esc(t.title) + '</b><br><span class="tiny muted">' + fmtYMD(t.date) + '／' + esc(t.sources.map(s => s.name).join('・')) + '</span></span></button>').join('');
   return h;
 }
 function missions() {
@@ -156,25 +156,50 @@ function viewLearn() {
   h += '<div class="sec-title">学習モード</div>' + modeCards(p.mode, 'setMode');
   h += '<div class="sec-title">1日の学習時間</div><div class="choice" style="grid-template-columns:repeat(3,1fr)">' + [3, 10, 15].map(m => '<button class="chip ' + (p.minutes === m ? 'on' : '') + '" data-a="setMinutes" data-v="' + m + '">' + m + '分</button>').join('') + '</div>';
   h += '<p class="tiny muted" style="margin:8px 2px 0">3分：要点＋クイズ2問　／　10分：背景と重要ポイント＋クイズ＋思考問題　／　15分：因果関係・多角的視点・実務応用まで</p>';
-  h += '<div class="sec-title">カテゴリー</div><div class="scroll-x">' + ['すべて'].concat(BIG_CATEGORIES).map(c => '<button class="chip ' + (ui.learnCat === c ? 'on' : '') + '" data-a="learnCat" data-v="' + c + '">' + c + '</button>').join('') + '</div>';
-  const relInd = RELATED_INDUSTRIES[p.industry] || RELATED_INDUSTRIES._;
-  const indOrder = [p.industry].concat(relInd).concat(INDUSTRIES.filter(x => x !== p.industry && !relInd.includes(x))).filter(Boolean);
-  h += '<div class="sec-title">業界<span class="tiny muted" style="font-weight:500">あなたの業界と関連業界を先頭に表示</span></div><div class="scroll-x">' +
-    '<button class="chip ' + (!ui.learnInd ? 'on' : '') + '" data-a="learnInd" data-v="">すべて</button>' +
-    indOrder.map(c => '<button class="chip ' + (ui.learnInd === c ? 'on' : '') + '" data-a="learnInd" data-v="' + c + '">' + (c === p.industry ? '★ ' : '') + c + '</button>').join('') + '</div>';
-  const list = newsList().filter(t => {
-    const catOk = ui.learnCat === 'すべて' || t.tags.includes(ui.learnCat) || t.path.some(x => x.includes(ui.learnCat)) || (ui.learnCat === '人事' && t.tags.includes('採用'));
-    const indOk = !ui.learnInd || t.industries.includes(ui.learnInd);
-    return catOk && indOk;
-  });
-  h += '<div class="sec-title">テーマ（' + list.length + '）</div>';
-  if (!list.length) h += '<div class="card flat"><div class="tomo">' + owl(44, 'think') + '<div class="small">「' + esc(ui.learnInd || ui.learnCat) + '」のテーマは、ニュースAPI接続後に毎日配信されます。いまは近いテーマから学べます。</div></div><button class="btn btn-ghost" style="margin-top:12px" data-a="learnReset">すべてのテーマを表示</button></div>';
-  h += list.map(topicCard).join('');
-  h += '<div class="sec-title">採用・人事の注目領域</div><div class="card flat"><div class="chips">' +
-    ['採用市場', '新卒採用', '中途採用', '転職市場', '人材不足', '賃金', '人材紹介', 'HR Tech', 'AI×採用', 'AI面接', '採用マーケティング', 'ダイレクトリクルーティング', '人的資本', '組織開発', '人材育成', 'マネジメント', '労働市場', '働き方', '労働政策', '海外HR', '人事戦略'].map(x => {
-      const t = TOPICS.find(tp => tp.title.includes(x) || tp.nodes.some(n => NODES[n].name === x));
-      return t ? '<button class="chip on" data-a="news" data-v="' + t.id + '">' + x + '</button>' : '<span class="chip soft">' + x + '</span>';
-    }).join('') + '</div><p class="tiny muted" style="margin-top:10px">色つきの領域は学習できるテーマがあります。その他はニュースAPI接続後に追加されます。</p></div>';
+  h += curriculumHTML();
+  // カリキュラムの単元にひも付かない教材（組織論に作り直す前の配信など、学習済みのもの）
+  const others = newsList().filter(t => !t.unit);
+  if (others.length) h += '<div class="sec-title">これまでの配信（' + others.length + '）</div>' + others.map(topicCard).join('');
+  return h;
+}
+/* 学習タブ：組織論のカリキュラム（章と単元）。学習できる単元だけにボタンを出す（要件 FR-2・FR-3） */
+const UNIT_STATE = { done: ['学習済み', 'fact'], ready: ['学習できる', 'ai'], soon: ['準備中', 'soft'] };
+function curriculumHTML() {
+  const C = Curriculum.data;
+  if (!C) {
+    // カリキュラムをまだ読み込めていない（初回のオフラインなど）：単元のある教材を順に出す
+    const ts = TOPICS.filter(t => t.unit).sort((a, b) => unitOrder(a.unit) - unitOrder(b.unit));
+    return '<div class="sec-title">カリキュラム</div><p class="tiny muted" style="margin:0 2px 8px">章の一覧は、ネットにつながると表示されます。</p>' + ts.map(topicCard).join('');
+  }
+  const next = nextUnitTopic();
+  const units = C.chapters.reduce((a, c) => a.concat(c.units), []);
+  const doneN = units.filter(u => unitState(u).state === 'done').length;
+  let h = '<div class="sec-title">カリキュラム：' + esc(C.title || '組織論') + '<span class="tiny muted" style="font-weight:500">' + C.chapters.length + '章・' + units.length + '単元</span></div>';
+  h += '<div class="card flat small" style="margin-bottom:10px"><div class="row"><div class="bar mint grow" style="height:7px"><i style="width:' + Math.round(doneN / units.length * 100) + '%"></i></div><span class="tiny num">' + doneN + '/' + units.length + ' 単元</span></div>' +
+    '<p class="tiny muted" style="margin-top:8px">毎朝1つずつ、まだ教材のない単元の教材が届きます。研究と公的統計にもとづき、各問題に根拠と信頼度ランクがあります。</p></div>';
+  h += C.chapters.map(ch => {
+    const st = ch.units.map(u => Object.assign({ u }, unitState(u)));
+    const done = st.filter(x => x.state === 'done').length;
+    const trends = chapterTrends(ch);
+    const open = st.some(x => x.state !== 'soon') || trends.length;
+    return '<details class="card chapter" data-ch="' + esc(ch.id) + '" style="margin-bottom:10px"' + (open ? ' open' : '') + '><summary class="row" style="cursor:pointer;align-items:flex-start">' +
+      '<i style="width:10px;height:10px;border-radius:50%;margin-top:6px;flex:none;background:' + (MAP_CATS[ch.cat] || 'var(--line)') + '"></i>' +
+      '<span class="grow"><b style="font-family:var(--f-head);font-size:15.5px">' + esc(ch.title) + '</b><br><span class="tiny muted">' + esc(ch.cat || '') + '・' + done + '/' + ch.units.length + ' 単元学習済み</span></span><span class="chev muted" aria-hidden="true">▾</span></summary>' +
+      (ch.role ? '<p class="tiny muted" style="margin:8px 0 0">' + esc(ch.role) + '</p>' : '') +
+      st.map(x => {
+        const lab = UNIT_STATE[x.state];
+        const isNext = next && x.t && x.t.id === next.id;
+        return '<div class="unit" data-unit="' + esc(x.u.id) + '" data-state="' + x.state + '" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">' +
+          '<div class="row" style="align-items:flex-start"><span class="grow"><b style="font-size:14px">' + esc(x.u.title) + '</b>' + (isNext ? ' <span class="tag ai">次の単元</span>' : '') +
+          '<div class="tiny muted" style="margin-top:2px;line-height:1.5">' + esc((x.u.concepts || []).slice(0, 4).join('・')) + '</div></span><span class="tag ' + lab[1] + '" style="flex:none">' + lab[0] + '</span></div>' +
+          (x.t ? '<div class="row" style="margin-top:8px"><button class="btn btn-ghost btn-sm grow" data-a="news" data-v="' + x.t.id + '">解説を読む</button><button class="btn btn-primary btn-sm grow" data-a="start" data-v="' + x.t.id + '">' + S.profile.minutes + '分で学ぶ</button></div>' : '') +
+          '</div>';
+      }).join('') +
+      (trends.length ? '<div class="trendbox" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)"><span class="tag" style="background:var(--sun-soft,#FFF4D6);color:var(--sun-deep)">最新トレンド（参考）</span>' +
+        trends.slice(-3).reverse().map(it => '<div style="margin-top:8px"><b class="small">' + esc(it.title) + '</b><p class="tiny" style="margin:2px 0">' + esc(it.summary) + '</p>' +
+          it.sources.map(sc => '<div class="tiny">' + rankBadge(sc.rank) + ' <a href="' + esc(sc.url) + '" target="_blank" rel="noopener">' + esc(sc.name) + '</a>' + (sc.published ? '<span class="muted">（' + esc(sc.published) + '）</span>' : '') + '</div>').join('') + '</div>').join('') + '</div>' : '') +
+      '</details>';
+  }).join('');
   return h;
 }
 function topicCard(t) {
@@ -185,7 +210,7 @@ function topicCard(t) {
     '<b style="font-family:var(--f-head);font-size:16px;display:block;margin-top:2px">' + esc(t.title) + '</b>' +
     '<div class="tiny muted" style="margin-top:2px">' + (t.trackLabel ? esc(t.trackLabel) + '｜' : '') + esc(t.kind) + '・' + fmtYMD(t.date) + (done ? '　<span class="tag fact">学習済み ×' + done + '</span>' : '') + '</div>' +
     '<div class="row" style="margin-top:8px"><div class="bar mint grow" style="height:7px"><i style="width:' + m + '%"></i></div><span class="tiny num">' + m + '%</span></div>' +
-    '</div></div><div class="row" style="margin-top:12px"><button class="btn btn-ghost btn-sm grow" data-a="news" data-v="' + t.id + '">ニュースを読む</button><button class="btn btn-primary btn-sm grow" data-a="start" data-v="' + t.id + '">' + S.profile.minutes + '分で学ぶ</button></div></div>';
+    '</div></div><div class="row" style="margin-top:12px"><button class="btn btn-ghost btn-sm grow" data-a="news" data-v="' + t.id + '">解説を読む</button><button class="btn btn-primary btn-sm grow" data-a="start" data-v="' + t.id + '">' + S.profile.minutes + '分で学ぶ</button></div></div>';
 }
 
 /* ---------------- growth ---------------- */
@@ -234,9 +259,9 @@ function analysisHTML(cs, base, baseLabel) {
   const strong = w.slice().reverse()[0], weak = w[0];
   out.push('<div><span class="tag fact">今の強み</span><p style="margin-top:4px">「' + strong.name + '」が安定しています（' + Math.round(strong.rate * 100) + '%）。</p></div>');
   let detail = '';
-  Object.keys(MAP_CATS).concat(['採用・人事', '経済', '金融']).forEach(cat => {
+  Object.keys(MAP_CATS).forEach(cat => {
     const k = S.skillCat[cat + '|knowledge'], c = S.skillCat[cat + '|causal'];
-    if (!detail && k && c && k.t && c.t && k.c / k.t >= 0.7 && c.c / c.t < 0.6) detail = cat + 'の用語は理解していますが、' + cat + 'ニュースの因果関係がやや弱めです。';
+    if (!detail && k && c && k.t && c.t && k.c / k.t >= 0.7 && c.c / c.t < 0.6) detail = '「' + cat + '」の用語は理解していますが、因果関係の問題がやや弱めです。';
   });
   out.push('<div><span class="tag" style="background:var(--coral-soft);color:var(--coral-deep)">今の弱点</span><p style="margin-top:4px">' + (detail || '「' + weak.name + '」がもう少しで伸びそうです（' + Math.round(weak.rate * 100) + '%）。') + '</p>' +
     (hasUnlock(30) ? '<div class="tomo" style="margin-top:8px">' + owl(40, 'think') + '<div class="say small">' + esc(say('weak', { weak: weak.name })) + '</div></div>' : '') + '</div>');
@@ -290,7 +315,7 @@ function viewMore() {
     '<p class="tiny muted" style="margin-top:10px">成長で増えるのは表情やリアクションだけです。学習機能が有利・不利になることはありません。</p></div>';
   h += '<div class="sec-title">通知</div><div class="card">' +
     '<div class="setrow"><span><b>通知を受け取る</b></span><button class="switch ' + (n.enabled ? 'on' : '') + '" data-a="notifToggle" aria-label="通知を受け取る" aria-pressed="' + n.enabled + '"></button></div>' +
-    [['morning', '☀️ 朝', '今日の10分教養'], ['noon', '💡 昼', '今日のおすすめニュース'], ['night', '🧠 夜', '復習のお知らせ']].map(([k, l, d]) => '<div class="setrow"><span class="grow"><b>' + l + '</b><br><span class="tiny muted">' + d + '</span></span><input type="time" value="' + n.slots[k].time + '" data-f="notif.slots.' + k + '.time" aria-label="' + l + 'の時刻"><button class="switch ' + (n.slots[k].on ? 'on' : '') + '" data-a="slotToggle" data-v="' + k + '" aria-label="' + l + 'の通知" aria-pressed="' + n.slots[k].on + '"></button></div>').join('') +
+    [['morning', '☀️ 朝', '今日の10分組織論'], ['noon', '💡 昼', '今日のおすすめテーマ'], ['night', '🧠 夜', '復習のお知らせ']].map(([k, l, d]) => '<div class="setrow"><span class="grow"><b>' + l + '</b><br><span class="tiny muted">' + d + '</span></span><input type="time" value="' + n.slots[k].time + '" data-f="notif.slots.' + k + '.time" aria-label="' + l + 'の時刻"><button class="switch ' + (n.slots[k].on ? 'on' : '') + '" data-a="slotToggle" data-v="' + k + '" aria-label="' + l + 'の通知" aria-pressed="' + n.slots[k].on + '"></button></div>').join('') +
     '<div class="setrow"><span><b>頻度</b></span><select class="select" style="width:auto" data-f="notif.freq">' + [['daily', '毎日'], ['weekday', '平日のみ'], ['3week', '週3回']].map(([v, l]) => '<option value="' + v + '" ' + (n.freq === v ? 'selected' : '') + '>' + l + '</option>').join('') + '</select></div>' +
     '<button class="btn btn-ghost" style="margin-top:12px" data-a="notifPreview">通知をプレビューする</button>' +
     '<p class="tiny muted" style="margin-top:8px">プッシュ通知はスマホアプリ版（本番接続時）で、設定した時刻に配信されます。この版では設定の保存とプレビューができます。</p></div>';
@@ -299,7 +324,7 @@ function viewMore() {
     '<label class="field"><span>アプリ名（正式名称の変更用）</span><input class="input" data-f="appName" value="' + esc(S.appName) + '" maxlength="20"></label></div>';
   h += aiServerCard();
   h += '<div class="sec-title">本番接続の状態</div><div class="card small">' +
-    [['LLM（AI解説・採点・ディスカッション）', AI.connected() ? '接続中' : '簡易AIで動作'], ['データベース', Remote.ready ? 'クラウド同期中' : 'この端末に保存'], ['ニュースAPI・検索API', contentStatus()], ['プッシュ通知', 'アプリ版で接続予定'], ['分析基盤', '未接続']].map(([a, b]) => '<div class="setrow"><span>' + a + '</span><span class="tag">' + b + '</span></div>').join('') +
+    [['LLM（AI解説・採点・ディスカッション）', AI.connected() ? '接続中' : '簡易AIで動作'], ['データベース', Remote.ready ? 'クラウド同期中' : 'この端末に保存'], ['教材の配信', contentStatus()], ['プッシュ通知', 'アプリ版で接続予定'], ['分析基盤', '未接続']].map(([a, b]) => '<div class="setrow"><span>' + a + '</span><span class="tag">' + b + '</span></div>').join('') +
     '<p class="tiny muted" style="margin-top:8px">APIキーなどの秘密情報は端末に保存せず、サーバー経由で接続する構成です。</p></div>';
   h += '<div class="sec-title">アカウント</div><div class="card"><div class="small muted">' + (S.account === 'account' && Remote.ready ? 'アカウントでログイン中（クラウドに保存）' : S.account === 'account' ? 'アカウントでログイン中（同期の準備中・この端末にも保存）' : 'ゲスト（この端末に保存）') + '</div>' +
     '<button class="btn btn-ghost" style="margin-top:12px" data-a="logout">ログアウト</button>' +
@@ -311,7 +336,7 @@ function aiServerCard() {
   const cfg = AI.config();
   const msg = ui.aiMsg || (cfg ? (AI.lastError ? '⚠️ ' + AI.lastError : '設定済み') : '未設定（簡易AIで動作中）');
   return '<div class="sec-title">AIサーバー（自分専用）</div><div class="card">' +
-    '<p class="small muted" style="margin:0">自分で用意したサーバーにつなぐと、思考問題の採点とニュースの対話に本物のAIを使えます。合言葉はこの端末にだけ保存されます。</p>' +
+    '<p class="small muted" style="margin:0">自分で用意したサーバーにつなぐと、思考問題の採点とテーマについての対話に本物のAIを使えます。合言葉はこの端末にだけ保存されます。</p>' +
     '<label class="field"><span>サーバーのURL</span><input class="input" id="aiBase" type="url" inputmode="url" autocomplete="off" placeholder="https://tomotomo-api.○○.workers.dev" value="' + esc(cfg ? cfg.apiBase.replace(/\/api$/, '') : '') + '"></label>' +
     '<label class="field"><span>合言葉</span><input class="input" id="aiToken" type="password" autocomplete="off" placeholder="' + (cfg && cfg.token ? '保存済み（変えるときだけ入力）' : '') + '"></label>' +
     '<p class="small" id="aiMsg" role="status" style="margin-top:10px">' + esc(msg) + '</p>' +

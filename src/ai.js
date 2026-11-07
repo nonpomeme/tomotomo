@@ -101,7 +101,7 @@ const AI = {
     }, 60000, res => readText(res, onText));
     if (viaBackend) return viaBackend;
     if (AI.sample) {
-      const ctx = 'あなたはユーザーの学習パートナー「' + partnerName() + '」（先生ではなく一緒に知識を育てる相棒）。ユーザーと次のニュースについて対話し、理解を深めさせる。話し方: ' + partner().voice + '。ただし説明の正確さ・情報量・質は話し方によって変えない。' +
+      const ctx = 'あなたはユーザーの学習パートナー「' + partnerName() + '」（先生ではなく一緒に知識を育てる相棒）。ユーザーと次のテーマ（組織論の教材）について対話し、理解を深めさせる。話し方: ' + partner().voice + '。ただし説明の正確さ・情報量・質は話し方によって変えない。' +
         '事実とAIの解釈を区別し、政治・社会の話題では特定の政党・候補者・思想を支持せず、複数の立場を示す。300字程度で、日本語で、やさしく具体的に。最後に考えを深める短い問いを1つ添える。\n' +
         'テーマ: ' + t.title + '\n要点: ' + t.s30 + '\n因果: ' + t.s10.causal.join('→') + '\nユーザーの職種: ' + (S.profile.occupation || '未設定') + '、業界: ' + (S.profile.industry || '未設定');
       const turns = log.map((m, i) => ({ role: m.role, content: i === 0 ? ctx + '\n\n質問: ' + m.content : m.content }));
@@ -225,9 +225,9 @@ function heuristicFeedback(t, variant, text) {
 function fallbackChat(t, q) {
   if (t.chat && t.chat[q]) return t.chat[q];
   const p = t.s10.perspectives;
-  if (/反対|批判|デメリット|リスク/.test(q)) return 'よくある慎重論を整理します。' + p.slice(0, 3).map(x => '\n・' + x.who + 'の立場：' + x.text).join('') + '\n\nどの立場も一理あるので、「どこに線を引くか」を考えると議論が深まります。';
+  if (/反対|批判|限界|デメリット|リスク/.test(q)) return 'よくある慎重論を整理します。' + p.slice(0, 3).map(x => '\n・' + x.who + 'の立場：' + x.text).join('') + '\n\nどの立場も一理あるので、「どこに線を引くか」を考えると議論が深まります。';
   if (/採用|人事|人材/.test(q)) return '採用・人事の視点では次の点が重要です。' + t.apply.hr.map(x => '\n・' + x).join('') + '\n\n' + t.s10.opinion;
   if (/企業|経営|メリット/.test(q)) return '企業・経営の視点で見ると：' + p.filter(x => /企業|経営/.test(x.who)).map(x => '\n・' + x.text).join('') + '\n\n加えて、' + t.apply.general[1];
   if (/提案|コンサル|営業/.test(q)) return '提案の型は「現状 → ボトルネック → 打ち手 → 小さな実験」です。このテーマなら：' + t.apply.hr.map(x => '\n・' + x).join('');
-  return 'いい問いですね。このテーマの因果関係は「' + t.s10.causal.join(' → ') + '」です。' + '\n\nどの矢印が最も不確かだと思いますか？ そこに注目すると、ニュースの先が読めるようになります。\n\n（いまは簡易応答モードです。AI接続時は自由な質問に詳しく答えます）';
+  return 'いい問いですね。このテーマの因果関係は「' + t.s10.causal.join(' → ') + '」です。' + '\n\nどの矢印が最も不確かだと思いますか？ そこに注目すると、理論の使いどころが見えるようになります。\n\n（いまは簡易応答モードです。AI接続時は自由な質問に詳しく答えます）';
 }

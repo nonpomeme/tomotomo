@@ -120,4 +120,4 @@ function newsList(max) {
   const delivered = TOPICS.filter(t => t.deliveredOn).sort((a, b) => b.deliveredOn.localeCompare(a.deliveredOn)).slice(0, max || CONTENT_KEEP);
   return delivered.concat(TOPICS.filter(t => !t.deliveredOn));
 }
-function contentStatus() { return Content.latest ? '毎日配信（最新 ' + fmtYMD(Content.latest) + '）' : 'サンプルニュースで動作'; }
+function contentStatus() { return Content.latest ? '毎日配信（最新 ' + fmtYMD(Content.latest) + '）' : 'お手本の教材で動作'; }

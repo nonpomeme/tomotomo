@@ -1,7 +1,7 @@
 {
-  "name": "TomoTomo — AI教養トレーナー",
+  "name": "TomoTomo — 組織論トレーナー",
   "short_name": "TomoTomo",
-  "description": "毎日10分、ニュースと教養が知識マップでつながっていく、社会人向けAI教養トレーナー。",
+  "description": "毎日10分、研究にもとづく組織論を、採用・組織づくりの実務につなげて学ぶ学習アプリ。",
   "lang": "ja",
   "id": "./",
   "start_url": "./",
