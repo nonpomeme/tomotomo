@@ -1,5 +1,6 @@
-// content/curriculum.json から調査ノート（docs/research/organization-theory.md）を作る。
-// 文献の情報はカリキュラムのファイルだけに書き、文書はそこから生成する（食い違いを防ぐ）。
+// content/curriculum.json から、調査ノート（docs/research/organization-theory.md）と
+// 週1回のトレンド調査が使う章の一覧（content/chapters.json）を作る。
+// 文献・章の情報はカリキュラムのファイルだけに書き、ほかはそこから生成する（食い違いを防ぐ）。
 // 使い方: node tools/content/curriculum-doc.mjs
 import fs from 'node:fs';
 import path from 'node:path';
@@ -36,4 +37,9 @@ for (const ch of C.chapters) {
 }
 fs.mkdirSync(path.join(ROOT, 'docs', 'research'), { recursive: true });
 fs.writeFileSync(path.join(ROOT, 'docs', 'research', 'organization-theory.md'), lines.join('\n') + '\n');
-console.log('docs/research/organization-theory.md を作りました');
+const chapters = {
+  _説明: 'content/curriculum.json から自動生成（node tools/content/curriculum-doc.mjs）。週1回のトレンド調査（tools/trends/）が、章ごとのキーワードで調べ、関係する章の「最新トレンド」（content/trends.json）への追記案をプルリクエストで出す。',
+  chapters: C.chapters.map(ch => ({ id: ch.id, no: ch.no, title: ch.title, scope: ch.role, keywords: ch.keywords }))
+};
+fs.writeFileSync(path.join(ROOT, 'content', 'chapters.json'), JSON.stringify(chapters, null, 2) + '\n');
+console.log('docs/research/organization-theory.md と content/chapters.json を作りました');

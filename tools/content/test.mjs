@@ -1,100 +1,108 @@
-// 毎日の教材づくりの自動テスト。本物の情報源・Anthropic API は使わない。
+// 組織論のカリキュラムと、毎日の教材づくりの自動テスト。本物の Anthropic API は使わない。
 // 使い方: node tools/content/test.mjs
 import http from 'node:http';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { loadApp, ROOT } from './load-app.mjs';
-import { parseFeed } from './collect.mjs';
 import { CHECKS } from './prompts.mjs';
 
 const failures = [];
 const check = (c, m) => { if (!c) failures.push(m); };
 const A = loadApp();
+const CUR = JSON.parse(fs.readFileSync(path.join(ROOT, 'content', 'curriculum.json'), 'utf8'));
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tomotomo-content-'));
+const units = CUR.chapters.flatMap(ch => ch.units.map(u => ({ ch, u })));
 
-// ---- 偽の情報源と記事 ----
-const web = path.join(tmp, 'web');
-fs.mkdirSync(path.join(web, 'feeds.test'), { recursive: true });
-fs.mkdirSync(path.join(web, 'news.test'), { recursive: true });
-const now = new Date().toUTCString();
-fs.writeFileSync(path.join(web, 'feeds.test', 'rss.xml'), `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>テスト省</title>
-<item><title>令和8年 労働市場の動向調査の結果</title><link>https://news.test/release1.html</link><pubDate>${now}</pubDate><description>調査結果を公表しました</description></item>
-<item><title>人材育成支援の新制度について</title><link>https://news.test/release2.html</link><pubDate>${now}</pubDate><description>新制度を開始します</description></item>
-<item><title>求人広告の新料金プランを発表</title><link>https://news.test/release3.html</link><pubDate>${now}</pubDate><description>応募課金型のプランを追加</description></item>
-<item><title>包装フィルムのリサイクル基準を共同策定</title><link>https://news.test/release4.html</link><pubDate>${now}</pubDate><description>リサイクル評価の共通基準</description></item>
-<item><title>古いお知らせ</title><link>https://news.test/old.html</link><pubDate>Mon, 01 Jan 2024 00:00:00 GMT</pubDate></item>
-</channel></rss>`);
-const article = '<html><head><meta charset="utf-8"></head><body><nav>メニュー</nav><main><h1>労働市場の動向調査</h1>' + '<p>本調査によると、企業の78%が人手不足を感じており、採用活動にAIを活用する企業は前年の2倍に増えた。調査は全国の企業1,000社を対象に実施した。</p>'.repeat(8) + '</main><footer>著作権表示</footer></body></html>';
-fs.writeFileSync(path.join(web, 'news.test', 'release1.html'), article);
-fs.writeFileSync(path.join(web, 'news.test', 'release2.html'), article.replace('労働市場の動向調査', '人材育成支援の新制度'));
-fs.writeFileSync(path.join(web, 'news.test', 'release3.html'), article.replace('労働市場の動向調査', '求人広告の新料金プラン'));
-const sources = path.join(tmp, 'sources.json');
-fs.writeFileSync(sources, JSON.stringify({ feeds: [{ name: 'テスト省', type: '公的機関', url: 'https://feeds.test/rss.xml' }, { name: '壊れた情報源', type: '公的機関', url: 'https://feeds.test/missing.xml' }] }));
-const tracksFile = path.join(tmp, 'tracks.json');
-const realTracks = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/content/tracks.json'), 'utf8'));
-fs.writeFileSync(tracksFile, JSON.stringify({
-  audience: '社会人', roles: realTracks.roles, research_domains: ['go.jp', 'example.co.jp'],
-  schedule: { 0: 'hr', 1: 'hr', 2: 'hr', 3: 'hr', 4: 'hr', 5: 'hr', 6: 'hr' },
-  tracks: {
-    hr: { label: '採用・人材ビジネス', focus: '求人媒体の課金モデル', keywords: ['求人', '採用'], curriculum: ['求人媒体の課金モデルの仕組み', '人材紹介の手数料体系'] },
-    economy: { label: '経済・金融・統計', focus: '統計の読み方', keywords: ['調査', '人材育成'], curriculum: [] }
-  }
-}));
+// ---- AC-1：カリキュラムが12章・37単元で、全単元に確認済みの出典（ランクA〜C）がある ----
+check(CUR.chapters.length === 12 && units.length === 37, 'カリキュラムの章・単元の数: ' + CUR.chapters.length + '章 ' + units.length + '単元');
+check(new Set(units.map(x => x.u.id)).size === 37 && units.every(x => /^u(\d+|j)-\d+$/.test(x.u.id)), '単元の id が重複・不正');
+check(CUR.chapters.every(ch => ch.role && ch.keywords.length >= 3 && A.MAP_CATS[ch.cat]), '章に役割・調査キーワード・マップの分野がない');
+check(units.every(x => x.u.concepts.length >= 2 && x.u.sources.length >= 1 && x.u.sources.every(id => CUR.sources[id])), '出典のない単元、または存在しない出典を指す単元がある');
+check(Object.values(CUR.sources).every(s => ['A', 'B', 'C'].includes(s.rank) && /^https:\/\//.test(s.url) && s.cite && s.finding && s.finding.length >= 20), '出典にランク（A〜C）・URL・確認した内容がないものがある');
+// 単元id の並び（アプリが curriculum.json なしでも同じ順に並べるため）がカリキュラムの順と一致する
+const order = id => { const m = /^u(\d+|j)-(\d+)$/.exec(id); return (m[1] === 'j' ? 99 : Number(m[1])) * 100 + Number(m[2]); };
+check(units.every((x, i) => i === 0 || order(units[i - 1].u.id) < order(x.u.id)), '単元 id の順がカリキュラムの順と一致しない');
+
+// ---- AC-2：調査ノートと章の一覧がカリキュラムから生成され、内容が一致している ----
+const docFile = path.join(ROOT, 'docs', 'research', 'organization-theory.md'), chFile = path.join(ROOT, 'content', 'chapters.json');
+const before = [fs.readFileSync(docFile, 'utf8'), fs.readFileSync(chFile, 'utf8')];
+spawnSync(process.execPath, [path.join(ROOT, 'tools', 'content', 'curriculum-doc.mjs')]);
+const after = [fs.readFileSync(docFile, 'utf8'), fs.readFileSync(chFile, 'utf8')];
+check(before[0] === after[0], '調査ノートがカリキュラムと一致しない（node tools/content/curriculum-doc.mjs で作り直してください）');
+check(before[1] === after[1], 'content/chapters.json がカリキュラムと一致しない（node tools/content/curriculum-doc.mjs で作り直してください）');
+
+// ---- AC-3・AC-4：お手本3本が形式チェック（根拠必須・3つの視点必須）に合格し、出典はカリキュラムの確認済み文献だけ ----
+const norm = u => { try { const x = new URL(u); return x.hostname.replace(/^www\./, '') + x.pathname.replace(/\/+$/, ''); } catch (e) { return ''; } };
+const curUrls = new Set(Object.values(CUR.sources).map(s => norm(s.url)));
+check(A.TOPICS.length === 3 && ['org-psych-safety', 'org-socialization', 'org-change-myth'].every(id => A.TOPICS.some(t => t.id === id)), 'お手本が組織論の3本になっていない');
+for (const t of A.TOPICS) {
+  const errs = A.validateTopic(t, { nodes: A.NODES, cats: A.MAP_CATS, rels: A.REL_LABEL, skills: A.SKILLS, requireEvidence: true, requireViews: true });
+  check(!errs.length, 'お手本 ' + t.id + ' が形式チェックに合格しない: ' + errs.join(' / '));
+  const ev = t.questions.flatMap(q => q.evidence || []).concat(t.s3.flatMap(b => b.evidence || []));
+  check(t.questions.every(q => (q.evidence || []).length) && ev.every(e => ['A', 'B', 'C'].includes(e.rank)), 'お手本 ' + t.id + '：根拠のない問題、またはランクA〜C以外の根拠がある');
+  const urls = t.sources.map(s => s.url).concat(ev.map(e => e.url));
+  check(urls.every(u => curUrls.has(norm(u))), 'お手本 ' + t.id + '：カリキュラムで確認していない出典がある: ' + urls.filter(u => !curUrls.has(norm(u))).join(' '));
+  const u = units.find(x => x.u.id === t.unit);
+  check(u && u.ch.id === t.chapter && (u.u.topicId === t.id), 'お手本 ' + t.id + '：単元・章のひも付けがカリキュラムと一致しない');
+  check(t.nodes.every(n => A.NODES[n]) && Object.keys(A.MAP_CATS).length === 5, 'お手本 ' + t.id + '：知識ノード・分野が不正');
+}
+// 正解の位置が偏らない（4択の answer の位置）
+const pos0 = [0, 0, 0, 0];
+A.TOPICS.forEach(t => t.questions.forEach(q => { if (q.options) pos0[q.answer]++; }));
+check(pos0.filter(n => n > 0).length >= 3, 'お手本の正解の位置が偏っている: ' + pos0);
+
+// ---- 毎日の教材づくり（AC-12）：偽の Anthropic API ----
+const SEED_URL = u => CUR.sources[u.sources[0]].url;
 // 調査で「開いた」ページ。最後の2つは使えない（開いていない／許可していないサイト）
-const R = ['https://www.mhlw.go.jp/a', 'https://www.mhlw.go.jp/b', 'https://www.stat.go.jp/c', 'https://www.example.co.jp/ir/d'];
-// 1件目は末尾に / が付いた表記ゆれ（開いたページと同じとみなす）、2件目は B、3件目は公表時期つき
-const notes = R.map((url, i) => ({ fact: '確かめた事実その' + (i + 1) + '：2026年9月時点で、求人倍率は1.2倍だった。', url: i === 0 ? url + '/' : url, source: '厚生労働省 資料' + (i + 1), type: '公的機関', rank: ['A', 'B', 'A', 'C'][i], published: i === 2 ? '2026-09' : '' }))
-  .concat([{ fact: '個人ブログの意見（ランクDなので使ってはいけない）', url: R[1], source: '個人', type: '公的機関', rank: 'D' }])
-  .concat([{ fact: '開いていないページの事実（使ってはいけない）', url: 'https://www.mhlw.go.jp/notopened', source: 'x', type: '公的機関' }, { fact: '許可していないサイトの事実（使ってはいけない）', url: 'https://blog.test/x', source: 'ブログ', type: '公的機関' }]);
+const R = ['https://doi.org/10.9999/a', 'https://www.jil.go.jp/b', 'https://www.mhlw.go.jp/c', 'https://www.example.co.jp/ir/d'];
+const notes = R.map((url, i) => ({ fact: '確かめた事実その' + (i + 1) + '：2020年のメタ分析（120研究）で、関係は中程度の正の相関だった。', url: i === 0 ? url + '/' : url, source: '研究' + (i + 1), type: '学術研究', rank: ['A', 'B', 'A', 'C'][i], published: i === 2 ? '2026-09' : '' }))
+  .concat([{ fact: '個人ブログの意見（ランクDなので使ってはいけない）', url: R[1], source: '個人', type: '学術研究', rank: 'D' }])
+  .concat([{ fact: '開いていないページの事実（使ってはいけない）', url: 'https://www.mhlw.go.jp/notopened', source: 'x', type: '公的機関' }, { fact: '許可していないサイトの事実（使ってはいけない）', url: 'https://blog.test/x', source: 'ブログ', type: '学術研究' }]);
 
-// ---- 生成結果のお手本（サンプル1を配信形式に直したもの） ----
-const s = JSON.parse(JSON.stringify(A.TOPICS[0]));
-['id', 'kind', 'date', 'updated', 'sources'].forEach(k => delete s[k]);
-s.s3[0].label = '事実';
-s.apply.roles = { consultant: '顧客に応募課金と掲載課金の費用比較を示す', media_sales: '応募単価の目安を添えて新プランを提案する', agency: '求人企業に紹介手数料との費用差を説明する', inhouse: '自社の応募単価を算出してプランを見直す', executive: '採用費を応募単価と採用単価で管理する' };
-s.nodes = s.nodes.slice(0, 5).concat(['laborsurvey']);
-// 根拠：AIはURLだけを書く（名前・ランクはプログラムが付ける）
-s.questions = s.questions.map((q, i) => Object.assign({}, q, { evidence: i === 0 ? [R[0], 'MAIN_SOURCE'] : [R[i % 3]] }));
-s.s3 = s.s3.map((b, i) => Object.assign({}, b, { evidence: [R[i % 3]] }));
-const refs = [R[0], R[2], 'https://fake.test/hallucinated'];
-const good = { topic: s, nodes: { laborsurvey: { name: '労働市場調査', cat: '経済', sub: '労働', diff: 2 } }, edges: [['laborsurvey', 'labor', 'related', 0.7]], references: refs };
-// 2日目以降は、前日に増えたノード（laborsurvey）を既存として使う
-const reuse = { topic: s, nodes: {}, edges: [], references: refs };
-const bad = { topic: Object.assign({}, s, { questions: s.questions.slice(0, 3).map(q => Object.assign({}, q, { evidence: ['https://fake.test/made-up'] })) }), nodes: {}, edges: [] };
+// 生成結果のお手本（お手本1を、AIが返す形に直したもの）。根拠はURLだけ（名前・ランクはプログラムが付ける）
+function genOut(unit, { badEvidence = false, noSeed = false } = {}) {
+  const s = JSON.parse(JSON.stringify(A.TOPICS[0]));
+  ['id', 'kind', 'date', 'updated', 'sources', 'unit', 'chapter', 'trackLabel'].forEach(k => delete s[k]);
+  s.nodes = s.nodes.slice(0, 5).concat(['newconcept']);
+  s.questions = s.questions.map((q, i) => Object.assign({}, q, { evidence: badEvidence ? ['https://fake.test/made-up'] : i === 0 ? [R[0], 'SEED'] : [R[i % 3]] }));
+  s.s3 = s.s3.map((b, i) => Object.assign({}, b, { evidence: i === 0 && !noSeed ? ['SEED', R[0]] : [R[i % 3]] }));
+  if (badEvidence) s.questions = s.questions.slice(0, 3);
+  return { topic: s, nodes: { newconcept: { name: '新しい概念', cat: 'チームとリーダー', sub: 'チーム', diff: 2 } }, edges: [['newconcept', 'psysafe', 'related', 0.7]], references: [R[0], R[2], 'https://fake.test/hallucinated'] };
+}
 
-// ---- 偽の Anthropic API ----
 const calls = [];
 let mode = {};
 const mock = http.createServer((req, res) => {
   let raw = ''; req.on('data', c => raw += c); req.on('end', () => {
     const body = JSON.parse(raw);
     const sys = typeof body.system === 'string' ? body.system : body.system.map(b => b.text).join('\n');
-    const kind = sys.includes('編集者') ? 'select' : sys.includes('品質検査員') ? 'verify' : sys.includes('調査員') ? 'research' : 'generate';
+    const kind = sys.includes('品質検査員') ? 'verify' : sys.includes('調査員') ? 'research' : 'generate';
     calls.push({ kind, body, headers: req.headers });
     const base = { id: 'msg', type: 'message', role: 'assistant', model: body.model, stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 } };
+    const userText = JSON.stringify(body.messages[0].content);
+    const unitId = (/単元：(u[\dj]+-\d+)/.exec(userText) || [])[1];
+    const unit = units.find(x => x.u.id === unitId);
     if (kind === 'research') {
       // 1回目は検索の途中で一時停止（pause_turn）、2回目で資料を開いて調査メモを返す
       res.writeHead(200, { 'Content-Type': 'application/json' });
       if (body.messages.length === 1) return res.end(JSON.stringify({ ...base, stop_reason: 'pause_turn', content: [
-        { type: 'server_tool_use', id: 'st1', name: 'web_search', input: { query: '求人倍率' } },
+        { type: 'server_tool_use', id: 'st1', name: 'web_search', input: { query: '組織論' } },
         { type: 'web_search_tool_result', tool_use_id: 'st1', content: R.map(url => ({ type: 'web_search_result', url, title: 't', encrypted_content: 'x', page_age: null })) }] }));
       const fetchedBlocks = R.concat(['https://blog.test/x']).flatMap((url, i) => [
         { type: 'server_tool_use', id: 'f' + i, name: 'web_fetch', input: { url } },
-        { type: 'web_fetch_tool_result', tool_use_id: 'f' + i, content: { type: 'web_fetch_result', url, retrieved_at: null, content: { type: 'document', source: { type: 'text', media_type: 'text/plain', data: '資料' } } } }]);
-      return res.end(JSON.stringify({ ...base, stop_reason: 'end_turn', content: [{ type: 'text', text: '資料を開いて確かめます。{途中の文}' }].concat(fetchedBlocks, [{ type: 'text', text: JSON.stringify({ notes: mode.fewNotes ? notes.slice(0, 2) : notes, gaps: 'なし' }) }]) }));
+        { type: 'web_fetch_tool_result', tool_use_id: 'f' + i, content: { type: 'web_fetch_result', url, retrieved_at: null, content: { type: 'document', source: { type: 'text', media_type: 'text/plain', data: 'ページ本文' + (i + 1) + '：メタ分析の要旨' } } } }]);
+      return res.end(JSON.stringify({ ...base, stop_reason: 'end_turn', content: [{ type: 'text', text: '資料を開いて確かめます。{途中の文}' }].concat(fetchedBlocks, [{ type: 'text', text: JSON.stringify({ notes: mode.fewNotes ? [] : notes, gaps: 'なし' }) }]) }));
     }
     let out;
-    if (kind === 'select') out = mode.noPicks ? { picks: [] } : { picks: [{ index: 0, track: 'hr', reason: '媒体の課金モデルを学べる' }, { index: 1, track: 'economy', reason: '市場データ' }] };
-    else if (kind === 'verify') out = { checks: CHECKS.map(([id]) => { const ok = !(mode.failVerify && id === 'expertise'); return { id, ok, note: ok ? '問題なし' : '一般論にとどまっている' }; }), summary: 'まとめ' };
-    else out = calls.filter(c => c.kind === 'generate').length === 1 && mode.badFirst ? bad : mode.reuse ? reuse : good;
-    let text = JSON.stringify(out);
-    if (kind === 'generate') {
-      // 「出典ドキュメントのURL」を根拠に書く。専門知識の教材（出典ドキュメントなし）では書かない
-      const m = /\nURL: (\S+)/.exec(JSON.stringify(body.messages[0].content).replace(/\\n/g, '\n'));
-      text = m ? text.replace(/MAIN_SOURCE/g, m[1]) : text.replace(/,"MAIN_SOURCE"/g, '');
+    if (kind === 'verify') out = { checks: CHECKS.map(([id]) => { const ok = !(mode.failVerify && id === 'research_accuracy'); return { id, ok, note: ok ? '問題なし' : '効果の向きを誇張している' }; }), summary: 'まとめ' };
+    else {
+      const n = calls.filter(c => c.kind === 'generate').length;
+      out = genOut(unit.u, { badEvidence: mode.badFirst && n === 1, noSeed: mode.noSeed });
+      if (mode.reuseNode) out.nodes = {}, out.edges = [], out.topic.nodes = out.topic.nodes.slice(0, 5).concat(['newconcept']);
     }
+    let text = JSON.stringify(out).replace(/"SEED"/g, JSON.stringify(unit ? SEED_URL(unit.u) : ''));
     if (!body.stream) { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ...base, stop_reason: 'end_turn', content: [{ type: 'text', text }] })); }
     res.writeHead(200, { 'Content-Type': 'text/event-stream' });
     const ev = (type, d) => res.write('event: ' + type + '\ndata: ' + JSON.stringify({ type, ...d }) + '\n\n');
@@ -108,131 +116,123 @@ const mock = http.createServer((req, res) => {
 });
 await new Promise(r => mock.listen(0, '127.0.0.1', r));
 
-const contentDir = path.join(tmp, 'content'), logDir = path.join(tmp, 'log'), candFile = path.join(tmp, 'cache', 'candidates.json');
-function run(today, args = [], extra = {}) {
+const contentDir = path.join(tmp, 'content'), logDir = path.join(tmp, 'log');
+fs.mkdirSync(contentDir, { recursive: true });
+fs.copyFileSync(path.join(ROOT, 'content', 'curriculum.json'), path.join(contentDir, 'curriculum.json'));
+const cfgFile = path.join(tmp, 'config.json');
+const realCfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/content/config.json'), 'utf8'));
+fs.writeFileSync(cfgFile, JSON.stringify(Object.assign({}, realCfg, { research_domains: ['doi.org', 'go.jp', 'example.co.jp'] })));
+function run(today, extra = {}) {
   calls.length = 0;
   return new Promise(resolve => {
-    const env = { ...process.env, ANTHROPIC_API_KEY: 'sk-test', ANTHROPIC_BASE_URL: 'http://127.0.0.1:' + mock.address().port, SOURCES_FILE: sources, TRACKS_FILE: tracksFile, CONTENT_DIR: contentDir, LOG_DIR: logDir, TODAY: today, MOCK_WEB_DIR: web, CANDIDATES_FILE: candFile, ...extra };
-    // 偽 API へのリクエストを受けるため、子プロセスは非同期に動かす
-    import('node:child_process').then(({ spawn }) => {
-      const p = spawn(process.execPath, ['--import', path.join(ROOT, 'tools/content/test-fetch-mock.mjs'), path.join(ROOT, 'tools/content/daily.mjs'), ...args], { env });
-      let out = ''; p.stdout.on('data', d => out += d); p.stderr.on('data', d => out += d);
-      p.on('close', code => resolve({ code, out }));
-    });
+    const env = { ...process.env, ANTHROPIC_API_KEY: 'sk-test', ANTHROPIC_BASE_URL: 'http://127.0.0.1:' + mock.address().port, CONFIG_FILE: cfgFile, CONTENT_DIR: contentDir, LOG_DIR: logDir, TODAY: today, ...extra };
+    const p = spawn(process.execPath, [path.join(ROOT, 'tools/content/daily.mjs')], { env });
+    let out = ''; p.stdout.on('data', d => out += d); p.stderr.on('data', d => out += d);
+    p.on('close', code => resolve({ code, out }));
   });
 }
+const readJ = f => JSON.parse(fs.readFileSync(f, 'utf8'));
 
 try {
-  // フィードの読み取り（RSS 1.0 / Atom も）
-  const rdf = parseFeed('<rdf:RDF xmlns:rdf="x" xmlns:dc="y"><item rdf:about="https://a.test/1"><title>RDFの記事</title><link>https://a.test/1</link><dc:date>2026-10-09T10:00:00+09:00</dc:date></item></rdf:RDF>', { name: 'R', type: '公的機関' });
-  check(rdf.length === 1 && rdf[0].title === 'RDFの記事' && rdf[0].date.startsWith('2026-10-09'), 'RSS 1.0 を読めない: ' + JSON.stringify(rdf));
-  const atom = parseFeed('<feed><entry><title>Atomの記事</title><link rel="alternate" href="https://a.test/2"/><updated>2026-10-09T01:00:00Z</updated></entry></feed>', { name: 'T', type: '公的機関' });
-  check(atom.length === 1 && atom[0].link === 'https://a.test/2', 'Atom を読めない: ' + JSON.stringify(atom));
-
-  // 候補の収集だけ（1日に何回か）：あとでフィードから消えても候補として残る
-  const feedFile = path.join(web, 'feeds.test', 'rss.xml');
-  const feedXml = fs.readFileSync(feedFile, 'utf8');
-  fs.writeFileSync(feedFile, feedXml.replace('</channel>', `<item><title>新卒採用の早期化に関する調査</title><link>https://news.test/early.html</link><pubDate>${now}</pubDate></item></channel>`));
-  let r = await run('2026-10-10', ['--collect']);
-  check(r.code === 0 && calls.length === 0 && fs.existsSync(candFile), '候補の収集だけのモードが動かない: ' + r.out);
-  fs.writeFileSync(feedFile, feedXml);
-
-  // 1日目（土曜＝採用手法・媒体の日）：最初の生成は形式不備 → 直させて合格 → 配信
+  // 1日目：カリキュラム順で最初の、お手本のない単元（序章 u0-1）を選ぶ。最初の生成は形式不備 → 直させて合格 → 配信
   mode = { badFirst: true };
-  r = await run('2026-10-10');
+  let r = await run('2026-11-10');
   check(r.code === 0, '1日目が失敗: ' + r.out);
   if (process.env.DEBUG_OUT) console.log(r.out);
-  const bundle = JSON.parse(fs.readFileSync(path.join(contentDir, 'daily', '2026-10-10.json'), 'utf8'));
-  const index = JSON.parse(fs.readFileSync(path.join(contentDir, 'index.json'), 'utf8'));
-  const sel1 = calls.find(c => c.kind === 'select').body;
-  const list1 = sel1.messages[0].content;
-  check(list1.indexOf('求人広告の新料金プラン') >= 0 && list1.indexOf('求人広告の新料金プラン') < list1.indexOf('労働市場の動向調査'), '今日のテーマ（媒体）に合う候補が先頭にない');
-  check(!list1.includes('リサイクル基準'), '採用・人材と関係ない候補が除外されていない');
-  check(list1.includes('新卒採用の早期化'), 'ためておいた候補が使われていない');
-  check(sel1.system.includes('採用・人材ビジネス'), '選定に今日のテーマが伝わっていない');
-  check(bundle.topic.track === 'hr' && bundle.topic.trackLabel === '採用・人材ビジネス' && bundle.topic.apply.roles.executive, 'テーマ・職種別の応用が保存されていない');
-  // 調査：一時停止しても続きを頼み、開いた・許可したサイトの事実だけを使う
+  const bundle = readJ(path.join(contentDir, 'daily', '2026-11-10.json'));
+  const index = readJ(path.join(contentDir, 'index.json'));
+  const t1 = bundle.topic;
+  check(t1.unit === 'u0-1' && t1.chapter === 'ch0' && t1.kind === '専門知識' && t1.trackLabel === '序章 組織論をどう学び、どう使うか', '単元が選ばれていない／ひも付いていない: ' + [t1.unit, t1.chapter, t1.trackLabel]);
+  check(index.items.length === 1 && index.items[0].unit === 'u0-1' && index.items[0].file === 'daily/2026-11-10.json', 'index.json に単元が記録されていない');
+  // 調査：単元の出典を渡し、一時停止しても続きを頼み、開いた・許可したサイトの事実だけを使う
   const res1 = calls.filter(c => c.kind === 'research');
   check(res1.length === 2 && res1[1].body.messages.length === 2 && res1[0].body.model === 'claude-sonnet-5-5', '調査の一時停止（pause_turn）から続けていない');
-  check(res1[0].body.tools.some(t => t.type === 'web_search_20260209' && t.allowed_domains.includes('go.jp')) && res1[0].body.tools.some(t => t.type === 'web_fetch_20260209'), '調査に検索・資料の読み込みとサイトの絞り込みが付いていない');
-  const genNotes = calls.find(c => c.kind === 'generate').body.messages[0].content.find(b => b.type === 'text' && b.text.includes('調査メモ')).text;
-  check(R.slice(1).every(u => genNotes.includes(u)) && genNotes.includes(R[0] + '/') && !genNotes.includes('notopened') && !genNotes.includes('blog.test'), '開いていない・許可していないサイトの事実が調査メモに入っている（または表記ゆれのURLが捨てられた）');
-  check(bundle.topic.sources.length === 3 && bundle.topic.sources[1].url === R[0] + '/' && bundle.topic.sources[2].url === R[2] && !JSON.stringify(bundle.topic.sources).includes('fake.test'), '出典に調査の資料が入っていない（または架空のURLが入っている）: ' + JSON.stringify(bundle.topic.sources));
-  // 根拠と信頼度ランク：出典と各問題・解説に付き、名前・ランクは調査メモから。ランクDの事実は使わない
-  check(bundle.topic.sources[0].rank === 'A' && bundle.topic.sources[1].rank === 'A' && bundle.topic.sources[2].rank === 'A', '出典に信頼度ランクが付いていない: ' + JSON.stringify(bundle.topic.sources));
-  const q1 = bundle.topic.questions[0];
-  check(q1.evidence.length === 2 && q1.evidence[0].rank === 'A' && q1.evidence[0].name === '厚生労働省 資料1' && q1.evidence[1].url === 'https://news.test/release3.html' && q1.evidence[1].name === 'テスト省', '問題の根拠（調査メモ・出典の名前とランク）: ' + JSON.stringify(q1.evidence));
-  check(bundle.topic.questions.every(q => q.evidence.length >= 1 && q.evidence.every(e => ['A', 'B', 'C'].includes(e.rank))), 'すべての問題に根拠とランクが付いていない');
-  check(bundle.topic.s3.every(b => b.evidence && b.evidence.length) && bundle.topic.s3[2].evidence[0].published === '2026-09', '解説ブロックの根拠（公表時期つき）: ' + JSON.stringify(bundle.topic.s3.map(b => b.evidence)));
+  check(res1[0].body.tools.some(t => t.type === 'web_search_20260209' && t.allowed_domains.includes('doi.org')) && res1[0].body.tools.some(t => t.type === 'web_fetch_20260209'), '調査に検索・資料の読み込みとサイトの絞り込みが付いていない');
+  const u01 = units[0].u;
+  check(res1[0].body.messages[0].content[0].text.includes(CUR.sources[u01.sources[0]].finding), '調査に単元の出典（確認済みの内容）が渡っていない');
+  const genNotes = calls.find(c => c.kind === 'generate').body.messages[0].content[0].text;
+  check(genNotes.includes('【単元の出典】') && u01.sources.every(id => genNotes.includes(CUR.sources[id].url)), '単元の出典が調査メモの中心に入っていない');
+  check(R.slice(1).every(u => genNotes.includes(u)) && genNotes.includes(R[0] + '/') && !genNotes.includes('notopened') && !genNotes.includes('blog.test'), '開いていない・許可していないサイトの事実が調査メモに入っている');
   check(!genNotes.includes('個人ブログ') && genNotes.includes('信頼度ランクB'), 'ランクDの事実が調査メモに入っている、またはランクが渡っていない');
   check(r.out.includes('除外：') && r.out.includes('ランクD 1'), '調査の内訳（除外の理由）が記録されていない');
-  check(A.validateTopic(bundle.topic, { nodes: Object.assign({}, A.NODES, bundle.nodes), cats: A.MAP_CATS, rels: A.REL_LABEL, skills: A.SKILLS, newNodes: bundle.nodes, newEdges: bundle.edges, requireEvidence: true }).length === 0, '根拠必須の形式チェックに合格しない');
-  // 4択の並びはランダム（正解の中身は変わらない）
-  const orig = Object.fromEntries(s.questions.map((q, i) => [i, q]));
-  const mcq = bundle.topic.questions.map((q, i) => [q, orig[i]]).filter(([q]) => q.options);
-  check(mcq.every(([q, o]) => q.options[q.answer] === o.options[o.answer] && q.options.slice().sort().join() === o.options.slice().sort().join()), '並べ替えで正解が変わっている');
-  check(bundle.topic.id === 'n20261010' && bundle.topic.questions.every((q, i) => q.id === 'n20261010-' + (i + 1)), 'id の付け方');
-  check(bundle.topic.sources[0].url === 'https://news.test/release3.html' && bundle.topic.updated === '2026-10-10' && /^\d{4}-\d{2}-\d{2}$/.test(bundle.topic.date), '出典・日付');
-  check(A.validateTopic(bundle.topic, { nodes: Object.assign({}, A.NODES, bundle.nodes), cats: A.MAP_CATS, rels: A.REL_LABEL, skills: A.SKILLS, newNodes: bundle.nodes, newEdges: bundle.edges }).length === 0, '保存された教材が形式チェックに合格しない');
-  check(index.items.length === 1 && index.items[0].file === 'daily/2026-10-10.json' && index.items[0].links[0] === 'https://news.test/release3.html', 'index.json');
+  // 出典：単元の出典（確認済み）＋調査で使った資料。架空のURLは入らない
+  check(u01.sources.every(id => t1.sources.some(s => s.url === CUR.sources[id].url)) && t1.sources.some(s => s.url === R[0] + '/') && !JSON.stringify(t1.sources).includes('fake.test'), '出典が不正: ' + JSON.stringify(t1.sources));
+  check(t1.sources.every(s => ['A', 'B', 'C'].includes(s.rank) && ['学術研究', '公的機関', '国際機関・研究', '企業公式'].includes(s.type)), '出典のランク・種類が不正');
+  const q1 = t1.questions[0];
+  check(q1.evidence.length === 2 && q1.evidence[0].name === '研究1' && q1.evidence[0].rank === 'A' && q1.evidence[1].url === SEED_URL(u01) && q1.evidence[1].name === 'Rousseau (2006)（査読論文）', '問題の根拠（名前とランク）: ' + JSON.stringify(q1.evidence));
+  check(t1.s3[0].evidence.some(e => e.url === SEED_URL(u01)) && t1.s3[2].evidence[0].published === '2026-09', '解説ブロックの根拠: ' + JSON.stringify(t1.s3.map(b => b.evidence)));
+  // 形式チェック（根拠必須・3つの視点必須）に合格し、アプリで表示できる
+  check(A.validateTopic(t1, { nodes: Object.assign({}, A.NODES, bundle.nodes), cats: A.MAP_CATS, rels: A.REL_LABEL, skills: A.SKILLS, newNodes: bundle.nodes, newEdges: bundle.edges, requireEvidence: true, requireViews: true }).length === 0, '保存された教材が形式チェックに合格しない');
+  check(t1.apply.views && t1.apply.views.customer && t1.apply.roles && t1.apply.roles.executive, '3つの視点・立場別の応用が保存されていない');
+  check(t1.id === 'n20261110' && t1.questions.every((q, i) => q.id === 'n20261110-' + (i + 1)) && t1.date === '2026-11-10', 'id・日付の付け方');
+  const orig = genOut(u01).topic.questions;
+  check(t1.questions.every((q, i) => !q.options || (q.options[q.answer] === orig[i].options[orig[i].answer] && q.options.slice().sort().join() === orig[i].options.slice().sort().join())), '並べ替えで正解が変わっている');
   check(calls.filter(c => c.kind === 'generate').length === 2, '形式不備のとき直させていない');
   const gen = calls.find(c => c.kind === 'generate').body;
   check(gen.model === 'claude-opus-5-5' && gen.stream === true && gen.output_config.effort === 'high', '生成のモデル・設定');
-  check(gen.messages[0].content[2].text.includes('採用・人材ビジネス') && gen.messages[0].content[2].text.includes('apply.roles') && gen.messages[0].content[2].text.includes('検定試験'), '生成にテーマと職種別の指示が渡っていない');
-  check(gen.messages[0].content[0].type === 'document' && gen.messages[0].content[0].source.data.includes('企業の78%') && !gen.messages[0].content[0].source.data.includes('メニュー'), '出典の本文が渡っていない（またはメニューが混ざっている）');
-  check(gen.system[0].cache_control && gen.system[0].text.includes('ai-agent-hiring'), 'サンプル3テーマをお手本として渡していない');
+  check(gen.messages[0].content[1].text.includes('apply.views') && gen.messages[0].content[1].text.includes('検定試験') && gen.messages[0].content[1].text.includes(u01.title), '生成に単元・3つの視点の指示が渡っていない');
+  check(gen.system[0].cache_control && gen.system[0].text.includes('org-psych-safety'), 'お手本3本を渡していない');
+  check(!calls.some(c => /選定|編集者/.test(JSON.stringify(c.body.system))), 'ニュースの選定をしている');
+  // 品質検査：ページは開かず、調査メモと開いたページの抜粋を材料にする（要件 GN-3）
   const ver = calls.find(c => c.kind === 'verify');
-  check(ver && ver.body.output_config.format.type === 'json_schema' && ver.body.messages[0].content[0].type === 'document' && ver.body.messages[0].content[1].text.includes('調査メモ'), '品質検査が出典・調査メモつきで行われていない');
-  check(ver.body.tools && ver.body.tools.some(t => t.type === 'web_fetch_20260209') && !ver.body.tools.some(t => t.type === 'web_search_20260209'), '品質検査で資料を開いて確かめられない');
+  check(ver && !ver.body.tools && ver.body.output_config.format.type === 'json_schema', '品質検査でページを開こうとしている（ツールが付いている）');
+  check(ver && ver.body.messages[0].content[0].text.includes('調査メモ') && ver.body.messages[0].content[1].text.includes('ページ本文1') && !ver.body.messages[0].content[1].text.includes('ページ本文5'), '品質検査に調査メモ・開いたページの抜粋が渡っていない');
   check(String(ver.headers['anthropic-beta']).includes('server-side-fallback-2026-07-01') && ver.body.fallbacks === 'default', 'フォールバック設定');
   check(!fs.existsSync(path.join(logDir, 'rejected.json')), '合格なのに不合格の記録がある');
-  check(r.out.includes('壊れた情報源：取得失敗'), '取得に失敗した情報源の記録がない');
 
   // 同じ日に2回動いても作り直さない
-  r = await run('2026-10-10');
+  r = await run('2026-11-10');
   check(r.code === 0 && calls.length === 0 && r.out.includes('すでにあります'), '同じ日の再実行で二重に作っている');
 
-  // 作り直し：今日の教材を取り下げて、別の発表から作り直す（同じ発表は使わない）
+  // 作り直し：今日の教材を取り下げて、同じ単元で作り直す
   mode = {};
-  r = await run('2026-10-10', [], { REDO: 'true' });
-  const idx2 = JSON.parse(fs.readFileSync(path.join(contentDir, 'index.json'), 'utf8'));
-  check(r.code === 0 && idx2.items.length === 1 && idx2.items[0].id === 'n20261010r1', '作り直しで新しい id にならない: ' + JSON.stringify(idx2.items) + r.out);
-  check(idx2.items[0].links[0] !== 'https://news.test/release3.html' && idx2.retired.includes('https://news.test/release3.html'), '取り下げた発表をまた使っている');
-  check(JSON.parse(fs.readFileSync(path.join(contentDir, 'daily', '2026-10-10.json'), 'utf8')).topic.id === 'n20261010r1', '作り直した教材が保存されていない');
+  r = await run('2026-11-10', { REDO: 'true' });
+  const idx2 = readJ(path.join(contentDir, 'index.json'));
+  check(r.code === 0 && idx2.items.length === 1 && idx2.items[0].id === 'n20261110r1' && idx2.items[0].unit === 'u0-1', '作り直しで新しい id にならない: ' + JSON.stringify(idx2.items) + r.out);
 
-  // 2日目：品質検査で不合格 → 破棄。1日目に使った記事は候補から外れる
-  mode = { failVerify: true, reuse: true };
-  r = await run('2026-10-11');
+  // 2日目：次の単元（u0-2）。品質検査で不合格 → 破棄。1日の試行は2回まで（予備の単元 u1-1 も不合格）
+  mode = { failVerify: true, reuseNode: true };
+  r = await run('2026-11-11');
   check(r.code === 0, '2日目が異常終了: ' + r.out);
-  check(!fs.existsSync(path.join(contentDir, 'daily', '2026-10-11.json')), '不合格の教材が保存されている');
-  const rej = JSON.parse(fs.readFileSync(path.join(logDir, 'rejected.json'), 'utf8'));
-  check(rej.length >= 1 && rej[0].reasons[0].includes('expertise'), '不合格の記録: ' + JSON.stringify(rej));
-  check(JSON.parse(fs.readFileSync(path.join(contentDir, 'index.json'), 'utf8')).items.length === 1, '不合格なのに index が増えた');
-  const sel = calls.find(c => c.kind === 'select');
-  check(sel && !sel.body.messages[0].content.includes('求人広告の新料金プラン') && !sel.body.messages[0].content.includes('労働市場の動向調査の結果'), '使った記事が候補に残っている');
+  check(!fs.existsSync(path.join(contentDir, 'daily', '2026-11-11.json')), '不合格の教材が保存されている');
+  const rej = readJ(path.join(logDir, 'rejected.json'));
+  check(rej.length === 2 && rej[1].unit === 'u0-2' && rej[0].unit === 'u1-1' && rej[0].reasons[0].includes('research_accuracy'), '不合格の記録: ' + JSON.stringify(rej));
+  check(calls.filter(c => c.kind === 'research').length === 4 && calls.filter(c => c.kind === 'verify').length === 2, '1日の試行が2回になっていない');
+  check(readJ(path.join(contentDir, 'index.json')).items.length === 1, '不合格なのに index が増えた');
 
-  // 3日目：良い発表がない → 専門知識の一覧から題材を選び、調査して教材にする
-  mode = { noPicks: true, reuse: true };
-  r = await run('2026-10-12');
-  check(r.code === 0, '3日目が異常終了: ' + r.out);
-  const b3 = JSON.parse(fs.readFileSync(path.join(contentDir, 'daily', '2026-10-12.json'), 'utf8'));
-  const idx3 = JSON.parse(fs.readFileSync(path.join(contentDir, 'index.json'), 'utf8'));
-  check(b3.topic.kind === '専門知識' && b3.topic.date === '2026-10-12' && b3.topic.sources.every(x => R.includes(x.url.replace(/\/$/, ''))), '専門知識の教材の出典・種類: ' + JSON.stringify(b3.topic.sources));
-  check(idx3.curriculumDone.includes('求人媒体の課金モデルの仕組み') && idx3.items[0].links.length === 0, '扱った専門知識の題材が記録されていない');
-  check(calls.find(c => c.kind === 'research').body.messages[0].content[0].text.includes('求人媒体の課金モデルの仕組み'), '専門知識の題材で調査していない');
+  // 3日目：単元の事実ブロックに単元の出典がない → 直させても直らなければ配信しない
+  mode = { noSeed: true, reuseNode: true };
+  r = await run('2026-11-12');
+  check(r.code === 0 && !fs.existsSync(path.join(contentDir, 'daily', '2026-11-12.json')) && r.out.includes('単元の出典のURL'), '単元の出典を使っていない教材を配信している: ' + r.out);
 
-  // 4日目：調査で確かめられた事実が少なすぎる → 書かずに破棄
-  mode = { noPicks: true, reuse: true, fewNotes: true };
-  r = await run('2026-10-13');
-  check(r.code === 0 && !fs.existsSync(path.join(contentDir, 'daily', '2026-10-13.json')) && r.out.includes('少なすぎます') && !calls.some(c => c.kind === 'generate'), '調査が不十分なのに教材を作っている: ' + r.out);
+  // 4日目：調査で確かめられた事実がない → 書かずに破棄（調査不足は配信しない）
+  mode = { fewNotes: true, reuseNode: true };
+  r = await run('2026-11-13');
+  check(r.code === 0 && !fs.existsSync(path.join(contentDir, 'daily', '2026-11-13.json')) && r.out.includes('少なすぎます') && !calls.some(c => c.kind === 'generate'), '調査が不十分なのに教材を作っている: ' + r.out);
 
-  // 4択の正解の位置が偏らない（何日分かを合わせて確認）
-  const pos = [0, 0, 0, 0];
-  for (const f of fs.readdirSync(path.join(contentDir, 'daily'))) JSON.parse(fs.readFileSync(path.join(contentDir, 'daily', f), 'utf8')).topic.questions.forEach(q => { if (q.options) pos[q.answer]++; });
-  check(pos.filter(n => n > 0).length >= 2, '正解の位置が偏っている: ' + pos);
+  // 3日続けて不合格の単元は後回しにする（u0-2 は2日目・3日目・4日目で3回）
+  const fails = readJ(path.join(logDir, 'unit-fails.json'));
+  mode = { reuseNode: true };
+  r = await run('2026-11-14');
+  const b5 = readJ(path.join(contentDir, 'daily', '2026-11-14.json'));
+  check(fails['u0-2'] >= 3 && b5.topic.unit !== 'u0-2', '不合格が続く単元を後回しにしていない: ' + JSON.stringify(fails) + ' → ' + b5.topic.unit);
+
+  // すべての単元に教材があれば作らない（APIも呼ばない）
+  const full = readJ(path.join(contentDir, 'index.json'));
+  const saved = JSON.stringify(full);
+  full.items = units.map((x, i) => ({ date: '2026-01-' + String(i % 28 + 1).padStart(2, '0'), id: 'x' + i, title: 'x', file: 'none.json', unit: x.u.id }));
+  fs.writeFileSync(path.join(contentDir, 'index.json'), JSON.stringify(full));
+  r = await run('2026-11-15', { ANTHROPIC_API_KEY: '' });
+  check(r.code === 0 && calls.length === 0 && r.out.includes('すべての単元に教材があります'), 'すべての単元に教材があるのに作ろうとしている: ' + r.out);
+  fs.writeFileSync(path.join(contentDir, 'index.json'), saved);
 } finally {
   mock.close();
   fs.rmSync(tmp, { recursive: true, force: true });
 }
+
+// ---- 配信一覧（MG-3）：組織論に作り直す前の7分野の教材は配信一覧から外れている ----
+const liveIndex = readJ(path.join(ROOT, 'content', 'index.json'));
+check(liveIndex.items.every(it => it.unit), '配信一覧に単元のない（作り直す前の）教材が残っている');
+
 if (failures.length) { console.error('NG\n' + failures.join('\n')); process.exit(1); }
-console.log('OK: 教材づくりのテストに合格しました');
+console.log('OK: カリキュラムと教材づくりのテストに合格しました');

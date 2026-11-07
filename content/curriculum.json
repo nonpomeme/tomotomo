@@ -15,7 +15,8 @@
    "url": "https://cebma.org/",
    "rank": "B",
    "kind": "学術機関",
-   "finding": "意思決定には4つの情報源（実務家の経験、組織のデータ・状況、批判的に吟味した研究、利害関係者の視点）を組み合わせる。どれか1つだけでは十分ではない。"
+   "finding": "意思決定には4つの情報源（実務家の経験、組織のデータ・状況、批判的に吟味した研究、利害関係者の視点）を組み合わせる。どれか1つだけでは十分ではない。",
+   "short": "CEBMa（エビデンスにもとづく経営センター）"
   },
   "barnard1938": {
    "cite": "Barnard, C. I. (1938). The Functions of the Executive. Harvard University Press.",
@@ -113,7 +114,8 @@
    "url": "https://is.muni.cz/el/phil/podzim2013/CJVA1M/43514039/reading_4_Levels_of_culture.pdf",
    "rank": "B",
    "kind": "学術書",
-   "finding": "組織文化を3つのレベルでとらえる。目に見える人工物（行動・制度・空間など）、表明された価値（理念・方針）、当然視され多くは無意識の基本的な前提。表明された価値と実際の前提や実践のずれが、文化を診断する手がかりになる。"
+   "finding": "組織文化を3つのレベルでとらえる。目に見える人工物（行動・制度・空間など）、表明された価値（理念・方針）、当然視され多くは無意識の基本的な前提。表明された価値と実際の前提や実践のずれが、文化を診断する手がかりになる。",
+   "short": "Schein『組織文化とリーダーシップ』（学術書）"
   },
   "weick1993": {
    "cite": "Weick, K. E. (1993). The collapse of sensemaking in organizations: The Mann Gulch disaster. Administrative Science Quarterly, 38(4), 628–652.",
@@ -141,7 +143,8 @@
    "url": "https://rework.withgoogle.com/intl/en/guides/understand-team-effectiveness",
    "rank": "C",
    "kind": "企業の調査",
-   "finding": "Google社内の調査で、成果を上げるチームを分ける5つの要因（心理的安全性、相互信頼、構造と明確さ、仕事の意味、インパクト）を挙げ、心理的安全性が最も重要だとした。査読を経た研究ではない社内調査で、参考扱い。"
+   "finding": "Google社内の調査で、成果を上げるチームを分ける5つの要因（心理的安全性、相互信頼、構造と明確さ、仕事の意味、インパクト）を挙げ、心理的安全性が最も重要だとした。査読を経た研究ではない社内調査で、参考扱い。",
+   "short": "Google re:Work（企業の調査）"
   },
   "mathieu2008": {
    "cite": "Mathieu, J., Maynard, M. T., Rapp, T., & Gilson, L. (2008). Team effectiveness 1997–2007: A review of recent advancements and a glimpse into the future. Journal of Management, 34(3), 410–476.",
@@ -274,14 +277,16 @@
    "url": "https://www.mhlw.go.jp/stf/houdou/0000177553_00010.html",
    "rank": "A",
    "kind": "公的統計",
-   "finding": "就職後3年以内の離職率は、新規大学卒33.8%（前年度比1.1ポイント低下）、新規高校卒37.9%（同0.5ポイント低下）。"
+   "finding": "就職後3年以内の離職率は、新規大学卒33.8%（前年度比1.1ポイント低下）、新規高校卒37.9%（同0.5ポイント低下）。",
+   "short": "厚生労働省「新規学卒就職者の離職状況」（2025年10月）"
   },
   "hamaguchi2021": {
    "cite": "濱口桂一郎（2021）『ジョブ型雇用社会とは何か：正社員体制の矛盾と転機』岩波新書／経済産業研究所（RIETI）の解説記事",
    "url": "https://www.rieti.go.jp/jp/special/af/069.html",
    "rank": "B",
    "kind": "学術書",
-   "finding": "「ジョブ型」と「メンバーシップ型」は、職務を限定して採用し賃金を職務に付けるか、職務を限定せず新卒一括で採用し定期的に職務を替え賃金を人に付けるかの違いで整理される。現実の制度の写しではなく、価値判断を含まない分析用の理念型であり、近年の「ジョブ型」論には誤解が多いと批判している。"
+   "finding": "「ジョブ型」と「メンバーシップ型」は、職務を限定して採用し賃金を職務に付けるか、職務を限定せず新卒一括で採用し定期的に職務を替え賃金を人に付けるかの違いで整理される。現実の制度の写しではなく、価値判断を含まない分析用の理念型であり、近年の「ジョブ型」論には誤解が多いと批判している。",
+   "short": "濱口 (2021)『ジョブ型雇用社会とは何か』（学術書）"
   },
   "gallup2026": {
    "cite": "Gallup (2026). State of the Global Workplace: Japan country-level data.",
