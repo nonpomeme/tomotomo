@@ -1,11 +1,11 @@
-# 毎朝、教材を1テーマ自動でつくる（CLAUDE.md ステップ2）。
-# 収集 → 生成 → 形式チェック → 別のAIによる品質検査 → 合格したものだけ content/ に保存して公開する。
+# 毎朝、組織論カリキュラムの次の単元の教材を1つ自動でつくる（docs/requirements.md GN-1〜5）。
+# 単元の選択 → 調査（単元の確認済み出典＋公的機関・学術機関の資料）→ 生成 → 形式チェック
+# → 別のAIによる品質検査 → 合格したものだけ content/ に保存して公開する。ニュースの収集・選定はしない。
 name: 毎日の教材づくり
 
 on:
   schedule:
     - cron: '17 19 * * *'                # 毎日 4:17（日本時間）教材をつくる
-    - cron: '43 1,5,9,13,17,22 * * *'    # 1日6回 候補を集めてためておく（朝だけだと新着が少ないため）
   workflow_dispatch:
     inputs:
       redo:
@@ -32,33 +32,14 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --omit=dev
-      - name: ためておいた候補を読み込む
-        uses: actions/cache/restore@v4
-        with:
-          path: tools/content/.cache
-          key: candidates-${{ github.run_id }}
-          restore-keys: candidates-
-
-      - name: 候補を集める
-        if: github.event_name == 'schedule' && github.event.schedule != '17 19 * * *'
-        run: node tools/content/daily.mjs --collect
-
       - name: 教材をつくる
-        if: github.event_name != 'schedule' || github.event.schedule == '17 19 * * *'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           REDO: ${{ inputs.redo }}
         run: node tools/content/daily.mjs
 
-      - name: 候補をためておく
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: tools/content/.cache
-          key: candidates-${{ github.run_id }}
-
       - name: 保存して公開する
-        if: always() && (github.event_name != 'schedule' || github.event.schedule == '17 19 * * *')
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

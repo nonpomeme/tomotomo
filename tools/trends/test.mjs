@@ -22,7 +22,7 @@ const proposal = {
     item('rank-d', { sources: [src('https://blog.example.com/x', 'D', { name: '個人ブログ' })] }),
     item('missing-url', { sources: [src('https://www.mhlw.go.jp/404', 'A')] }),
     item('dup', { sources: [src('https://www.mhlw.go.jp/old/', 'A')] }),
-    item('bad-chapter', { chapter: 'ch9' }),
+    item('bad-chapter', { chapter: 'ch99' }),
     item('no-date', { sources: [src('https://www.mhlw.go.jp/b', 'A', { published: '' })] }),
     item('partly', { chapter: 'ch7', sources: [src('https://www.mhlw.go.jp/c', 'A'), src('https://sns.example.com/p', 'D', { name: 'SNS' })] }),
     item('blocked', { chapter: 'ch6', sources: [src('https://www.meti.go.jp/x', 'A', { name: '経済産業省 資料' })] }),
@@ -38,6 +38,9 @@ const proposal = {
 const existing = [{ id: 'old', sources: [{ url: 'https://mhlw.go.jp/old' }] }];
 const fakeCheck = async u => (u.includes('/404') ? 'missing' : u.includes('meti.go.jp') ? 'unverified' : 'ok');
 
+// 章はカリキュラム（content/curriculum.json）の12章と同じ（要件 AC-13）
+const cur = JSON.parse(fs.readFileSync(path.join(here, '..', '..', 'content', 'curriculum.json'), 'utf8'));
+check(chapters.map(c => c.id).join() === cur.chapters.map(c => c.id).join() && chapters.every((c, i) => c.keywords.join() === cur.chapters[i].keywords.join()), 'トレンド調査の章がカリキュラムの章と一致しない');
 const res = await review(proposal, { chapters, existing, check: fakeCheck });
 const ids = res.kept.map(k => k.id);
 check(JSON.stringify(ids) === JSON.stringify(['ok-a', 'ok-c', 'partly', 'blocked']), '合格した項目: ' + ids);
@@ -53,7 +56,7 @@ check(res.keyPoints.length === 3 && !res.keyPoints.some(p => p.items.includes('r
 
 const md = report(res, { chapters, week: isoWeek('2026-10-28'), today: '2026-10-28' });
 check(isoWeek('2026-10-28') === '2026-W44' && isoWeek('2027-01-01') === '2026-W53', '週番号');
-check(md.includes('## 今週の要点3つ') && md.includes('## お客さん・研修・業務改善への示唆（AIの解釈）') && md.includes('### 第2章 採用計画と母集団形成') && md.includes('[A] [厚生労働省 一般職業紹介状況](https://www.mhlw.go.jp/a)') && md.includes('トレンド（参考）') && md.includes('## 除外した項目'), '報告の形');
+check(md.includes('## 今週の要点3つ') && md.includes('## お客さん・研修・業務改善への示唆（AIの解釈）') && md.includes('### 第2章 組織構造とデザイン') && md.includes('[A] [厚生労働省 一般職業紹介状況](https://www.mhlw.go.jp/a)') && md.includes('トレンド（参考）') && md.includes('## 除外した項目'), '報告の形');
 
 // コマンドとして：content/trends.json に追記し、週の報告を書く。本文（教材・章）は変えない
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tomotomo-trends-'));

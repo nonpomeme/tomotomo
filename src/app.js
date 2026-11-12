@@ -76,9 +76,6 @@ const A = {
   chatSend: () => { const i = $('#chatInput'); if (i) sendChat(i.value); },
   setMode: el => { S.profile.mode = el.dataset.v; save(); render(); toast(MODES[el.dataset.v].name + 'モードにしました'); },
   setMinutes: el => { S.profile.minutes = Number(el.dataset.v); ui.minutes = null; save(); render(); },
-  learnCat: el => { ui.learnCat = el.dataset.v; render(); },
-  learnInd: el => { ui.learnInd = el.dataset.v; render(); },
-  learnReset: () => { ui.learnCat = 'すべて'; ui.learnInd = ''; render(); },
   mapCat: el => { ui.mapCat = el.dataset.v; render(); },
   zoom: el => { if (ui.mapApply) ui.mapApply(Number(el.dataset.v)); },
   openNode: el => openNode(el.dataset.v),
@@ -88,7 +85,7 @@ const A = {
   notifPreview: () => {
     if (!S.notif.enabled) return toast('通知がOFFになっています');
     const due = dueReviews().length;
-    const msgs = { morning: '☀️ 今日の10分教養：「' + recommend()[0].t.title + '」', noon: '💡 今日のおすすめニュースが届いています', night: due ? '🧠 ' + say('review', { n: due }) : '🧠 今日の学習をふりかえりましょう' };
+    const msgs = { morning: '☀️ 今日の10分組織論：「' + recommend()[0].t.title + '」', noon: '💡 今日のおすすめテーマが届いています', night: due ? '🧠 ' + say('review', { n: due }) : '🧠 今日の学習をふりかえりましょう' };
     const on = Object.keys(S.notif.slots).filter(k => S.notif.slots[k].on);
     if (!on.length) return toast('通知する時間帯がすべてOFFです');
     on.forEach((k, i) => setTimeout(() => toast(S.notif.slots[k].time + '　' + msgs[k], true), i * 2600));
@@ -142,6 +139,7 @@ document.addEventListener('keydown', e => {
 render();
 initRuntime();
 refreshContent();
+refreshCurriculum();
 
 /* オフラインで学習できるようにする（https か手元の確認時のみ） */
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname))) {

@@ -1,0 +1,947 @@
+{
+ "version": 1,
+ "title": "組織論",
+ "_説明": "TomoTomo の学習カリキュラム（要件定義 docs/requirements.md）。sources は調査で一次資料・書誌を確認した文献（docs/research/organization-theory.md はこのファイルから生成）。finding は確認できた内容だけを書く。rank は設計書の信頼度ランク（A：査読付き論文・メタ分析・公的統計、B：学術書・学術機関・大手調査機関、C：企業の調査・実務記事）。units の topicId は、その単元の教材が配信済みであることを示す。",
+ "sources": {
+  "rousseau2006": {
+   "cite": "Rousseau, D. M. (2006). Is there such a thing as \"evidence-based management\"? Academy of Management Review, 31(2), 256–269.",
+   "url": "https://doi.org/10.5465/amr.2006.20208679",
+   "rank": "A",
+   "kind": "査読論文",
+   "finding": "最良のエビデンスにもとづく原則を組織の実務に翻訳する「エビデンスにもとづくマネジメント」を提唱。医療のEBMをモデルに、組織研究が実務の改善に生かされていない現状を指摘した（米国経営学会会長講演）。"
+  },
+  "cebma": {
+   "cite": "Center for Evidence-Based Management (CEBMa). Evidence-based management の4つの情報源.",
+   "url": "https://cebma.org/",
+   "rank": "B",
+   "kind": "学術機関",
+   "finding": "意思決定には4つの情報源（実務家の経験、組織のデータ・状況、批判的に吟味した研究、利害関係者の視点）を組み合わせる。どれか1つだけでは十分ではない。",
+   "short": "CEBMa（エビデンスにもとづく経営センター）"
+  },
+  "barnard1938": {
+   "cite": "Barnard, C. I. (1938). The Functions of the Executive. Harvard University Press.",
+   "url": "https://sk.sagepub.com/ency/edvol/embed/edleadership/chpt/barnard-chester-i",
+   "rank": "B",
+   "kind": "学術書",
+   "finding": "組織を「意識的に調整された2人以上の協働の体系」ととらえ、経営者の機能を、組織に不可欠な要素（共通の目的、伝達＝コミュニケーション、協働意欲）を整えることだとした。1937年のローウェル講義がもと。"
+  },
+  "hopfl2006": {
+   "cite": "Höpfl, H. M. (2006). Post-bureaucracy and Weber's \"modern\" bureaucrat. Journal of Organizational Change Management, 19(1), 8–21.",
+   "url": "https://doi.org/10.1108/09534810610643659",
+   "rank": "A",
+   "kind": "査読論文",
+   "finding": "官僚制対ポスト官僚制の議論で基準にされる「ウェーバー的理念型」は、ウェーバー自身の記述とあいまいにしか対応していない。官僚制を「規則に従う階層組織」と同一視するのは、ウェーバーの思想の大きな単純化だと論じた。"
+  },
+  "mintzberg1980": {
+   "cite": "Mintzberg, H. (1980). Structure in 5's: A synthesis of the research on organization design. Management Science, 26(3), 322–341.",
+   "url": "https://doi.org/10.1287/mnsc.26.3.322",
+   "rank": "A",
+   "kind": "査読論文",
+   "finding": "組織の構成要素・調整メカニズム・分権化の型がそれぞれ5つにまとまることから、5つの基本形（単純構造＝直接監督、機械的官僚制＝作業の標準化、専門職官僚制＝技能の標準化、事業部制、アドホクラシー）を示した。主著は『The Structuring of Organizations』（1979）。"
+  },
+  "burnsstalker1961": {
+   "cite": "Burns, T., & Stalker, G. M. (1961). The Management of Innovation. Tavistock.",
+   "url": "https://www.taylorfrancis.com/chapters/edit/10.4324/9781315702001-23/mechanistic-organic-systems-tom-burns-stalker",
+   "rank": "B",
+   "kind": "学術書",
+   "finding": "戦後の英国（スコットランド・イングランド）の企業16社の調査から、官僚的な「機械的」管理と、分権的で流動的な「有機的」管理を対比。機械的システムは安定した環境に、有機的システムは変化の激しい環境に向くとし、コンティンジェンシー理論の出発点となった。両者は連続体の両端の理念型で、管理者には選択の余地があるとした。"
+  },
+  "lawrencelorsch1967": {
+   "cite": "Lawrence, P. R., & Lorsch, J. W. (1967). Organization and Environment: Managing Differentiation and Integration. Harvard Business School.",
+   "url": "https://tuklas.up.edu.ph/Record/UP-99796217606983593",
+   "rank": "B",
+   "kind": "学術書",
+   "finding": "分化（組織が下位システムに分かれている状態）と統合（下位システム間で努力の統一を実現する過程）を定義し、外部環境に応じて必要な分化と統合の程度が変わるとした。"
+  },
+  "pfeffersalancik1978": {
+   "cite": "Pfeffer, J., & Salancik, G. R. (1978). The External Control of Organizations: A Resource Dependence Perspective. Harper & Row.",
+   "url": "https://papers.ssrn.com/abstract=1496213",
+   "rank": "B",
+   "kind": "学術書",
+   "finding": "組織の存続に不可欠な資源を握る他の組織は、その組織に対して力を持つ（資源依存）。資源の集中度・入手可能性、組織間の相互依存、経営者の役割、組織構造との関係を論じた。"
+  },
+  "dimaggiopowell1983": {
+   "cite": "DiMaggio, P. J., & Powell, W. W. (1983). The iron cage revisited: Institutional isomorphism and collective rationality in organizational fields. American Sociological Review, 48(2), 147–160.",
+   "url": "https://doi.org/10.2307/2095101",
+   "rank": "A",
+   "kind": "査読論文",
+   "finding": "同じ組織フィールドの組織が似てくる「制度的同型化」を、強制的（政府や依存先からの圧力）、模倣的（不確実なときに他社をまねる）、規範的（専門職化）の3つの仕組みで説明。同型化は効率とは無関係に、正当性や政治的な力のために起こりうるとした。"
+  },
+  "hannanfreeman1977": {
+   "cite": "Hannan, M. T., & Freeman, J. (1977). The population ecology of organizations. American Journal of Sociology, 82(5), 929–964.",
+   "url": "https://doi.org/10.1086/226424",
+   "rank": "A",
+   "kind": "査読論文",
+   "finding": "組織は大きく慣性を持つ（変わりにくい）ため、組織の多様性は個々の組織の適応よりも、組織の個体群レベルでの選択（淘汰）で説明すべきだと主張した。"
+  },
+  "williamson1975": {
+   "cite": "Williamson, O. E. (1975). Markets and Hierarchies: Analysis and Antitrust Implications. Free Press.",
+   "url": "https://sioe.org/field/transaction-cost-economics",
+   "rank": "B",
+   "kind": "学術書",
+   "finding": "限定合理性と機会主義を前提に、取引に特有の投資（資産特殊性）が高いと市場取引は不利になり、組織内部（階層）での統治が選ばれるとした。取引費用経済学の出発点。"
+  },
+  "march1991": {
+   "cite": "March, J. G. (1991). Exploration and exploitation in organizational learning. Organization Science, 2(1), 71–87.",
+   "url": "https://doi.org/10.1287/orsc.2.1.71",
+   "rank": "A",
+   "kind": "査読論文",
+   "finding": "新しい可能性の探索（exploration）と既存の確実性の活用（exploitation）の関係を分析。活用を探索より速く洗練する適応過程は、短期的には有効だが長期的には自滅的になりうるとした。"
+  },
+  "cohenlevinthal1990": {
+   "cite": "Cohen, W. M., & Levinthal, D. A. (1990). Absorptive capacity: A new perspective on learning and innovation. Administrative Science Quarterly, 35(1), 128–152.",
+   "url": "https://doi.org/10.2307/2393553",
+   "rank": "A",
+   "kind": "査読論文",
+   "finding": "外部の新しい情報の価値を認識し、取り込み、商業的に応用する能力を「吸収能力」と定義。吸収能力は主に、その組織がすでに持つ関連知識の水準によって決まるとした。"
+  },
+  "argyrisschon1978": {
+   "cite": "Argyris, C., & Schön, D. A. (1978). Organizational Learning: A Theory of Action Perspective. Addison-Wesley.",
+   "url": "https://infed.org/dir/chris-argyris-theories-of-action-double-loop-learning-and-organizational-learning/",
+   "rank": "B",
+   "kind": "学術書",
+   "finding": "行動の戦略や前提だけを変える「シングルループ学習」と、行動を方向づける価値（使用理論の価値）そのものを変える「ダブルループ学習」を区別した。"
+  },
+  "nonaka1994": {
+   "cite": "Nonaka, I. (1994). A dynamic theory of organizational knowledge creation. Organization Science, 5(1), 14–37.",
+   "url": "https://doi.org/10.1287/orsc.5.1.14",
+   "rank": "A",
+   "kind": "査読論文",
+   "finding": "組織の知識は暗黙知と形式知の絶え間ない対話から生まれ、個人が新しい知識を生み、組織がそれを明確化し増幅する。暗黙知と形式知の相互作用の4つのパターン（のちのSECIモデル：共同化・表出化・連結化・内面化）を示した。"
+  },
+  "schein": {
+   "cite": "Schein, E. H. Organizational Culture and Leadership. Jossey-Bass.",
+   "url": "https://is.muni.cz/el/phil/podzim2013/CJVA1M/43514039/reading_4_Levels_of_culture.pdf",
+   "rank": "B",
+   "kind": "学術書",
+   "finding": "組織文化を3つのレベルでとらえる。目に見える人工物（行動・制度・空間など）、表明された価値（理念・方針）、当然視され多くは無意識の基本的な前提。表明された価値と実際の前提や実践のずれが、文化を診断する手がかりになる。",
+   "short": "Schein『組織文化とリーダーシップ』（学術書）"
+  },
+  "weick1993": {
+   "cite": "Weick, K. E. (1993). The collapse of sensemaking in organizations: The Mann Gulch disaster. Administrative Science Quarterly, 38(4), 628–652.",
+   "url": "https://doi.org/10.2307/2393339",
+   "rank": "A",
+   "kind": "査読論文",
+   "finding": "1949年のマン峡谷の山火事で13人の降下消防隊員が亡くなった事例を、小さな組織における役割構造とセンスメイキング（意味づけ）の崩壊として分析。崩壊を防ぐものとして、即興、仮想的な役割システム、知恵の態度、互いを尊重するやりとりを挙げた。"
+  },
+  "edmondson1999": {
+   "cite": "Edmondson, A. (1999). Psychological safety and learning behavior in work teams. Administrative Science Quarterly, 44(2), 350–383.",
+   "url": "https://doi.org/10.2307/2666999",
+   "rank": "A",
+   "kind": "査読論文",
+   "finding": "チームの心理的安全性を「チームは対人関係のリスクをとっても安全だという、メンバーに共有された信念」と定義。製造業の51チームの調査で、心理的安全性は学習行動と関連し、心理的安全性を統制するとチーム効力感は学習行動と関連しなかった。学習行動は心理的安全性とチームの成果の関係を媒介した。"
+  },
+  "frazier2017": {
+   "cite": "Frazier, M. L., Fainshmidt, S., Klinger, R. L., Pezeshkan, A., & Vracheva, V. (2017). Psychological safety: A meta-analytic review and extension. Personnel Psychology, 70(1), 113–165.",
+   "url": "https://doi.org/10.1111/peps.12183",
+   "rank": "A",
+   "kind": "メタ分析",
+   "finding": "136の独立サンプル（2万2千人超・約5千グループ）のメタ分析で、心理的安全性の先行要因と、課業成果・組織市民行動への影響を検討した。含まれる研究の多くは一時点の調査（横断研究）で、因果の向きの解釈には限界がある。"
+  },
+  "rework": {
+   "cite": "Google re:Work. Guide: Understand team effectiveness（Project Aristotle）.",
+   "url": "https://rework.withgoogle.com/intl/en/guides/understand-team-effectiveness",
+   "rank": "C",
+   "kind": "企業の調査",
+   "finding": "Google社内の調査で、成果を上げるチームを分ける5つの要因（心理的安全性、相互信頼、構造と明確さ、仕事の意味、インパクト）を挙げ、心理的安全性が最も重要だとした。査読を経た研究ではない社内調査で、参考扱い。",
+   "short": "Google re:Work（企業の調査）"
+  },
+  "mathieu2008": {
+   "cite": "Mathieu, J., Maynard, M. T., Rapp, T., & Gilson, L. (2008). Team effectiveness 1997–2007: A review of recent advancements and a glimpse into the future. Journal of Management, 34(3), 410–476.",
+   "url": "https://doi.org/10.1177/0149206308316061",
+   "rank": "A",
+   "kind": "レビュー論文",
+   "finding": "10年分のチーム研究をレビューし、従来の「入力–過程–成果（IPO）」モデルを、過程と創発状態（信頼・凝集性など）を媒介に置き時間の流れを考慮する「入力–媒介–成果（IMO）」の枠組みに発展させた。"
+  },
+  "judgepiccolo2004": {
+   "cite": "Judge, T. A., & Piccolo, R. F. (2004). Transformational and transactional leadership: A meta-analytic test of their relative validity. Journal of Applied Psychology, 89(5), 755–768.",
+   "url": "https://doi.org/10.1037/0021-9010.89.5.755",
+   "rank": "A",
+   "kind": "メタ分析",
+   "finding": "87の資料・626の相関のメタ分析。変革型リーダーシップの全体的な妥当性は.44、条件つき報酬（交換型）は.39、放任型は−.37。変革型と条件つき報酬の相関は.80と高く、両者は大きく重なっている。"
+  },
+  "colquitt2001": {
+   "cite": "Colquitt, J. A., Conlon, D. E., Wesson, M. J., Porter, C. O. L. H., & Ng, K. Y. (2001). Justice at the millennium: A meta-analytic review of 25 years of organizational justice research. Journal of Applied Psychology, 86(3), 425–445.",
+   "url": "https://doi.org/10.1037/0021-9010.86.3.425",
+   "rank": "A",
+   "kind": "メタ分析",
+   "finding": "183の研究のメタ分析。組織的公正を分配的・手続き的・対人的・情報的の4次元に分け、各次元は互いに中〜強程度に関連しながらも、公正の知覚に対してそれぞれ独自の説明力を持つことを示した。"
+  },
+  "rhoades2002": {
+   "cite": "Rhoades, L., & Eisenberger, R. (2002). Perceived organizational support: A review of the literature. Journal of Applied Psychology, 87(4), 698–714.",
+   "url": "https://doi.org/10.1037/0021-9010.87.4.698",
+   "rank": "A",
+   "kind": "メタ分析",
+   "finding": "70以上の研究のメタ分析。公正さ、上司の支援、組織からの報酬と良好な職務条件の3つが、組織から支援されているという知覚（POS）と関連した。"
+  },
+  "gagnedeci2005": {
+   "cite": "Gagné, M., & Deci, E. L. (2005). Self-determination theory and work motivation. Journal of Organizational Behavior, 26(4), 331–362.",
+   "url": "https://doi.org/10.1002/job.322",
+   "rank": "A",
+   "kind": "査読論文",
+   "finding": "自己決定理論を仕事の動機づけの理論として示し、組織行動論との関連を論じた。内発・外発の二分法ではなく、外発的動機づけを自律性の程度によっていくつかの型に分けた点が要点。人の基本的な心理的欲求として自律性・有能感・関係性を置く。"
+  },
+  "lockelatham2002": {
+   "cite": "Locke, E. A., & Latham, G. P. (2002). Building a practically useful theory of goal setting and task motivation: A 35-year odyssey. American Psychologist, 57(9), 705–717.",
+   "url": "https://doi.org/10.1037/0003-066X.57.9.705",
+   "rank": "A",
+   "kind": "レビュー論文",
+   "finding": "35年分の実証研究から目標設定理論をまとめた。具体的で難しい目標は「ベストを尽くせ」より高い成果につながること、目標が働く仕組み（方向づけ・努力・持続・方略）、効果を左右する条件（コミットメント、フィードバック、課題の複雑さ）を整理した。"
+  },
+  "humphrey2007": {
+   "cite": "Humphrey, S. E., Nahrgang, J. D., & Morgeson, F. P. (2007). Integrating motivational, social, and contextual work design features: A meta-analytic summary and theoretical extension of the work design literature. Journal of Applied Psychology, 92(5), 1332–1356.",
+   "url": "https://doi.org/10.1037/0021-9010.92.5.1332",
+   "rank": "A",
+   "kind": "メタ分析",
+   "finding": "259研究・約22万人のメタ分析。14の仕事の特性は、19の態度・行動の分散を平均43%説明した。動機づけ的特性（自律性など）に加えて、社会的特性（社会的支援など）が組織コミットメントや離職意図の説明を大きく上積みした。"
+  },
+  "kluger1996": {
+   "cite": "Kluger, A. N., & DeNisi, A. (1996). The effects of feedback interventions on performance: A historical review, a meta-analysis, and a preliminary feedback intervention theory. Psychological Bulletin, 119(2), 254–284.",
+   "url": "https://doi.org/10.1037/0033-2909.119.2.254",
+   "rank": "A",
+   "kind": "メタ分析",
+   "finding": "607の効果量・23,663の観測のメタ分析。フィードバックは平均では成果を高めた（d=.41）が、3分の1以上のケースでは成果を下げた。注意が課題から自己（自尊心など）へ向かうほど効果が下がるとする理論を示した。"
+  },
+  "kristofbrown2005": {
+   "cite": "Kristof-Brown, A. L., Zimmerman, R. D., & Johnson, E. C. (2005). Consequences of individuals' fit at work: A meta-analysis of person–job, person–organization, person–group, and person–supervisor fit. Personnel Psychology, 58(2), 281–342.",
+   "url": "https://doi.org/10.1111/j.1744-6570.2005.00672.x",
+   "rank": "A",
+   "kind": "メタ分析",
+   "finding": "人と仕事・組織・集団・上司の4種類の適合を対象としたメタ分析。入社前（応募の魅力、内定承諾など）と入社後（態度、退職行動、ストレス、成果、在職期間）の結果を検討し、ほとんどの関係が状況をこえて一般化できることを示した。"
+  },
+  "sackett2022": {
+   "cite": "Sackett, P. R., Zhang, C., Berry, C. M., & Lievens, F. (2022). Revisiting meta-analytic estimates of validity in personnel selection: Addressing systematic overcorrection for restriction of range. Journal of Applied Psychology, 107(11), 2040–2068.",
+   "url": "https://doi.org/10.1037/apl0000994",
+   "rank": "A",
+   "kind": "メタ分析",
+   "finding": "過去のメタ分析は選抜による範囲の制限を過大に補正しており、多くの選考手法の妥当性が過大評価されていたと指摘。補正し直すと平均妥当性は.10〜.20下がり、構造化面接が最上位の選考手法となった（平均の運用上の妥当性 r=.42）。"
+  },
+  "phillips1998": {
+   "cite": "Phillips, J. M. (1998). Effects of realistic job previews on multiple organizational outcomes: A meta-analysis. Academy of Management Journal, 41(6), 673–690.",
+   "url": "https://doi.org/10.2307/256964",
+   "rank": "A",
+   "kind": "メタ分析",
+   "finding": "現実的な仕事情報の事前提示（RJP）のメタ分析。定着や成果への効果は小さい（限定的）。口頭で対面で伝えるほうが、書面や動画より離職の抑制に効果的だった。"
+  },
+  "bauer2007": {
+   "cite": "Bauer, T. N., Bodner, T., Erdogan, B., Truxillo, D. M., & Tucker, J. S. (2007). Newcomer adjustment during organizational socialization: A meta-analytic review of antecedents, outcomes, and methods. Journal of Applied Psychology, 92(3), 707–721.",
+   "url": "https://doi.org/10.1037/0021-9010.92.3.707",
+   "rank": "A",
+   "kind": "メタ分析",
+   "finding": "70の新人サンプルのメタ分析と経路分析。社会化戦術や新人の情報探索が、新人の適応（役割の明確さ・自己効力感・社会的受容）を通じて、職務満足・組織コミットメント・職務成果・定着意図・離職につながるというモデルがおおむね支持された。"
+  },
+  "meyer2002": {
+   "cite": "Meyer, J. P., Stanley, D. J., Herscovitch, L., & Topolnytsky, L. (2002). Affective, continuance, and normative commitment to the organization: A meta-analysis of antecedents, correlates, and consequences. Journal of Vocational Behavior, 61(1), 20–52.",
+   "url": "https://doi.org/10.1006/jvbe.2001.1842",
+   "rank": "A",
+   "kind": "メタ分析",
+   "finding": "情緒的・継続的・規範的コミットメントは互いに関連しつつ区別できた。3つとも退職の考えや離職と負の関連を示したが、職場の望ましい結果との関連が最も強いのは情緒的コミットメントで、継続的コミットメントは無関連か負の関連だった。"
+  },
+  "christian2011": {
+   "cite": "Christian, M. S., Garza, A. S., & Slaughter, J. E. (2011). Work engagement: A quantitative review and test of its relations with task and contextual performance. Personnel Psychology, 64(1), 89–136.",
+   "url": "https://doi.org/10.1111/j.1744-6570.2010.01203.x",
+   "rank": "A",
+   "kind": "メタ分析",
+   "finding": "ワーク・エンゲージメントの定義を整理し、職務態度とは区別できる概念であること、課業成果と文脈的成果（周囲への貢献）の両方と関連することを示した。多くの研究は一時点の調査で、因果の向きは確定できない。"
+  },
+  "rubenstein2018": {
+   "cite": "Rubenstein, A. L., Eberly, M. B., Lee, T. W., & Mitchell, T. R. (2018). Surveying the forest: A meta-analysis, moderator investigation, and future-oriented discussion of the antecedents of voluntary employee turnover. Personnel Psychology, 71(1), 23–65.",
+   "url": "https://doi.org/10.1111/peps.12226",
+   "rank": "A",
+   "kind": "メタ分析",
+   "finding": "自発的離職の先行要因を網羅的にメタ分析し、既存の効果量を更新するとともに新しい先行要因も検討。調整変数の分析と、従来の離職研究の枠組みをこえる今後の研究の方向を示した。"
+  },
+  "cummings2016": {
+   "cite": "Cummings, S., Bridgman, T., & Brown, K. G. (2016). Unfreezing change as three steps: Rethinking Kurt Lewin's legacy for change management. Human Relations, 69(1), 33–60.",
+   "url": "https://doi.org/10.1177/0018726715577707",
+   "rank": "A",
+   "kind": "査読論文",
+   "finding": "レヴィンの書いたものと後の文献の記述を比べ、レヴィンは「解凍・変革・再凍結」の3段階モデルを作っておらず、それは彼の死（1947年）の後に形づくられたと論じた。後の文献には誤引用や単純化が多く見られた。"
+  },
+  "appelbaum2012": {
+   "cite": "Appelbaum, S. H., Habashy, S., Malo, J.-L., & Shafiq, H. (2012). Back to the future: Revisiting Kotter's 1996 change model. Journal of Management Development, 31(8), 764–782.",
+   "url": "https://doi.org/10.1108/02621711211253231",
+   "rank": "A",
+   "kind": "レビュー論文",
+   "finding": "コッターの8段階の各段階を支持する文献を15年分レビュー。モデルに反する証拠は見つからなかったが、8段階全体を1つのモデルとして検証した研究はなかった。モデルの人気は科学的な合意よりも、使いやすい形式によるところが大きいと指摘した。"
+  },
+  "oreg2011": {
+   "cite": "Oreg, S., Vakola, M., & Armenakis, A. (2011). Change recipients' reactions to organizational change: A 60-year review of quantitative studies. The Journal of Applied Behavioral Science, 47(4), 461–524.",
+   "url": "https://doi.org/10.1177/0021886310396550",
+   "rank": "A",
+   "kind": "レビュー論文",
+   "finding": "1948〜2007年の量的研究のうち基準を満たす79研究をレビュー。変革の受け手の反応を認知・感情・行動の3次元の態度としてとらえ、変革前の先行要因と変革の結果を含むモデルを示した。"
+  },
+  "mhlw2025": {
+   "cite": "厚生労働省（2025年10月24日公表）「新規学卒就職者の離職状況（令和4年3月卒業者）」",
+   "url": "https://www.mhlw.go.jp/stf/houdou/0000177553_00010.html",
+   "rank": "A",
+   "kind": "公的統計",
+   "finding": "就職後3年以内の離職率は、新規大学卒33.8%（前年度比1.1ポイント低下）、新規高校卒37.9%（同0.5ポイント低下）。",
+   "short": "厚生労働省「新規学卒就職者の離職状況」（2025年10月）"
+  },
+  "hamaguchi2021": {
+   "cite": "濱口桂一郎（2021）『ジョブ型雇用社会とは何か：正社員体制の矛盾と転機』岩波新書／経済産業研究所（RIETI）の解説記事",
+   "url": "https://www.rieti.go.jp/jp/special/af/069.html",
+   "rank": "B",
+   "kind": "学術書",
+   "finding": "「ジョブ型」と「メンバーシップ型」は、職務を限定して採用し賃金を職務に付けるか、職務を限定せず新卒一括で採用し定期的に職務を替え賃金を人に付けるかの違いで整理される。現実の制度の写しではなく、価値判断を含まない分析用の理念型であり、近年の「ジョブ型」論には誤解が多いと批判している。",
+   "short": "濱口 (2021)『ジョブ型雇用社会とは何か』（学術書）"
+  },
+  "gallup2026": {
+   "cite": "Gallup (2026). State of the Global Workplace: Japan country-level data.",
+   "url": "https://www.gallup.com/workplace/705794/state-global-workplace-japan-country-level-data.aspx",
+   "rank": "B",
+   "kind": "大手調査機関",
+   "finding": "2025年のデータで、仕事にエンゲージしている従業員の割合は日本8%（東アジア平均18%、世界平均20%）。Gallup独自の尺度による国際比較で、回答傾向の文化差には注意が必要。"
+  }
+ },
+ "chapters": [
+  {
+   "id": "ch0",
+   "no": 0,
+   "title": "序章 組織論をどう学び、どう使うか",
+   "role": "以降のすべての章で使う「根拠の読み方」をそろえる。有名な理論と、確かめられた知見を区別する目を養う。",
+   "cat": "文化・学習・変革",
+   "keywords": [
+    "エビデンスにもとづくマネジメント",
+    "evidence-based management",
+    "メタ分析",
+    "因果推論 横断研究"
+   ],
+   "units": [
+    {
+     "id": "u0-1",
+     "title": "エビデンスにもとづくマネジメントと、根拠の信頼度",
+     "concepts": [
+      "エビデンスにもとづくマネジメント",
+      "4つの情報源",
+      "根拠の信頼度ランク"
+     ],
+     "sources": [
+      "rousseau2006",
+      "cebma"
+     ]
+    },
+    {
+     "id": "u0-2",
+     "title": "人気の理論と、確かめられた知見は違う",
+     "concepts": [
+      "実務で広まった理論の検証",
+      "横断研究と因果",
+      "誤引用"
+     ],
+     "sources": [
+      "appelbaum2012",
+      "cummings2016",
+      "frazier2017"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ch1",
+   "no": 1,
+   "title": "第1章 組織とは何か",
+   "role": "組織を「人の協働の体系」として見る視点を持つ。以降の章の土台。",
+   "cat": "組織デザイン",
+   "keywords": [
+    "協働の体系",
+    "官僚制",
+    "組織の定義"
+   ],
+   "units": [
+    {
+     "id": "u1-1",
+     "title": "協働の体系としての組織（バーナード）",
+     "concepts": [
+      "協働の体系",
+      "共通の目的",
+      "伝達",
+      "協働意欲"
+     ],
+     "sources": [
+      "barnard1938"
+     ]
+    },
+    {
+     "id": "u1-2",
+     "title": "官僚制の理念型と、よくある誤解",
+     "concepts": [
+      "官僚制",
+      "理念型",
+      "ポスト官僚制"
+     ],
+     "sources": [
+      "hopfl2006"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ch2",
+   "no": 2,
+   "title": "第2章 組織構造とデザイン",
+   "role": "第1章の協働を、どんな分業と調整の仕組みで実現するか。環境に応じた最適な形はひとつではない。",
+   "cat": "組織デザイン",
+   "keywords": [
+    "組織構造",
+    "組織デザイン",
+    "コンティンジェンシー理論",
+    "機械的組織 有機的組織",
+    "ミンツバーグ"
+   ],
+   "units": [
+    {
+     "id": "u2-1",
+     "title": "機械的組織と有機的組織",
+     "concepts": [
+      "機械的組織",
+      "有機的組織",
+      "コンティンジェンシー理論"
+     ],
+     "sources": [
+      "burnsstalker1961"
+     ]
+    },
+    {
+     "id": "u2-2",
+     "title": "分化と統合",
+     "concepts": [
+      "分化",
+      "統合",
+      "環境の不確実性"
+     ],
+     "sources": [
+      "lawrencelorsch1967"
+     ]
+    },
+    {
+     "id": "u2-3",
+     "title": "ミンツバーグの5つの組織形態",
+     "concepts": [
+      "調整メカニズム",
+      "機械的官僚制",
+      "専門職官僚制",
+      "アドホクラシー"
+     ],
+     "sources": [
+      "mintzberg1980"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ch3",
+   "no": 3,
+   "title": "第3章 組織と環境",
+   "role": "組織の形は内側の都合だけでは決まらない。資源・制度・淘汰・取引費用という4つのレンズで外部環境との関係を見る。",
+   "cat": "組織と環境",
+   "keywords": [
+    "資源依存理論",
+    "制度理論 同型化",
+    "個体群生態学",
+    "取引費用 内製 外部委託"
+   ],
+   "units": [
+    {
+     "id": "u3-1",
+     "title": "資源依存：組織は依存する相手に左右される",
+     "concepts": [
+      "資源依存",
+      "組織間の力関係",
+      "相互依存"
+     ],
+     "sources": [
+      "pfeffersalancik1978"
+     ]
+    },
+    {
+     "id": "u3-2",
+     "title": "制度的同型化：なぜ組織は似てくるのか",
+     "concepts": [
+      "強制的同型化",
+      "模倣的同型化",
+      "規範的同型化",
+      "正当性"
+     ],
+     "sources": [
+      "dimaggiopowell1983"
+     ]
+    },
+    {
+     "id": "u3-3",
+     "title": "個体群生態学と組織の慣性",
+     "concepts": [
+      "組織の慣性",
+      "淘汰",
+      "個体群"
+     ],
+     "sources": [
+      "hannanfreeman1977"
+     ]
+    },
+    {
+     "id": "u3-4",
+     "title": "取引費用：内製するか、外に任せるか",
+     "concepts": [
+      "限定合理性",
+      "機会主義",
+      "資産特殊性"
+     ],
+     "sources": [
+      "williamson1975"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ch4",
+   "no": 4,
+   "title": "第4章 人と組織の出会い：採用と組織社会化",
+   "role": "組織が人を迎え入れる入口。どんな人と出会い、どう選び、どう組織の一員にするかで、その後の定着と成果が変わる。",
+   "cat": "人と仕事",
+   "keywords": [
+    "人と組織の適合",
+    "構造化面接 妥当性",
+    "リアリスティック・ジョブ・プレビュー",
+    "組織社会化 オンボーディング",
+    "早期離職"
+   ],
+   "units": [
+    {
+     "id": "u4-1",
+     "title": "人と組織の適合（P-Oフィット）",
+     "concepts": [
+      "人と仕事の適合",
+      "人と組織の適合",
+      "知覚された適合"
+     ],
+     "sources": [
+      "kristofbrown2005"
+     ]
+    },
+    {
+     "id": "u4-2",
+     "title": "予測力のある選考：構造化面接",
+     "concepts": [
+      "予測的妥当性",
+      "構造化面接",
+      "範囲の制限"
+     ],
+     "sources": [
+      "sackett2022"
+     ]
+    },
+    {
+     "id": "u4-3",
+     "title": "現実的な仕事情報の事前提示（RJP）",
+     "concepts": [
+      "RJP",
+      "期待の調整",
+      "早期離職"
+     ],
+     "sources": [
+      "phillips1998",
+      "mhlw2025"
+     ]
+    },
+    {
+     "id": "u4-4",
+     "title": "組織社会化とオンボーディング",
+     "concepts": [
+      "組織社会化",
+      "役割の明確さ",
+      "社会的受容",
+      "情報探索"
+     ],
+     "sources": [
+      "bauer2007",
+      "mhlw2025"
+     ],
+     "topicId": "org-socialization"
+    }
+   ]
+  },
+  {
+   "id": "ch5",
+   "no": 5,
+   "title": "第5章 動機づけと仕事のデザイン",
+   "role": "組織に入った人が力を発揮する条件。動機づけの心理と、仕事そのものの設計の両面から見る。",
+   "cat": "人と仕事",
+   "keywords": [
+    "自己決定理論",
+    "目標設定理論",
+    "職務設計 ワークデザイン",
+    "フィードバック 効果"
+   ],
+   "units": [
+    {
+     "id": "u5-1",
+     "title": "自己決定理論：自律性・有能感・関係性",
+     "concepts": [
+      "自律的動機づけ",
+      "外発的動機づけの型",
+      "基本的心理欲求"
+     ],
+     "sources": [
+      "gagnedeci2005"
+     ]
+    },
+    {
+     "id": "u5-2",
+     "title": "目標設定理論",
+     "concepts": [
+      "具体的で難しい目標",
+      "目標コミットメント",
+      "フィードバック"
+     ],
+     "sources": [
+      "lockelatham2002"
+     ]
+    },
+    {
+     "id": "u5-3",
+     "title": "仕事の特性とワークデザイン",
+     "concepts": [
+      "自律性",
+      "社会的支援",
+      "職務特性"
+     ],
+     "sources": [
+      "humphrey2007"
+     ]
+    },
+    {
+     "id": "u5-4",
+     "title": "フィードバックは逆効果にもなる",
+     "concepts": [
+      "フィードバック介入",
+      "注意の向き",
+      "自己への注意"
+     ],
+     "sources": [
+      "kluger1996"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ch6",
+   "no": 6,
+   "title": "第6章 チーム",
+   "role": "個人から集団へ。チームの成果は、メンバーの能力の合計ではなく、チーム内の過程と共有された状態で決まる。",
+   "cat": "チームとリーダー",
+   "keywords": [
+    "心理的安全性",
+    "チーム 効果性",
+    "チーム学習"
+   ],
+   "units": [
+    {
+     "id": "u6-1",
+     "title": "心理的安全性と学習行動",
+     "concepts": [
+      "心理的安全性",
+      "学習行動",
+      "チーム効力感"
+     ],
+     "sources": [
+      "edmondson1999",
+      "frazier2017",
+      "rework"
+     ],
+     "topicId": "org-psych-safety"
+    },
+    {
+     "id": "u6-2",
+     "title": "チームの効果性：入力・媒介・成果",
+     "concepts": [
+      "IMOモデル",
+      "創発状態",
+      "チーム過程"
+     ],
+     "sources": [
+      "mathieu2008"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ch7",
+   "no": 7,
+   "title": "第7章 リーダーシップと公正",
+   "role": "チームと組織を方向づける力。リーダーの行動と、公正さ・支援の知覚が人の反応を左右する。",
+   "cat": "チームとリーダー",
+   "keywords": [
+    "変革型リーダーシップ",
+    "組織的公正",
+    "組織的支援 POS"
+   ],
+   "units": [
+    {
+     "id": "u7-1",
+     "title": "変革型リーダーシップと交換型リーダーシップ",
+     "concepts": [
+      "変革型リーダーシップ",
+      "条件つき報酬",
+      "放任型"
+     ],
+     "sources": [
+      "judgepiccolo2004"
+     ]
+    },
+    {
+     "id": "u7-2",
+     "title": "組織的公正の4つの次元",
+     "concepts": [
+      "分配的公正",
+      "手続き的公正",
+      "対人的公正",
+      "情報的公正"
+     ],
+     "sources": [
+      "colquitt2001"
+     ]
+    },
+    {
+     "id": "u7-3",
+     "title": "組織から支援されているという知覚",
+     "concepts": [
+      "知覚された組織的支援",
+      "互恵性",
+      "上司の支援"
+     ],
+     "sources": [
+      "rhoades2002"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ch8",
+   "no": 8,
+   "title": "第8章 コミットメント・エンゲージメント・定着",
+   "role": "第4〜7章の積み重ねの結果として、人は組織にとどまり、熱意をもって働く。何がそれを左右するのか。",
+   "cat": "人と仕事",
+   "keywords": [
+    "組織コミットメント",
+    "ワーク・エンゲージメント",
+    "離職 要因 メタ分析",
+    "早期離職 統計"
+   ],
+   "units": [
+    {
+     "id": "u8-1",
+     "title": "3つのコミットメント",
+     "concepts": [
+      "情緒的コミットメント",
+      "継続的コミットメント",
+      "規範的コミットメント"
+     ],
+     "sources": [
+      "meyer2002"
+     ]
+    },
+    {
+     "id": "u8-2",
+     "title": "ワーク・エンゲージメント",
+     "concepts": [
+      "ワーク・エンゲージメント",
+      "課業成果",
+      "文脈的成果"
+     ],
+     "sources": [
+      "christian2011",
+      "gallup2026"
+     ]
+    },
+    {
+     "id": "u8-3",
+     "title": "人はなぜ辞めるのか：離職の先行要因",
+     "concepts": [
+      "自発的離職",
+      "先行要因",
+      "早期離職"
+     ],
+     "sources": [
+      "rubenstein2018",
+      "mhlw2025"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ch9",
+   "no": 9,
+   "title": "第9章 組織文化と組織学習",
+   "role": "組織の「当たり前」と、それを学び直す力。変革（第10章）の前提になる。",
+   "cat": "文化・学習・変革",
+   "keywords": [
+    "組織文化",
+    "組織学習",
+    "ダブルループ学習",
+    "両利き 探索 活用",
+    "知識創造"
+   ],
+   "units": [
+    {
+     "id": "u9-1",
+     "title": "組織文化の3つのレベル",
+     "concepts": [
+      "人工物",
+      "表明された価値",
+      "基本的な前提"
+     ],
+     "sources": [
+      "schein"
+     ]
+    },
+    {
+     "id": "u9-2",
+     "title": "シングルループ学習とダブルループ学習",
+     "concepts": [
+      "シングルループ学習",
+      "ダブルループ学習",
+      "使用理論"
+     ],
+     "sources": [
+      "argyrisschon1978"
+     ]
+    },
+    {
+     "id": "u9-3",
+     "title": "探索と活用",
+     "concepts": [
+      "探索",
+      "活用",
+      "短期の成功の罠"
+     ],
+     "sources": [
+      "march1991"
+     ]
+    },
+    {
+     "id": "u9-4",
+     "title": "吸収能力と組織的知識創造",
+     "concepts": [
+      "吸収能力",
+      "暗黙知と形式知",
+      "SECIモデル"
+     ],
+     "sources": [
+      "cohenlevinthal1990",
+      "nonaka1994"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ch10",
+   "no": 10,
+   "title": "第10章 組織変革",
+   "role": "これまでの章の知識を総動員して、組織を変える。変革モデルの根拠と、変革を受け止める人の側から考える。",
+   "cat": "文化・学習・変革",
+   "keywords": [
+    "組織変革",
+    "変革への抵抗 反応",
+    "コッター 8段階 検証",
+    "センスメイキング"
+   ],
+   "units": [
+    {
+     "id": "u10-1",
+     "title": "「解凍・変革・再凍結」の神話",
+     "concepts": [
+      "レヴィン",
+      "3段階モデル",
+      "誤引用"
+     ],
+     "sources": [
+      "cummings2016",
+      "appelbaum2012",
+      "oreg2011"
+     ],
+     "topicId": "org-change-myth"
+    },
+    {
+     "id": "u10-2",
+     "title": "変革の受け手の反応",
+     "concepts": [
+      "認知的反応",
+      "感情的反応",
+      "行動的反応"
+     ],
+     "sources": [
+      "oreg2011"
+     ]
+    },
+    {
+     "id": "u10-3",
+     "title": "コッターの8段階は検証されたか",
+     "concepts": [
+      "8段階モデル",
+      "危機感",
+      "実証的支持"
+     ],
+     "sources": [
+      "appelbaum2012"
+     ]
+    },
+    {
+     "id": "u10-4",
+     "title": "危機とセンスメイキング",
+     "concepts": [
+      "センスメイキング",
+      "役割構造",
+      "レジリエンス"
+     ],
+     "sources": [
+      "weick1993"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "chj",
+   "no": 11,
+   "title": "補章 日本の組織と雇用システム",
+   "role": "ここまでの理論を、日本の雇用の仕組みと統計に当てはめて読む。各章の「お客さん視点」の前提知識。",
+   "cat": "組織と環境",
+   "keywords": [
+    "ジョブ型 メンバーシップ型",
+    "新卒一括採用",
+    "早期離職 統計",
+    "エンゲージメント 日本"
+   ],
+   "units": [
+    {
+     "id": "uj-1",
+     "title": "メンバーシップ型とジョブ型",
+     "concepts": [
+      "メンバーシップ型",
+      "ジョブ型",
+      "新卒一括採用",
+      "理念型"
+     ],
+     "sources": [
+      "hamaguchi2021"
+     ]
+    },
+    {
+     "id": "uj-2",
+     "title": "データで見る日本の早期離職とエンゲージメント",
+     "concepts": [
+      "3年以内離職率",
+      "エンゲージメント",
+      "国際比較の注意点"
+     ],
+     "sources": [
+      "mhlw2025",
+      "gallup2026"
+     ]
+    }
+   ]
+  }
+ ]
+}

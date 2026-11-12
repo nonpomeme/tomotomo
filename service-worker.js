@@ -1,12 +1,13 @@
 /* TomoTomo — オフライン対応（service worker）
    アプリ本体はキャッシュからすぐ表示し、裏で最新版を取りに行く（次回起動時に反映）。
    AIサーバー（別ドメイン）や POST には一切さわらない。 */
-const CACHE = 'tomotomo-v2';
+const CACHE = 'tomotomo-v3';
 const SHELL = [
   './', 'index.html', 'manifest.json',
-  'src/styles.css', 'src/data.js', 'src/content-schema.js', 'src/content.js', 'src/core.js', 'src/learning.js', 'src/ai.js', 'src/partners.js',
+  'src/styles.css', 'src/data.js', 'src/content-schema.js', 'src/content.js', 'src/curriculum.js', 'src/core.js', 'src/learning.js', 'src/ai.js', 'src/partners.js',
   'src/views.js', 'src/map.js', 'src/lesson.js', 'src/app.js',
-  'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png'
+  'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
+  'content/curriculum.json'
 ];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 

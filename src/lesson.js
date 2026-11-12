@@ -46,7 +46,7 @@ function viewLesson() {
       '<div class="chain" style="margin-top:10px">' + plan.map((p, i) => (i ? '<i>↓</i>' : '') + '<span>' + p + '</span>').join('') + '</div></div>';
     foot = '<button class="btn btn-primary" data-a="next">はじめる</button>';
   } else if (step.k === 'read') {
-    body = '<div class="kicker">📰 ニュース解説</div><h2 class="qtitle" style="margin-bottom:4px">' + esc(t.title) + '</h2>' + readingHTML(t, L.depth, 'lessonDepth');
+    body = '<div class="kicker">📘 解説</div><h2 class="qtitle" style="margin-bottom:4px">' + esc(t.title) + '</h2>' + readingHTML(t, L.depth, 'lessonDepth');
     foot = '<div class="row"><button class="btn btn-ghost" style="width:auto" data-a="chat" data-v="' + t.id + '">AIに質問</button><button class="btn btn-primary grow" data-a="next">クイズへ進む</button></div>';
   } else if (step.k === 'quiz') {
     const q = QBANK[step.qid];
@@ -62,7 +62,7 @@ function viewLesson() {
     const items = isHRish() ? t.apply.hr : t.apply.general;
     body = '<div class="kicker">💼 仕事への応用</div><h2 class="qtitle">' + (isHRish() ? esc(S.profile.occupation) + 'にとって、何が重要か' : 'あなたの仕事にどう使うか') + '</h2>' +
       '<div class="card">' + items.map((x, i) => '<div class="row" style="align-items:flex-start' + (i ? ';margin-top:12px' : '') + '"><span class="oitem" style="padding:0;border:0;box-shadow:none;background:none;width:auto"><span class="n">' + (i + 1) + '</span></span><span>' + esc(x) + '</span></div>').join('') + '</div>' +
-      rolesHTML(t) +
+      rolesHTML(t) + viewsHTML(t) +
       '<div class="sec-title">明日の会話で使えるひとこと</div><div class="tomo">' + owl(46, 'happy') + '<div class="say">' + esc(t.talk) + '</div></div>' +
       '<div class="card flat" style="margin-top:14px"><span class="tag ai">AIの解釈</span><p class="small" style="margin-top:6px">' + esc(t.s10.opinion.replace(/^AIの解釈：/, '')) + '</p></div>';
     foot = '<button class="btn btn-mint" data-a="next">学習を完了する</button>';
@@ -78,6 +78,15 @@ function rolesHTML(t) {
   const keys = Object.keys(CONTENT_RULES.ROLES).filter(k => roles[k]).sort((a, b) => (b === mine) - (a === mine));
   return '<div class="sec-title">立場別：明日からの使い方</div><div class="card">' + keys.map((k, i) =>
     '<div' + (i ? ' style="margin-top:12px"' : '') + '><span class="tag' + (k === mine ? ' ai' : '') + '">' + esc(CONTENT_RULES.ROLES[k]) + (k === mine ? '（あなた）' : '') + '</span><p class="small" style="margin-top:4px">' + esc(roles[k]) + '</p></div>').join('') + '</div>';
+}
+/* 3つの視点（お客さんに提案する／社内で教える／仕組みで改善する）。設計書 docs/design-brief.md */
+const VIEW_ICON = { customer: '🤝', teach: '🧑‍🏫', system: '⚙️' };
+function viewsHTML(t) {
+  const v = t.apply && t.apply.views;
+  if (!v) return '';
+  return '<div class="sec-title">3つの視点</div><div class="card" id="views">' + Object.keys(CONTENT_RULES.VIEWS).filter(k => v[k]).map((k, i) =>
+    '<div' + (i ? ' style="margin-top:12px"' : '') + '><span class="tag">' + VIEW_ICON[k] + ' ' + esc(CONTENT_RULES.VIEWS[k]) + '</span><p class="small" style="margin-top:4px">' + esc(v[k]) + '</p></div>').join('') +
+    '<p class="tiny muted" style="margin-top:10px">視点ごとの使い方は、研究の知見をもとにしたAIの提案です。</p></div>';
 }
 /* 根拠の信頼度ランクのバッジ（設計書4章）。説明はタップ／ホバーで出す */
 function rankBadge(rank) {
@@ -188,7 +197,7 @@ function checkAnswer() {
   if (!canCheck(q, L)) return;
   const ok = grade(q, L);
   L.checked = true; L.lastOk = ok; L.total++;
-  const cat = topicById(q.topicId).path[0];
+  const cat = topicCat(topicById(q.topicId));
   addSkill(q.skill, ok, cat);
   if (ok) {
     L.correct++; L.combo++; L.maxCombo = Math.max(L.maxCombo, L.combo);
@@ -219,7 +228,7 @@ async function submitThought() {
   const avg = AXES.reduce((a, [k]) => a + fb.scores[k], 0) / AXES.length;
   const gain = 15 + Math.round(avg * 3);
   L.xp += gain; L.thoughtDone = true;
-  const cat = t.path[0];
+  const cat = topicCat(t);
   addSkill('logic', fb.scores.logic >= 3, cat); addSkill('multi', fb.scores.multi >= 3, cat);
   addSkill('verbal', fb.scores.verbal >= 3, cat); addSkill('applied', fb.scores.practical >= 3, cat);
   addSkill('critical', fb.scores.evidence >= 3, cat);
@@ -293,7 +302,7 @@ function finishLesson() {
   if (S.thoughtCount >= 3) give('thinker');
   if (learnedIds().length >= 10) give('connector');
   if (S.streak.count >= 3) give('streak3');
-  if (catScores()['採用・人事'] >= 80) give('hr');
+  if (catScores()['人と仕事'] >= 80) give('hr');
   if (S.reviewDone >= 1) give('reviewer');
   if (Object.keys(S.completed).length >= 3) give('explorer');
   save();
@@ -326,7 +335,7 @@ function viewMapUpdate() {
   let msg;
   if (R.links.length) {
     const names = [...new Set(R.links.map(l => NODES[l[1]].name))].slice(0, 3);
-    msg = 'このニュースは、あなたの既存知識の「' + names.join('」「') + '」とつながりました。';
+    msg = 'このテーマは、あなたの既存知識の「' + names.join('」「') + '」とつながりました。';
   } else if (R.newNodes.length) msg = '新しく ' + R.newNodes.length + ' つの知識がマップに加わりました。次のテーマを学ぶと、知識同士がつながりはじめます。';
   else msg = '既存の知識の理解度が上がりました。光が強くなっています。';
   let h = '<div class="lesson-top"><button class="iconbtn" data-a="closeOverlay" aria-label="閉じる">' + IC.close + '</button><b style="font-family:var(--f-head)">知識マップが更新されました</b></div><div class="lesson-body">';
@@ -338,7 +347,7 @@ function viewMapUpdate() {
     h += '<div class="suggest"><div class="tomo">' + owl(40, 'normal') + '<div class="small"><span class="tag ai">次のおすすめテーマ</span><br>' + esc(say('recommend')) + '</div></div><h3 style="font-size:18px;margin-top:8px">' + rec.t.emoji + ' ' + esc(rec.t.title) + '</h3><p class="small muted" style="margin-top:4px">' + esc(rec.reasons.join('／')) + '</p>' +
       '<p class="small" style="margin-top:8px">このテーマを学ぶと「' + rec.t.nodes.filter(k => !isLearned(k)).slice(0, 3).map(k => NODES[k].name).join('」「') + '」が加わり、' + esc(t.title.split('：')[0]) + 'の知識とつながります。</p>' +
       '<button class="btn btn-primary" style="margin-top:12px" data-a="startMin" data-v="' + rec.t.id + '" data-m="10">このテーマを10分で学ぶ</button></div>';
-  } else h += '<div class="suggest"><b>すべてのテーマを学習しました</b><p class="small muted" style="margin-top:4px">復習で知識を定着させましょう。新しいニュースは本番接続後に毎日届きます。</p></div>';
+  } else h += '<div class="suggest"><b>すべてのテーマを学習しました</b><p class="small muted" style="margin-top:4px">復習で知識を定着させましょう。まだ教材のない単元の教材が、毎朝1つずつ届きます。</p></div>';
   h += '</div><div class="lesson-foot"><div class="row"><button class="btn btn-ghost grow" data-a="goGrowth">成長を見る</button><button class="btn btn-ghost grow" data-a="closeOverlay">ホームへ</button></div></div>';
   return h;
 }
@@ -354,10 +363,10 @@ function viewNews() {
 }
 function viewChat() {
   const c = ui.chat, t = topicById(c.topicId);
-  const presets = ['採用業界にはどう影響する？', '逆に企業側にはメリットない？', '採用コンサルなら何を提案する？', 'このニュースの反対意見は？'];
+  const presets = ['研修ではどう教えればいい？', 'この研究の限界は？', '採用コンサルなら何を提案する？', '反対の立場の意見は？'];
   return '<div class="lesson-top"><button class="iconbtn" data-a="closeChat" aria-label="戻る">' + IC.back + '</button><div class="grow"><b style="font-family:var(--f-head);font-size:14px">AIディスカッション</b><div class="tiny muted">' + esc(t.title) + '</div></div><span data-ai-status>' + aiStatusHTML() + '</span></div>' +
     '<div class="chatlog" id="chatlog">' +
-    '<div class="row" style="align-items:flex-end;gap:8px">' + owl(34, 'normal') + '<div class="msg ai">' + esc(say('start')) + '\nこのニュースについて、何でも聞いてね。事実と解釈は分けて答えます。</div></div>' +
+    '<div class="row" style="align-items:flex-end;gap:8px">' + owl(34, 'normal') + '<div class="msg ai">' + esc(say('start')) + '\nこのテーマについて、何でも聞いてね。研究で分かっていることと解釈は分けて答えます。</div></div>' +
     c.log.map(m => '<div class="msg ' + (m.role === 'user' ? 'me' : 'ai') + '">' + esc(m.content) + '</div>').join('') +
     (c.busy ? '<div class="msg ai" id="streaming">' + (c.partial ? esc(c.partial) : '<span class="spinner" style="display:inline-block;vertical-align:middle"></span> 考えています') + '</div>' : '') +
     '</div>' +

@@ -1,0 +1,17 @@
+{
+  "_説明": "毎日の教材づくり（daily.mjs）の設定。題材は content/curriculum.json の「まだ教材のない次の単元」。追加の調査で開いてよいサイトは research_domains だけ（公的機関・国際機関・大学・学術出版社など）。",
+  "audience": "採用・組織づくりに関わる社会人（採用コンサルタント、求人媒体の営業、人材紹介のRA・CA、企業の人事・採用担当、経営者）",
+  "roles": {
+    "consultant": "採用コンサルタント",
+    "media_sales": "求人広告・媒体の営業",
+    "agency": "人材紹介（RA・CA）",
+    "inhouse": "企業の人事・採用担当",
+    "executive": "経営者"
+  },
+  "research_domains": [
+    "go.jp", "lg.jp", "ac.jp", "oecd.org", "ilo.org", "worldbank.org",
+    "doi.org", "apa.org", "aom.org", "wiley.com", "sciencedirect.com", "elsevier.com", "springer.com", "tandfonline.com", "taylorfrancis.com", "sagepub.com", "jstor.org", "informs.org", "cambridge.org", "oup.com", "annualreviews.org", "nih.gov", "ssrn.com", "nber.org",
+    "harvard.edu", "hbs.edu", "mit.edu", "stanford.edu", "wharton.upenn.edu", "umich.edu", "cmu.edu",
+    "cebma.org", "siop.org", "shrm.org", "cipd.org", "jil.go.jp", "rieti.go.jp", "jpc-net.jp"
+  ]
+}

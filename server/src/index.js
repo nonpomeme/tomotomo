@@ -1,6 +1,6 @@
 /* TomoTomo API（Cloudflare Workers）
    POST /api/feedback … 思考問題の6観点採点（JSON）
-   POST /api/chat     … ニュースについての対話（text/plain ストリーミング）
+   POST /api/chat     … 教材のテーマについての対話（text/plain ストリーミング）
    GET  /api/health   … 合言葉の確認と、今日の残り回数
    送受信の形はアプリ側 src/ai.js の冒頭コメントと同じ。
 
@@ -108,8 +108,8 @@ async function chat(body, env, client, cors) {
   const topic = topicOf(body.topic), profile = profileOf(body.profile), partner = partnerOf(body.partner);
   const causal = Array.isArray(body.topic.causal) ? body.topic.causal.slice(0, 10).map(x => str(x, 100, '因果')) : [];
   const messages = messagesOf(body.messages);
-  const system = 'あなたはユーザーの学習パートナー「' + partner.name + '」（先生ではなく一緒に知識を育てる相棒）。ユーザーと次のニュースについて対話し、理解を深めさせる。話し方: ' + partner.voice + '。ただし説明の正確さ・情報量・質は話し方によって変えない。' +
-    '事実とAIの解釈を区別し、政治・社会の話題では特定の政党・候補者・思想を支持せず、複数の立場を示す。300字程度で、日本語で、やさしく具体的に。最後に考えを深める短い問いを1つ添える。このニュースと学習に関係のない依頼には、やさしく話題を戻す。\n' +
+  const system = 'あなたはユーザーの学習パートナー「' + partner.name + '」（先生ではなく一緒に知識を育てる相棒）。ユーザーと次のテーマ（組織論の教材）について対話し、理解を深めさせる。話し方: ' + partner.voice + '。ただし説明の正確さ・情報量・質は話し方によって変えない。' +
+    '研究で分かっている事実とAIの解釈を区別し、政治・社会の話題では特定の政党・候補者・思想を支持せず、複数の立場を示す。300字程度で、日本語で、やさしく具体的に。最後に考えを深める短い問いを1つ添える。このテーマと学習に関係のない依頼には、やさしく話題を戻す。\n' +
     'テーマ: ' + topic.title + '\n要点: ' + topic.summary + '\n因果: ' + causal.join('→') + '\nユーザーの職種: ' + profile.occupation + '、業界: ' + profile.industry;
 
   const stream = client.beta.messages.stream({

@@ -92,7 +92,7 @@ export async function review(proposal, { chapters, existing, check = checkUrl })
 /* 報告（docs/trends/週.md と PR 本文） */
 export function report({ kept, dropped, keyPoints }, { chapters, week, today }) {
   const ch = Object.fromEntries(chapters.map(c => [c.id, c]));
-  const chName = id => ch[id].no ? '第' + ch[id].no + '章 ' + ch[id].title : ch[id].title;
+  const chName = id => ch[id].title; // 章の名前（「第2章 組織構造とデザイン」のように番号つき）
   const byId = Object.fromEntries(kept.map(k => [k.id, k]));
   const src = s => '[' + s.rank + '] [' + s.name + '](' + s.url + ')（' + s.published + '）' + (s.autoCheck ? '　※' + s.autoCheck : '');
   const lines = ['# 最新トレンドの追記案（' + week + '）', '', '調査日：' + today + '　／　追記案 ' + kept.length + '件（除外 ' + dropped.length + '件）', '',

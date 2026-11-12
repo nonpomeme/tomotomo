@@ -24,9 +24,20 @@ EDGES.forEach(([s, t, type, w]) => { ADJ[s].push({ id: t, type, w, dir: 'out' })
 
 /* ---------------- state ---------------- */
 const KEY = 'tomotomo:v1';
+const STATE_VERSION = 2;
+/* v1 → v2（組織論への作り直し、要件 MG-1）：旧サンプル3テーマの問題はなくなったので、その復習予定だけ消す。
+   XP・履歴・連続日数・設定・知識ノードの習熟度はそのまま残す（旧ノードはマップに出さない） */
+const OLD_SAMPLE_TOPICS = ['ai-agent-hiring', 'ai-productivity-labor', 'rates-hiring'];
+function migrate(r) {
+  if ((r.v || 1) < 2) {
+    r.reviews = (Array.isArray(r.reviews) ? r.reviews : []).filter(x => x && !OLD_SAMPLE_TOPICS.some(id => String(x.qid).indexOf(id + '-') === 0));
+    r.v = 2;
+  }
+  return r;
+}
 function defaults() {
   return {
-    v: 1, updatedAt: 0, loggedIn: false, account: 'device', appName: 'TomoTomo', theme: 'auto',
+    v: STATE_VERSION, updatedAt: 0, loggedIn: false, account: 'device', appName: 'TomoTomo', theme: 'auto',
     profile: { name: '', occupation: '', industry: '', role: '', interests: [], minutes: 10, mode: 'auto', onboarded: false },
     xp: 0, streak: { count: 0, last: null }, history: [], skills: {}, skillCat: {}, nodes: {}, reviews: [],
     completed: {}, thoughtCount: 0, badges: [], reviewDone: 0, snapshots: [],
@@ -38,10 +49,11 @@ function mergeState(o) {
   const d = defaults();
   if (!o || typeof o !== 'object') return d;
   const r = Object.assign(d, o);
+  r.v = o.v || 1; // 古いデータには v がないことがある（移行の判定に使う）
   r.profile = Object.assign(defaults().profile, o.profile || {});
   r.notif = Object.assign(defaults().notif, o.notif || {});
   r.notif.slots = Object.assign(defaults().notif.slots, (o.notif && o.notif.slots) || {});
-  return r;
+  return migrate(r);
 }
 function loadLocal() { try { const raw = localStorage.getItem(KEY); return raw ? mergeState(JSON.parse(raw)) : defaults(); } catch (e) { return defaults(); } }
 let S = loadLocal();
@@ -110,6 +122,8 @@ function addSkill(k, ok, cat) {
   const s = S.skills[k] || (S.skills[k] = { c: 0, t: 0 }); s.t++; if (ok) s.c++;
   if (cat) { const key = cat + '|' + k; const x = S.skillCat[key] || (S.skillCat[key] = { c: 0, t: 0 }); x.t++; if (ok) x.c++; }
 }
+/* 理解度の分野（知識マップの5分野）。教材の最初の知識ノードの分野を使う */
+function topicCat(t) { return t && t.nodes && NODES[t.nodes[0]] ? NODES[t.nodes[0]].cat : (t && t.path ? t.path[0] : ''); }
 function isHRish() { return /採用|人事|コンサル/.test(S.profile.occupation) || S.profile.industry === '人材' || S.profile.industry === 'コンサル'; }
 function todayHistory() { const k = dkey(); return S.history.filter(h => dkey(h.at) === k); }
 function dueReviews(all) {
