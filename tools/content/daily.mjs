@@ -81,6 +81,23 @@ function fetchedPages(blocks) {
   }
   return pages;
 }
+/* 調査で道具をどう使ったか（検索の回数と件数、ページを開いた回数と失敗の理由）。うまくいかなかった日の原因を調べるため */
+function toolStats(blocks) {
+  const st = { search: 0, hits: 0, searchErr: {}, fetch: 0, ok: 0, fetchErr: {} };
+  const add = (o, k) => { o[k] = (o[k] || 0) + 1; };
+  for (const b of blocks) {
+    if (b.type === 'server_tool_use' && b.name === 'web_search') st.search++;
+    if (b.type === 'server_tool_use' && b.name === 'web_fetch') st.fetch++;
+    if (b.type === 'web_search_tool_result') {
+      if (Array.isArray(b.content)) st.hits += b.content.length; else add(st.searchErr, (b.content && b.content.error_code) || '不明');
+    }
+    if (b.type === 'web_fetch_tool_result') {
+      if (b.content && b.content.type === 'web_fetch_result') st.ok++; else add(st.fetchErr, (b.content && b.content.error_code) || '不明');
+    }
+  }
+  const fmt = o => Object.entries(o).map(([k, v]) => k + ' ' + v).join('・');
+  return '検索 ' + st.search + '回（結果 ' + st.hits + '件' + (Object.keys(st.searchErr).length ? '・失敗 ' + fmt(st.searchErr) : '') + '）／ページを開く ' + st.fetch + '回（成功 ' + st.ok + (Object.keys(st.fetchErr).length ? '・失敗 ' + fmt(st.fetchErr) : '') + '）';
+}
 /* 回答の JSON を取り出す。最後のほうの文章から、key を含む JSON として読めるものを探す */
 function lastJSON(blocks, key) {
   const texts = blocks.filter(b => b.type === 'text').map(b => b.text);
@@ -199,7 +216,7 @@ async function research(client, sj) {
   const seeds = seedNotes(sj.u);
   const brief = unitBrief(sj.ch, sj.u, sj.u.sources.map(id => CUR.sources[id]).filter(Boolean));
   const content = [{ type: 'text', text: brief + '\n\nこの単元の教材を作るために、単元の出典を補う資料を調べてください。\n今日の日付：' + TODAY }];
-  const params = { model: RESEARCH_MODEL, max_tokens: 16000, system: researchSystem(CFG), messages: [{ role: 'user', content }], tools: webTools(6, 6), output_config: { effort: 'medium' }, ...FALLBACK };
+  const params = { model: RESEARCH_MODEL, max_tokens: 16000, system: researchSystem(CFG), messages: [{ role: 'user', content }], tools: webTools(8, 10), output_config: { effort: 'medium' }, ...FALLBACK };
   let r;
   try { r = await withTools(client, params, '調査'); } catch (e) {
     // サイトの絞り込み指定が受け付けられなかったときは、絞り込みなしで調べ、あとでこちらで絞る
@@ -208,8 +225,9 @@ async function research(client, sj) {
     r = await withTools(client, Object.assign({}, params, { tools: params.tools.map(t => { const c = Object.assign({}, t); delete c.allowed_domains; return c; }) }), '調査');
   }
   const pages = fetchedPages(r.blocks);
-  let raw = [];
-  try { const out = lastJSON(r.blocks, 'notes'); raw = Array.isArray(out.notes) ? out.notes : []; } catch (e) { say('- 調査の回答を読み取れませんでした（' + e.message + '）'); }
+  let raw = [], gaps = '';
+  try { const out = lastJSON(r.blocks, 'notes'); raw = Array.isArray(out.notes) ? out.notes : []; gaps = typeof out.gaps === 'string' ? out.gaps : ''; } catch (e) { say('- 調査の回答を読み取れませんでした（' + e.message + '）'); }
+  say('- 調査の道具：' + toolStats(r.blocks) + (gaps ? '\n- 調べても確かめられなかったこと：' + gaps.slice(0, 300) : ''));
   const drop = { 短い: 0, 開いていない: 0, 許可外のサイト: 0, ランクD: 0, 単元の出典と重複: 0 };
   const found = raw.filter(n => {
     if (!n || typeof n.fact !== 'string' || n.fact.length < 20) { drop.短い++; return false; }

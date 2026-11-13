@@ -93,7 +93,10 @@ const mock = http.createServer((req, res) => {
       const fetchedBlocks = R.concat(['https://blog.test/x']).flatMap((url, i) => [
         { type: 'server_tool_use', id: 'f' + i, name: 'web_fetch', input: { url } },
         { type: 'web_fetch_tool_result', tool_use_id: 'f' + i, content: { type: 'web_fetch_result', url, retrieved_at: null, content: { type: 'document', source: { type: 'text', media_type: 'text/plain', data: 'ページ本文' + (i + 1) + '：メタ分析の要旨' } } } }]);
-      return res.end(JSON.stringify({ ...base, stop_reason: 'end_turn', content: [{ type: 'text', text: '資料を開いて確かめます。{途中の文}' }].concat(fetchedBlocks, [{ type: 'text', text: JSON.stringify({ notes: mode.fewNotes ? [] : notes, gaps: 'なし' }) }]) }));
+      // 出版社のページは断られることがある（失敗の理由を記録する）
+      const failedFetch = [{ type: 'server_tool_use', id: 'fx', name: 'web_fetch', input: { url: 'https://doi.org/10.9999/blocked' } },
+        { type: 'web_fetch_tool_result', tool_use_id: 'fx', content: { type: 'web_fetch_tool_result_error', error_code: 'url_not_accessible' } }];
+      return res.end(JSON.stringify({ ...base, stop_reason: 'end_turn', content: [{ type: 'text', text: '資料を開いて確かめます。{途中の文}' }].concat(failedFetch, fetchedBlocks, [{ type: 'text', text: JSON.stringify({ notes: mode.fewNotes ? [] : notes, gaps: 'なし' }) }]) }));
     }
     let out;
     if (kind === 'verify') out = { checks: CHECKS.map(([id]) => { const ok = !(mode.failVerify && id === 'research_accuracy'); return { id, ok, note: ok ? '問題なし' : '効果の向きを誇張している' }; }), summary: 'まとめ' };
@@ -155,6 +158,7 @@ try {
   check(R.slice(1).every(u => genNotes.includes(u)) && genNotes.includes(R[0] + '/') && !genNotes.includes('notopened') && !genNotes.includes('blog.test'), '開いていない・許可していないサイトの事実が調査メモに入っている');
   check(!genNotes.includes('個人ブログ') && genNotes.includes('信頼度ランクB'), 'ランクDの事実が調査メモに入っている、またはランクが渡っていない');
   check(r.out.includes('除外：') && r.out.includes('ランクD 1'), '調査の内訳（除外の理由）が記録されていない');
+  check(r.out.includes('検索 1回（結果 4件）') && r.out.includes('ページを開く 6回（成功 5・失敗 url_not_accessible 1）') && r.out.includes('調べても確かめられなかったこと：なし'), '調査の道具の使い方（検索・ページを開く回数と失敗の理由）が記録されていない: ' + r.out);
   // 出典：単元の出典（確認済み）＋調査で使った資料。架空のURLは入らない
   check(u01.sources.every(id => t1.sources.some(s => s.url === CUR.sources[id].url)) && t1.sources.some(s => s.url === R[0] + '/') && !JSON.stringify(t1.sources).includes('fake.test'), '出典が不正: ' + JSON.stringify(t1.sources));
   check(t1.sources.every(s => ['A', 'B', 'C'].includes(s.rank) && ['学術研究', '公的機関', '国際機関・研究', '企業公式'].includes(s.type)), '出典のランク・種類が不正');
