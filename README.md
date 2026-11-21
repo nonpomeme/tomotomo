@@ -163,3 +163,7 @@ GitHub Actions がプルリクエストを作れるようにします：リポ�
 
 そのほか、合言葉を10回続けて間違えたら、その接続元を1時間締め出します。
 安全上の理由でAIが回答を断った場合は、Anthropic 推奨の別モデルで自動的にやり直す設定（server-side fallback）を入れています。
+
+## 街カード（別アプリ）
+
+`machi-card/` に街歩き記録アプリ「街カード」（Expo + Expo Router、Web版は Vercel で公開）があります。説明と公開手順は `machi-card/README.md` を見てください。

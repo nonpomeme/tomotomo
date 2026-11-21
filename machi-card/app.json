@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "街カード",
+    "slug": "machi-card",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "散歩のルートとピンを記録するために現在地を使います。"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "output": "single",
+      "name": "街カード",
+      "shortName": "街カード",
+      "lang": "ja",
+      "themeColor": "#2f6f4f",
+      "backgroundColor": "#faf7f0"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "散歩のルートとピンを記録するために現在地を使います。"
+        }
+      ]
+    ],
+    "scheme": "machicard",
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}
