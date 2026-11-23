@@ -1,5 +1,21 @@
 [
  {
+  "date": "2026-11-23",
+  "title": "u3-1 資源依存：組織は依存する相手に左右される",
+  "unit": "u3-1",
+  "reasons": [
+   "source：単元の出典 Pfeffer & Salancik (1978) とURLは載っている。しかし、利用者に見える出典名が途中で切れている。sources・evidence に「Davis, G. F. & Cobb, J. A. (2009) Resource Dependence Theory: Past and Future, R」「Drees, J. & Heugens, P. (2012/2013) Synthesizing and Extending Resource Dependen」とあり、掲載誌名や論文名が欠けている。サンプルの「Edmondson (1999) Administrative Science Quarterly」のような完全な書誌になっておらず、出典の記載として不十分。"
+  ]
+ },
+ {
+  "date": "2026-11-23",
+  "title": "u2-3 ミンツバーグの5つの組織形態",
+  "unit": "u2-3",
+  "reasons": [
+   "error：調査で確かめられた事実が少なすぎます（単元の出典 1件＋確かめた事実 0件）"
+  ]
+ },
+ {
   "date": "2026-11-22",
   "title": "u3-1 資源依存：組織は依存する相手に左右される",
   "unit": "u3-1",
