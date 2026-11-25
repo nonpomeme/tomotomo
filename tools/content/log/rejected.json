@@ -1,5 +1,21 @@
 [
  {
+  "date": "2026-11-25",
+  "title": "u3-3 個体群生態学と組織の慣性",
+  "unit": "u3-3",
+  "reasons": [
+   "error：調査で確かめられた事実が少なすぎます（単元の出典 1件＋確かめた事実 0件）"
+  ]
+ },
+ {
+  "date": "2026-11-25",
+  "title": "u3-2 制度的同型化：なぜ組織は似てくるのか",
+  "unit": "u3-2",
+  "reasons": [
+   "source：単元の出典 DiMaggio & Powell (1983) の DOI は sources と各 evidence に載っている。ただし出典名に2つの欠陥がある。①2023年論考の名前が「Powell, W. W., & DiMaggio, P. J. (2023). The Iron Cage Redux: Looking Back and F」と途中で切れたまま、sources・s3・evidence に表示されている。②DiMaggio & Powell (1983) は「（査読論文）」とあるだけで、掲載誌（American Sociological Review）が書かれていない。サンプルの「著者 (年) 誌名」形式に届いておらず、学習者に見せる出典表記として不備がある。"
+  ]
+ },
+ {
   "date": "2026-11-24",
   "title": "u3-1 資源依存：組織は依存する相手に左右される",
   "unit": "u3-1",
